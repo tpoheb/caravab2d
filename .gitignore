@@ -1,0 +1,9 @@
+﻿Library
+Temp
+obj
+Logs
+*.sln
+*.vsconfig
+Assembly-CSharp.csproj
+.plastic
+.vs
