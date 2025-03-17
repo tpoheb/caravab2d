@@ -1,37 +1,107 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public List<Transform> cells; // Список клеток
-    public Transform player; // Фишка игрока
-    private int currentCellIndex = 0; // Текущая клетка
+    [Header("Game Data")]
+    public List<City> cities; // Все города в игре
+    public GameObject playerToken; // Фишка игрока
 
-    public void EndTurn()
+    [Header("UI Components")]
+    public Button endTurnButton; // Кнопка "Конец хода"
+    public CityPanelManager cityPanelManager; // Менеджер панелей городов
+
+    private City currentCity; // Текущий город игрока
+    private Direction currentDirection; // Текущее направление
+    private int currentTileIndex = 0; // Индекс текущей клетки
+
+    void Start()
     {
-        if (currentCellIndex < cells.Count - 1)
+        // Начинаем игру в первом городе
+        if (cities.Count > 0)
         {
-            currentCellIndex++;
-            MovePlayerToCell(currentCellIndex);
-            CheckCellType();
+            currentCity = cities[0];
+            OpenCityPanel(currentCity);
+        }
+
+        // Подписываемся на событие нажатия кнопки "Конец хода"
+        if (endTurnButton != null)
+        {
+            endTurnButton.onClick.AddListener(OnEndTurn);
+        }
+    }
+
+    // Открывает панель действий города
+    private void OpenCityPanel(City city)
+    {
+        if (city.cityPanel != null && cityPanelManager != null)
+        {
+            city.cityPanel.SetActive(true);
+            // Обновляем кнопки направлений через CityPanelManager
+            cityPanelManager.UpdateDirectionButtons(city, SelectDirection);
+        }
+    }
+
+    // Закрывает панель действий города
+    private void CloseCityPanel(City city)
+    {
+        if (city.cityPanel != null)
+        {
+            city.cityPanel.SetActive(false);
+        }
+    }
+
+    // Выбор направления
+    public void SelectDirection(Direction direction)
+    {
+        Debug.Log("Выбрано направление: " + direction.destinationCity.cityName);
+        currentDirection = direction;
+        CloseCityPanel(currentCity);
+        StartMoving();
+    }
+
+    // Начало движения по выбранному направлению
+    private void StartMoving()
+    {
+        currentTileIndex = 0;
+        MoveToNextTile();
+    }
+
+    // Перемещение на следующую клетку
+    private void MoveToNextTile()
+    {
+        if (currentDirection != null && currentTileIndex < currentDirection.tiles.Count)
+        {
+            // Логика перемещения фишки (например, изменение спрайта или анимации)
+            Debug.Log("Перемещение на клетку: " + currentDirection.tiles[currentTileIndex].tileName);
+            currentTileIndex++;
         }
         else
         {
-            Debug.Log("Игра окончена!");
+            // Достигли города назначения
+            ArriveAtDestination();
         }
     }
 
-    private void MovePlayerToCell(int cellIndex)
+    // Прибытие в город назначения
+    private void ArriveAtDestination()
     {
-        player.position = cells[cellIndex].position;
+        if (currentDirection != null)
+        {
+            currentCity = currentDirection.destinationCity;
+            OpenCityPanel(currentCity);
+            currentDirection = null;
+        }
     }
 
-    private void CheckCellType()
+    // Обработка нажатия кнопки "Конец хода"
+    private void OnEndTurn()
     {
-        CityCell cityCell = cells[currentCellIndex].GetComponent<CityCell>();
-        if (cityCell != null)
+        if (currentDirection != null)
         {
-            cityCell.OnPlayerEnter();
+            MoveToNextTile();
         }
     }
 }
