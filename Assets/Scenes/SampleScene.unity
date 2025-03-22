@@ -326,7 +326,7 @@ MonoBehaviour:
   cityName: 2
   inCityPaths:
   - {fileID: 839545562}
-  - {fileID: 207969022}
+  - {fileID: 152221912}
 --- !u!1 &152221911
 GameObject:
   m_ObjectHideFlags: 0
@@ -357,6 +357,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  finishCity: {fileID: 1469057807573079152}
   initializeOnStart: 1
 --- !u!114 &152221913
 MonoBehaviour:
@@ -370,14 +371,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 001300c4df35fcd40a17ba8aa58f33b1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cells:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
 --- !u!4 &152221914
 Transform:
   m_ObjectHideFlags: 0
@@ -420,9 +413,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 0}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 0}
 --- !u!1 &207969021
 GameObject:
   m_ObjectHideFlags: 0
@@ -452,6 +442,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  finishCity: {fileID: 117872520}
   initializeOnStart: 1
 --- !u!4 &207969023
 Transform:
@@ -561,9 +552,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 1751652861}
-  previousCell: {fileID: 2086141742}
-  connectedCity: {fileID: 117872520}
 --- !u!1001 &401593902
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1005,11 +993,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 550472509}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8f821aced8e73e24da459242c77d4a46, type: 3}
+  m_Script: {fileID: 11500000, guid: 884371c7abac54644b5a83b4f8c3a7d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentCellIndex: 0
-  playerObject: {fileID: 550472509}
+  cityPanel: {fileID: 1688781431}
+  endTurnButton: {fileID: 525133557}
+  tokenObject: {fileID: 550472509}
 --- !u!1001 &551449071
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1380,9 +1369,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 1624332741}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 117872520}
 --- !u!1001 &805368442
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1498,6 +1484,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  finishCity: {fileID: 860271835}
   initializeOnStart: 1
 --- !u!1001 &843615276
 PrefabInstance:
@@ -1583,7 +1570,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cityName: 3
   inCityPaths:
-  - {fileID: 839545562}
+  - {fileID: 207969022}
 --- !u!1 &876276657
 GameObject:
   m_ObjectHideFlags: 0
@@ -1875,9 +1862,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 0}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 0}
 --- !u!1 &1089469045
 GameObject:
   m_ObjectHideFlags: 0
@@ -1966,7 +1950,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1131042307}
-  - component: {fileID: 1131042308}
   - component: {fileID: 1131042309}
   m_Layer: 0
   m_Name: Path12
@@ -1995,26 +1978,6 @@ Transform:
   - {fileID: 1624455779}
   m_Father: {fileID: 1864762240}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1131042308
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1131042306}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 001300c4df35fcd40a17ba8aa58f33b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cells:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
 --- !u!114 &1131042309
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2027,6 +1990,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  finishCity: {fileID: 117872520}
   initializeOnStart: 1
 --- !u!1 &1218083942 stripped
 GameObject:
@@ -2045,9 +2009,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 0}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 0}
 --- !u!4 &1218083945 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4691127595636259579, guid: da3931478036004469338e0c03331bb6, type: 3}
@@ -2237,9 +2198,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 2086141742}
-  previousCell: {fileID: 1846279049}
-  connectedCity: {fileID: 0}
 --- !u!1001 &1352716450
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2746,9 +2704,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 0}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 0}
 --- !u!1 &1624332740 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9110996841500214313, guid: da3931478036004469338e0c03331bb6, type: 3}
@@ -2766,9 +2721,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 2055267416}
-  previousCell: {fileID: 797354428}
-  connectedCity: {fileID: 0}
 --- !u!4 &1624332743 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4691127595636259579, guid: da3931478036004469338e0c03331bb6, type: 3}
@@ -2930,7 +2882,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1688781428
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2944,7 +2896,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3010,6 +2962,7 @@ MonoBehaviour:
   hireTeamButton: {fileID: 2118954938}
   buyGoodsButton: {fileID: 1494311581}
   buttonSpacing: 10
+  playerToken: {fileID: 550472511}
 --- !u!1 &1716010057 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9110996841500214313, guid: da3931478036004469338e0c03331bb6, type: 3}
@@ -3027,9 +2980,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 1218083943}
-  previousCell: {fileID: 2055267416}
-  connectedCity: {fileID: 117872520}
 --- !u!4 &1716010060 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4691127595636259579, guid: da3931478036004469338e0c03331bb6, type: 3}
@@ -3052,9 +3002,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 0}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 0}
 --- !u!1 &1825981164
 GameObject:
   m_ObjectHideFlags: 0
@@ -3208,9 +3155,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 1265844736}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 117872520}
 --- !u!1 &1864762239
 GameObject:
   m_ObjectHideFlags: 0
@@ -3223,7 +3167,7 @@ GameObject:
   - component: {fileID: 1864762242}
   - component: {fileID: 1864762241}
   m_Layer: 0
-  m_Name: Tilemap
+  m_Name: Paths
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3445,9 +3389,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da870e1673b8ce947bd6f6cafccd353d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  player: {fileID: 0}
-  startingCity: {fileID: 0}
-  endTurnButton: {fileID: 0}
 --- !u!1 &2055267415 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 9110996841500214313, guid: da3931478036004469338e0c03331bb6, type: 3}
@@ -3465,9 +3406,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 1716010058}
-  previousCell: {fileID: 1624332741}
-  connectedCity: {fileID: 117872520}
 --- !u!4 &2055267418 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4691127595636259579, guid: da3931478036004469338e0c03331bb6, type: 3}
@@ -3554,9 +3492,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 369943482}
-  previousCell: {fileID: 1265844736}
-  connectedCity: {fileID: 117872520}
 --- !u!1 &2111729424
 GameObject:
   m_ObjectHideFlags: 0
@@ -3794,9 +3729,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71a6360c332021841b2a40964faf11a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextCell: {fileID: 0}
-  previousCell: {fileID: 0}
-  connectedCity: {fileID: 0}
 --- !u!1001 &1469057807573079147
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3881,7 +3813,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cityName: 1
   inCityPaths:
-  - {fileID: 152221912}
+  - {fileID: 1131042309}
 --- !u!1001 &6417344932950880536
 PrefabInstance:
   m_ObjectHideFlags: 0
