@@ -11,6 +11,7 @@ public class CityPanel : MonoBehaviour
     [SerializeField] private Button buyGoodsButton; // Кнопка покупки товаров
     [SerializeField] private float buttonSpacing = 10f; // Расстояние между кнопками
     [SerializeField] private PlayerToken playerToken; // Ссылка на фишку игрока
+    [SerializeField] private TradeSystem tradeSystem;
 
     private List<Button> pathButtons = new List<Button>(); // Список созданных кнопок путей
 
@@ -81,6 +82,14 @@ public class CityPanel : MonoBehaviour
 
     private void OnBuyGoodsClicked()
     {
+        if (tradeSystem != null)
+        {
+            tradeSystem.OpenTradePanel(); // Открываем панель торговли
+        }
+        else
+        {
+            Debug.LogError("TradeSystem не найден!");
+        }
         Debug.Log($"Нажата кнопка покупки товаров в городе {currentCity.CityName}");
     }
 
