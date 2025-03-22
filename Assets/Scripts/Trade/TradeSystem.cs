@@ -4,80 +4,64 @@ using System.Linq;
 
 public class TradeSystem : MonoBehaviour
 {
-    public TradeData tradeData;
-    public GameObject tradePanel;
-    public Text cityQuantityText;
-    public Text playerQuantityText;
-    public InputField quantityInput;
-    public Text selectedItemText;
+    public TradeDataSO tradeDataSO; // ScriptableObject с данными
+    public GameObject tradePanel; // Панель торговли
+    public GameObject tradeItemRowPrefab; // Префаб строки товара
+    public Transform tradeContent; // Родительский объект для строк товаров
 
-    private Item selectedItem;
+    private TradeData tradeData; // Данные о товарах
 
     void Start()
     {
         tradePanel.SetActive(false);
+
+        // Получаем данные из ScriptableObject
+        if (tradeDataSO != null)
+        {
+            tradeData = tradeDataSO.tradeData;
+        }
+        else
+        {
+            Debug.LogError("TradeDataSO не назначен!");
+        }
     }
 
-    public void OnBuyGoodsClicked()
-    {
-        OpenTradePanel();
-    }
+    // Открытие панели торговли
     public void OpenTradePanel()
     {
         tradePanel.SetActive(true);
-        SelectItem(0); // Выбираем первый товар по умолчанию
+        CreateTradeRows();
     }
 
+    // Закрытие панели торговли
     public void CloseTradePanel()
     {
         tradePanel.SetActive(false);
     }
 
-    public void SelectItem(int itemIndex)
+    // Создание строк товаров
+    private void CreateTradeRows()
     {
-        if (itemIndex >= 0 && itemIndex < tradeData.items.Length)
+        foreach (Transform child in tradeContent)
         {
-            selectedItem = tradeData.items[itemIndex];
-            UpdateUI();
+            Destroy(child.gameObject);
         }
-    }
 
-    public void BuyItem()
-    {
-        int quantity = int.Parse(quantityInput.text);
-        if (quantity > 0 && selectedItem.quantityInCity >= quantity)
+        foreach (var item in tradeData.items)
         {
-            selectedItem.quantityInCity -= quantity;
-            selectedItem.quantityInPlayerInventory += quantity;
-            Debug.Log($"Куплено {quantity} единиц товара {selectedItem.itemName}");
-        }
-        else
-        {
-            Debug.Log("Недостаточно товара в городе или введено неверное количество.");
-        }
-        UpdateUI();
-    }
+            // Создаем экземпляр префаба
+            GameObject row = Instantiate(tradeItemRowPrefab, tradeContent);
 
-    public void SellItem()
-    {
-        int quantity = int.Parse(quantityInput.text);
-        if (quantity > 0 && selectedItem.quantityInPlayerInventory >= quantity)
-        {
-            selectedItem.quantityInCity += quantity;
-            selectedItem.quantityInPlayerInventory -= quantity;
-            Debug.Log($"Продано {quantity} единиц товара {selectedItem.itemName}");
+            // Получаем компонент TradeItemRow и инициализируем его
+            TradeItemRow rowScript = row.GetComponent<TradeItemRow>();
+            if (rowScript != null)
+            {
+                rowScript.Initialize(item);
+            }
+            else
+            {
+                Debug.LogError("Компонент TradeItemRow не найден в префабе!");
+            }
         }
-        else
-        {
-            Debug.Log("Недостаточно товара у игрока или введено неверное количество.");
-        }
-        UpdateUI();
-    }
-
-    private void UpdateUI()
-    {
-        cityQuantityText.text = $"В городе: {selectedItem.quantityInCity}";
-        playerQuantityText.text = $"У игрока: {selectedItem.quantityInPlayerInventory}";
-        selectedItemText.text = selectedItem.itemName;
     }
 }
