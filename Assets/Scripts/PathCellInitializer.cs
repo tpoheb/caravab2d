@@ -2,7 +2,10 @@ using UnityEngine;
 
 public class PathCellInitializer : MonoBehaviour
 {
+    [SerializeField] private City finishCity; // Город назначения пути
     [SerializeField] private bool initializeOnStart = true;
+
+    public City FinishCity => finishCity; // Свойство для доступа к городу финиша
 
     void Start()
     {
@@ -16,34 +19,29 @@ public class PathCellInitializer : MonoBehaviour
     {
         int cellIndex = 0;
 
-        // Проходим по всем дочерним объектам
         foreach (Transform child in transform)
         {
-            // Проверяем, является ли объект клеткой (по тегу, имени или компоненту)
-            if (child.CompareTag("Cell")) // Предполагается, что у клеток есть тег "Cell"
+            if (child.CompareTag("Cell"))
             {
                 Cell cell = child.GetComponent<Cell>();
-
                 if (cell == null)
                 {
                     cell = child.gameObject.AddComponent<Cell>();
                 }
 
                 cell.cellNumber = cellIndex;
-                cell.name = $"Cell_{cellIndex}"; // Дополнительно переименовываем объект
+                cell.name = $"Cell_{cellIndex}";
                 cellIndex++;
             }
         }
 
-        Debug.Log($"Инициализировано {cellIndex} клеток");
+        Debug.Log($"Инициализировано {cellIndex} клеток в пути");
     }
 }
 
 public class Cell : MonoBehaviour
 {
     public int cellNumber;
-
-    // Дополнительные свойства клетки, если нужно
     public Vector3 Position => transform.position;
     public bool IsActive => gameObject.activeSelf;
 }
