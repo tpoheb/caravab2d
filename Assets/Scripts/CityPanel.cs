@@ -11,7 +11,7 @@ public class CityPanel : MonoBehaviour
     [SerializeField] private Button buyGoodsButton; // Кнопка покупки товаров
     [SerializeField] private float buttonSpacing = 10f; // Расстояние между кнопками
     [SerializeField] private PlayerToken playerToken; // Ссылка на фишку игрока
-    [SerializeField] private TradeSystem tradeSystem;
+    [SerializeField] private TradeItemSystem tradeItemSystem;
 
     private List<Button> pathButtons = new List<Button>(); // Список созданных кнопок путей
 
@@ -53,7 +53,7 @@ public class CityPanel : MonoBehaviour
         }
 
         hireTeamButton.onClick.AddListener(OnHireTeamClicked);
-        buyGoodsButton.onClick.AddListener(OnBuyGoodsClicked);
+       // buyGoodsButton.onClick.AddListener(OnBuyGoodsClicked);
     }
 
     public void OpenPanel(City city)
@@ -80,7 +80,7 @@ public class CityPanel : MonoBehaviour
         Debug.Log($"Нажата кнопка найма команды в городе {currentCity.CityName}");
     }
 
-    private void OnBuyGoodsClicked()
+   /* private void OnBuyGoodsClicked()
     {
         if (tradeSystem != null)
         {
@@ -91,7 +91,7 @@ public class CityPanel : MonoBehaviour
             Debug.LogError("TradeSystem не найден!");
         }
         Debug.Log($"Нажата кнопка покупки товаров в городе {currentCity.CityName}");
-    }
+    }*/
 
     private void ClearPathButtons()
     {
