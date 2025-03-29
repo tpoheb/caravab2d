@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: City3
   m_EditorClassIdentifier: 
   cityName: 2
-  cityGold: 30
+  cityGold: 6380
   items:
   - item: {fileID: 11400000, guid: 4ad36b3587a525d469cd45b237a48b35, type: 2}
-    stock: 100
-    buyPrice: 6
-    sellPrice: 8
+    stock: 0
+    buyPrice: 1
+    sellPrice: 1
   - item: {fileID: 11400000, guid: f246d5490dbc44a41a67683e14d7276f, type: 2}
     stock: 100
-    buyPrice: 2
-    sellPrice: 1
+    buyPrice: 50
+    sellPrice: 60
   - item: {fileID: 11400000, guid: 855a9df5c62ad74409ed112988c1a86c, type: 2}
-    stock: 0
+    stock: 1
     buyPrice: 95
-    sellPrice: 100
+    sellPrice: 105

@@ -15,8 +15,8 @@ public class ItemUI : MonoBehaviour
     public void Initialize(CityData.CityItem cityItem, int playerStock, TradeItemSystem tradeSystem)
     {
         itemNameText.text = cityItem.item.itemName;
-        buyPriceText.text = $"Купить: {cityItem.buyPrice}";
-        sellPriceText.text = $"Продать: {cityItem.sellPrice}";
+        buyPriceText.text = $" {cityItem.buyPrice}";
+        sellPriceText.text = $" {cityItem.sellPrice}";
         cityStockText.text = $"В городе: {cityItem.stock}";
         playerStockText.text = $"У вас: {playerStock}";
 

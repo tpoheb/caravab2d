@@ -3,12 +3,13 @@ using System.Collections.Generic;
 
 public class City : MonoBehaviour
 {
-    public CityData cityData; // Ссылка на ScriptableObject
+    public string CityName => cityData.cityName;
+    public CityData cityData;
+    public CityPanel CityPanel; // Индивидуальная панель (опционально)
     [SerializeField] private string cityName; // Название города
     [SerializeField] private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // Список путей в городе
 
-    // Свойства для доступа к данным
-    public string CityName => cityName;
+   
     public List<PathCellInitializer> Paths => inCityPaths;
 
     void Start()
