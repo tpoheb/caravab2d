@@ -3,27 +3,28 @@ using UnityEngine.UI;
 
 public class ItemUI : MonoBehaviour
 {
+    [Header("UI Elements")]
     public Text itemNameText;
-    public Text priceText;
+    public Text buyPriceText;
+    public Text sellPriceText;
     public Text cityStockText;
     public Text playerStockText;
     public Button buyButton;
     public Button sellButton;
 
-    private Item currentItem;
-    private TradeItemSystem tradeItemSystem;
-
-    public void Initialize(Item item, TradeItemSystem tradeSystem)
+    public void Initialize(CityData.CityItem cityItem, int playerStock, TradeItemSystem tradeSystem)
     {
-        currentItem = item;
-        this.tradeItemSystem = tradeSystem;
+        itemNameText.text = cityItem.item.itemName;
+        buyPriceText.text = $"Купить: {cityItem.buyPrice}";
+        sellPriceText.text = $"Продать: {cityItem.sellPrice}";
+        cityStockText.text = $"В городе: {cityItem.stock}";
+        playerStockText.text = $"У вас: {playerStock}";
 
-        itemNameText.text = item.itemName;
-        priceText.text = $"Цена: {item.price}";
-        cityStockText.text = $"В городе: {item.cityStock}";
-        playerStockText.text = $"У вас: {item.playerStock}";
+        buyButton.onClick.AddListener(() => tradeSystem.BuyItem(cityItem, 1));
+        sellButton.onClick.AddListener(() => tradeSystem.SellItem(cityItem, 1));
 
-        buyButton.onClick.AddListener(() => tradeSystem.BuyItem(item, 1));
-        sellButton.onClick.AddListener(() => tradeSystem.SellItem(item, 1));
+        // Блокировка кнопок если нельзя совершить сделку
+        buyButton.interactable = (tradeSystem.playerInventory.money >= cityItem.buyPrice && cityItem.stock > 0);
+        //sellButton.interactable = (playerStock > 0 && tradeSystem.currentCity.cityGold >= cityItem.sellPrice);
     }
 }
