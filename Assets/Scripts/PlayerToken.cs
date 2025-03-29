@@ -49,7 +49,7 @@ public class PlayerToken : MonoBehaviour
             // Открываем панель города финиша
             if (currentPath.FinishCity != null)
             {
-                cityPanel.OpenPanel(currentPath.FinishCity.cityData);
+                cityPanel.OpenPanel(currentPath.FinishCity);
                 Debug.Log($"Игрок достиг города {currentPath.FinishCity.CityName}");
 
                 // Автоматически открываем торговлю (опционально)
