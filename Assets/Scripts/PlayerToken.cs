@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,8 +49,11 @@ public class PlayerToken : MonoBehaviour
             // Открываем панель города финиша
             if (currentPath.FinishCity != null)
             {
-                cityPanel.OpenPanel(currentPath.FinishCity);
+                cityPanel.OpenPanel(currentPath.FinishCity.cityData);
                 Debug.Log($"Игрок достиг города {currentPath.FinishCity.CityName}");
+
+                // Автоматически открываем торговлю (опционально)
+                // cityPanel.OpenTrade(); 
             }
             else
             {

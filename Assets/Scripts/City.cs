@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 public class City : MonoBehaviour
 {
+    public CityData cityData; // Ссылка на ScriptableObject
     [SerializeField] private string cityName; // Название города
     [SerializeField] private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // Список путей в городе
 
@@ -38,4 +39,6 @@ public class City : MonoBehaviour
 
         Debug.Log($"Город {cityName} инициализирован. Всего путей: {inCityPaths.Count}");
     }
+
+
 }
