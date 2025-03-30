@@ -1823,9 +1823,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   money: 1000
+  maxCapacity: 100
   items:
   - item: {fileID: 11400000, guid: 4ad36b3587a525d469cd45b237a48b35, type: 2}
-    quantity: 0
+    quantity: 10
   - item: {fileID: 11400000, guid: f246d5490dbc44a41a67683e14d7276f, type: 2}
     quantity: 0
   - item: {fileID: 11400000, guid: 855a9df5c62ad74409ed112988c1a86c, type: 2}
@@ -3391,6 +3392,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 396b5d2849e4a354e8bfc83141e27c50, type: 2}
   - {fileID: 11400000, guid: 26d693366e31bd24a85ea5013bb06e19, type: 2}
   - {fileID: 11400000, guid: 44bd788926a67ce488ea9e929afea5e0, type: 2}
+  playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
   playerMoneyText: {fileID: 316432629}
   cityMoneyText: {fileID: 2070808876}
   cityNameText: {fileID: 1567535488}

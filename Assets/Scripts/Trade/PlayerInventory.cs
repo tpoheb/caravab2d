@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class PlayerInventory : MonoBehaviour
 {
-    public int money = 1000; // Начальные деньги игрока
+    public int money = 1000;
+    public int maxCapacity = 100; // Максимальная грузоподъемность
     public List<InventoryItem> items = new List<InventoryItem>();
 
     [System.Serializable]
@@ -13,10 +14,21 @@ public class PlayerInventory : MonoBehaviour
         public int quantity;
     }
 
-    // Добавляет предмет в инвентарь
+    public bool CanCarryMore(int weightToAdd)
+    {
+        return GetCurrentWeight() + weightToAdd <= maxCapacity;
+    }
+    // Добавляет предмет в инвентарь (с проверкой грузоподъемности)
     public void AddItem(Item item, int quantity)
     {
         if (item == null || quantity <= 0) return;
+
+        // Проверяем, не превысит ли это грузоподъемность
+        if (GetCurrentWeight() + (item.weight * quantity) > maxCapacity)
+        {
+            Debug.LogWarning("Не хватает грузоподъемности!");
+            return;
+        }
 
         var existingItem = items.Find(i => i.item == item);
         if (existingItem != null)
@@ -54,39 +66,59 @@ public class PlayerInventory : MonoBehaviour
         return existingItem != null ? existingItem.quantity : 0;
     }
 
-    // Сохраняет инвентарь игрока
+    // Новый метод: проверка возможности взять предмет
+    public bool CanCarryItem(Item item, int quantity)
+    {
+        if (item == null) return false;
+        return GetCurrentWeight() + (item.weight * quantity) <= maxCapacity;
+    }
+
+    // Новый метод: получение текущего веса
+    public int GetCurrentWeight()
+    {
+        int totalWeight = 0;
+        foreach (var inventoryItem in items)
+        {
+            totalWeight += inventoryItem.item.weight * inventoryItem.quantity;
+        }
+        return totalWeight;
+    }
+
+    // Новый метод: получение оставшейся грузоподъемности
+    public int GetRemainingCapacity()
+    {
+        return maxCapacity - GetCurrentWeight();
+    }
+
+    // Сохраняет инвентарь игрока (добавлен вес)
     public void SaveInventory()
     {
         PlayerPrefs.SetInt("PlayerMoney", money);
+        PlayerPrefs.SetInt("PlayerMaxCapacity", maxCapacity);
 
-        // Сохраняем количество предметов
         PlayerPrefs.SetInt("InventoryCount", items.Count);
-
-        // Сохраняем каждый предмет
         for (int i = 0; i < items.Count; i++)
         {
             PlayerPrefs.SetString($"InventoryItem_{i}", items[i].item.name);
             PlayerPrefs.SetInt($"InventoryQuantity_{i}", items[i].quantity);
         }
-
         PlayerPrefs.Save();
     }
 
-    // Загружает инвентарь игрока
+    // Загружает инвентарь игрока (добавлен вес)
     public void LoadInventory()
     {
-        money = PlayerPrefs.GetInt("PlayerMoney", 1000); // Значение по умолчанию
+        money = PlayerPrefs.GetInt("PlayerMoney", 1000);
+        maxCapacity = PlayerPrefs.GetInt("PlayerMaxCapacity", 100);
 
         int itemCount = PlayerPrefs.GetInt("InventoryCount", 0);
         items.Clear();
 
-        // Загружаем каждый предмет
         for (int i = 0; i < itemCount; i++)
         {
             string itemName = PlayerPrefs.GetString($"InventoryItem_{i}", "");
             int quantity = PlayerPrefs.GetInt($"InventoryQuantity_{i}", 0);
 
-            // Предполагаем, что у вас есть система загрузки предметов по имени
             Item item = Resources.Load<Item>($"Items/{itemName}");
             if (item != null)
             {

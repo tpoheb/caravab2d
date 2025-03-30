@@ -4,7 +4,5 @@ using UnityEngine;
 public class Item : ScriptableObject
 {
     public string itemName;
-    public int price;
-    public int cityStock;
-    public int playerStock;
+    public int weight = 1;
 }
