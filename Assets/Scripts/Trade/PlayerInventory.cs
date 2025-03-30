@@ -4,7 +4,7 @@ using UnityEngine;
 public class PlayerInventory : MonoBehaviour
 {
     public int money = 1000;
-    public int maxCapacity = 100; // Максимальная грузоподъемность
+    [SerializeField] private PlayerStats playerStats; // Ссылка на PlayerStats
     public List<InventoryItem> items = new List<InventoryItem>();
 
     [System.Serializable]
@@ -14,17 +14,22 @@ public class PlayerInventory : MonoBehaviour
         public int quantity;
     }
 
+    private void Awake()
+    {
+        if (playerStats == null)
+            playerStats = GetComponent<PlayerStats>();
+    }
+
     public bool CanCarryMore(int weightToAdd)
     {
-        return GetCurrentWeight() + weightToAdd <= maxCapacity;
+        return GetCurrentWeight() + weightToAdd <= playerStats.Capacity;
     }
-    // Добавляет предмет в инвентарь (с проверкой грузоподъемности)
+
     public void AddItem(Item item, int quantity)
     {
         if (item == null || quantity <= 0) return;
 
-        // Проверяем, не превысит ли это грузоподъемность
-        if (GetCurrentWeight() + (item.weight * quantity) > maxCapacity)
+        if (!CanCarryMore(item.weight * quantity))
         {
             Debug.LogWarning("Не хватает грузоподъемности!");
             return;
@@ -41,7 +46,6 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
-    // Удаляет предмет из инвентаря
     public void RemoveItem(Item item, int quantity)
     {
         if (item == null || quantity <= 0) return;
@@ -57,7 +61,6 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
-    // Возвращает количество указанного предмета
     public int GetItemStock(Item item)
     {
         if (item == null) return 0;
@@ -66,14 +69,12 @@ public class PlayerInventory : MonoBehaviour
         return existingItem != null ? existingItem.quantity : 0;
     }
 
-    // Новый метод: проверка возможности взять предмет
     public bool CanCarryItem(Item item, int quantity)
     {
         if (item == null) return false;
-        return GetCurrentWeight() + (item.weight * quantity) <= maxCapacity;
+        return CanCarryMore(item.weight * quantity);
     }
 
-    // Новый метод: получение текущего веса
     public int GetCurrentWeight()
     {
         int totalWeight = 0;
@@ -84,19 +85,16 @@ public class PlayerInventory : MonoBehaviour
         return totalWeight;
     }
 
-    // Новый метод: получение оставшейся грузоподъемности
     public int GetRemainingCapacity()
     {
-        return maxCapacity - GetCurrentWeight();
+        return playerStats.Capacity - GetCurrentWeight();
     }
 
-    // Сохраняет инвентарь игрока (добавлен вес)
     public void SaveInventory()
     {
         PlayerPrefs.SetInt("PlayerMoney", money);
-        PlayerPrefs.SetInt("PlayerMaxCapacity", maxCapacity);
-
         PlayerPrefs.SetInt("InventoryCount", items.Count);
+
         for (int i = 0; i < items.Count; i++)
         {
             PlayerPrefs.SetString($"InventoryItem_{i}", items[i].item.name);
@@ -105,11 +103,9 @@ public class PlayerInventory : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // Загружает инвентарь игрока (добавлен вес)
     public void LoadInventory()
     {
         money = PlayerPrefs.GetInt("PlayerMoney", 1000);
-        maxCapacity = PlayerPrefs.GetInt("PlayerMaxCapacity", 100);
 
         int itemCount = PlayerPrefs.GetInt("InventoryCount", 0);
         items.Clear();
