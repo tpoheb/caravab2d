@@ -122,4 +122,14 @@ public class PlayerInventory : MonoBehaviour
             }
         }
     }
+
+    public bool TrySpendMoney(int amount)
+    {
+        if (money >= amount)
+        {
+            money -= amount;
+            return true;
+        }
+        return false;
+    }
 }
