@@ -56,4 +56,10 @@ public class TeamSystem : MonoBehaviour
 
         playerInventory.TrySpendMoney(totalSalary);
     }
+
+    public void CloseHirePanel()
+    {
+        hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
+        hirePanelUI.gameObject.SetActive(false);
+    }
 }
