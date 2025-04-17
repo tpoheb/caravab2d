@@ -51,6 +51,7 @@ public class HirePanelUI : MonoBehaviour
     {
         var text = button.GetComponentInChildren<TextMeshProUGUI>();
         text.text = $"{data.unitName}\n" +
+                   $"Цена найма: {data.hireCost} золота\n" +
                    $"Атака: +{data.attackBonus}\n" +
                    $"Выгода: +{data.bargainBonus}\n" +
                    $"Груз: +{data.capacityBonus}\n" +
