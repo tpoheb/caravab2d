@@ -7,6 +7,7 @@ public class PlayerToken : MonoBehaviour
 
     [SerializeField] private Button endTurnButton;
     [SerializeField] private GameObject tokenObject;
+    [SerializeField] private TeamSystem teamSystem;
 
     [Header("Game References")]
     [SerializeField] private CityManager cityManager; // Менеджер городов
@@ -57,6 +58,8 @@ public class PlayerToken : MonoBehaviour
         else
         {
             MoveToCell(currentCellIndex);
+
+            teamSystem.PaySalaries();
         }
     }
 
