@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 using UnityEngine.UI;
 
 public class HirePanelUI : MonoBehaviour
@@ -13,53 +13,40 @@ public class HirePanelUI : MonoBehaviour
 
     private TeamSystem teamSystem;
 
-    public void Initialize(TeamSystem system, PlayerInventory playerInventory, PlayerStats playerStats)
+    public void Initialize(TeamSystem system)
     {
         teamSystem = system;
+
+        // Получаем ссылки автоматически, если не назначены
+        if (moneyText == null)
+            moneyText = GetComponentInChildren<TextMeshProUGUI>();
     }
 
     public void UpdateUI(List<UnitData> availableUnits, List<TeamMember> currentTeam, int currentMoney)
     {
         moneyText.text = $"Золото: {currentMoney}";
-        UpdateAvailableUnitsDisplay(availableUnits);
-        UpdateCurrentTeamDisplay(currentTeam);
-    }
 
-    private void UpdateAvailableUnitsDisplay(List<UnitData> units)
-    {
         ClearContainer(availableUnitsContainer);
-
-        foreach (var unit in units)
-        {
-            var button = Instantiate(unitButtonPrefab, availableUnitsContainer);
-            SetupUnitButton(button, unit, () => teamSystem.TryHireUnit(unit));
-        }
-    }
-
-    private void UpdateCurrentTeamDisplay(List<TeamMember> teamMembers)
-    {
         ClearContainer(currentTeamContainer);
 
-        foreach (var member in teamMembers)
+        foreach (var unit in availableUnits)
         {
-            var button = Instantiate(unitButtonPrefab, currentTeamContainer);
-            SetupUnitButton(button, member.unitData, () => teamSystem.FireUnit(member));
+            CreateUnitButton(unit, availableUnitsContainer, () => teamSystem.TryHireUnit(unit));
+        }
+
+        foreach (var member in currentTeam)
+        {
+            CreateUnitButton(member.unitData, currentTeamContainer, () => teamSystem.FireUnit(member));
         }
     }
 
-    private void SetupUnitButton(GameObject button, UnitData data, UnityEngine.Events.UnityAction action)
+    private void CreateUnitButton(UnitData data, Transform parent, UnityEngine.Events.UnityAction action)
     {
+        var button = Instantiate(unitButtonPrefab, parent);
         var text = button.GetComponentInChildren<TextMeshProUGUI>();
-        text.text = $"{data.unitName}\n" +
-                   $"Цена найма: {data.hireCost} золота\n" +
-                   $"Атака: +{data.attackBonus}\n" +
-                   $"Выгода: +{data.bargainBonus}\n" +
-                   $"Груз: +{data.capacityBonus}\n" +
-                   $"Жалование: {data.salaryPerTurn}/ход";
+        text.text = $"{data.unitName}\nЦена: {data.hireCost}";
 
-        var buttonComp = button.GetComponent<Button>();
-        buttonComp.onClick.RemoveAllListeners();
-        buttonComp.onClick.AddListener(action);
+        button.GetComponent<Button>().onClick.AddListener(action);
     }
 
     private void ClearContainer(Transform container)
@@ -68,5 +55,15 @@ public class HirePanelUI : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+    }
+
+    public void ShowPanel()
+    {
+        gameObject.SetActive(true);
+    }
+
+    public void ClosePanel()
+    {
+        gameObject.SetActive(false);
     }
 }

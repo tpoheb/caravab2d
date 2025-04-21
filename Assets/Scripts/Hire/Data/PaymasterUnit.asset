@@ -15,7 +15,7 @@ MonoBehaviour:
   unitName: paymaster
   icon: {fileID: 0}
   attackBonus: 0
-  bargainBonus: 5
+  bargainBonus: 10
   capacityBonus: 0
   hireCost: 150
   salaryPerTurn: 5

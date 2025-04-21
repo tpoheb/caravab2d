@@ -3,33 +3,67 @@ using UnityEngine;
 
 public class TeamSystem : MonoBehaviour
 {
-    [Header("References")]
+    [Header("Player Systems")]
     [SerializeField] private PlayerInventory playerInventory;
     [SerializeField] private PlayerStats playerStats;
-    [SerializeField] private HirePanelUI hirePanelUI;
 
-    [Header("Available Units")]
+    [Header("UI Configuration")]
+    [SerializeField] private HirePanelUI hirePanelPrefab;
+    [SerializeField] private Transform uiParent;
+
+    [Header("Unit Data")]
     [SerializeField] private List<UnitData> availableUnits = new List<UnitData>();
 
-    [Header("Current Team")]
-    [SerializeField] private List<TeamMember> currentTeam = new List<TeamMember>();
+    private List<TeamMember> currentTeam = new List<TeamMember>();
+    private HirePanelUI hirePanelUI;
+    private bool isUILoaded = false;
 
-    private void Start()
+    private void Awake()
     {
-        hirePanelUI.Initialize(this, playerInventory, playerStats);
+        ValidateReferences();
+    }
+
+    private void ValidateReferences()
+    {
+        if (playerInventory == null)
+            playerInventory = GetComponent<PlayerInventory>();
+
+        if (playerStats == null)
+            playerStats = GetComponent<PlayerStats>();
+
+        if (uiParent == null && FindFirstObjectByType<Canvas>() != null)
+            uiParent = FindFirstObjectByType<Canvas>().transform;
     }
 
     public void OpenHirePanel()
     {
+        if (!isUILoaded)
+        {
+            InitializeUI();
+        }
+
         hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
-        hirePanelUI.gameObject.SetActive(true);
+        hirePanelUI.ShowPanel();
+    }
+
+    private void InitializeUI()
+    {
+        if (hirePanelPrefab == null)
+        {
+            Debug.LogError("HirePanel prefab is not assigned!", this);
+            return;
+        }
+
+        hirePanelUI = Instantiate(hirePanelPrefab, uiParent);
+        hirePanelUI.Initialize(this); // Теперь передаем только TeamSystem
+        isUILoaded = true;
     }
 
     public bool TryHireUnit(UnitData unitData)
     {
         if (!playerInventory.TrySpendMoney(unitData.hireCost))
         {
-            Debug.Log("Недостаточно денег!");
+            Debug.Log("Not enough money!");
             return false;
         }
 
@@ -37,7 +71,7 @@ public class TeamSystem : MonoBehaviour
         currentTeam.Add(newMember);
         newMember.ApplyBonuses(playerStats);
 
-        hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
+        UpdateUI();
         return true;
     }
 
@@ -45,21 +79,60 @@ public class TeamSystem : MonoBehaviour
     {
         member.RemoveBonuses(playerStats);
         currentTeam.Remove(member);
-        hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
+        UpdateUI();
+    }
+
+    private void UpdateUI()
+    {
+        if (isUILoaded)
+        {
+            hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
+        }
     }
 
     public void PaySalaries()
     {
-        int totalSalary = 0;
-        foreach (var member in currentTeam)
-            totalSalary += member.unitData.salaryPerTurn;
+        int totalSalary = CalculateTotalSalary();
+        if (playerInventory.TrySpendMoney(totalSalary))
+        {
+            Debug.Log($"Salaries paid: {totalSalary}");
+        }
+        else
+        {
+            Debug.LogWarning($"Not enough money to pay salaries: {totalSalary}");
+            HandleSalaryShortage(totalSalary);
+        }
+    }
 
-        playerInventory.TrySpendMoney(totalSalary);
+    private int CalculateTotalSalary()
+    {
+        int total = 0;
+        foreach (var member in currentTeam)
+        {
+            total += member.unitData.salaryPerTurn;
+        }
+        return total;
+    }
+
+    private void HandleSalaryShortage(int requiredAmount)
+    {
+        // Логика увольнения при нехватке денег
+        // ...
     }
 
     public void CloseHirePanel()
     {
-        hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
-        hirePanelUI.gameObject.SetActive(false);
+        if (isUILoaded)
+        {
+            hirePanelUI.ClosePanel();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (hirePanelUI != null)
+        {
+            Destroy(hirePanelUI.gameObject);
+        }
     }
 }
