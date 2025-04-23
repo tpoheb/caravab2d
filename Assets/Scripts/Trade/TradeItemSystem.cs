@@ -33,7 +33,7 @@ public class TradeItemSystem : MonoBehaviour
 
         // Обновление заголовков
         cityNameText.text = currentCity.cityName;
-        playerMoneyText.text = $"Золото: {playerInventory.money}";
+        playerMoneyText.text = $"Золото: {playerInventory.Money}";
         cityMoneyText.text = $"Казна: {currentCity.cityGold}";
 
         // Создание элементов UI
@@ -62,10 +62,10 @@ public class TradeItemSystem : MonoBehaviour
             return;
         }
 
-        if (playerInventory.money >= totalCost &&
+        if (playerInventory.Money >= totalCost &&
             cityItem.stock >= quantity)
         {
-            playerInventory.money -= totalCost;
+            playerInventory.Money -= totalCost;
             currentCity.cityGold += totalCost;
             cityItem.stock -= quantity;
             playerInventory.AddItem(cityItem.item, quantity);
@@ -75,7 +75,7 @@ public class TradeItemSystem : MonoBehaviour
         }
         else
         {
-            Debug.Log($"Недостаточно средств или товара! Нужно: {totalCost}, есть: {playerInventory.money} | На складе: {cityItem.stock}");
+            Debug.Log($"Недостаточно средств или товара! Нужно: {totalCost}, есть: {playerInventory.Money} | На складе: {cityItem.stock}");
         }
     }
 
@@ -91,7 +91,7 @@ public class TradeItemSystem : MonoBehaviour
         if (playerStock >= quantity &&
             currentCity.cityGold >= totalValue)
         {
-            playerInventory.money += totalValue;
+            playerInventory.Money += totalValue;
             currentCity.cityGold -= totalValue;
             cityItem.stock += quantity;
             playerInventory.RemoveItem(cityItem.item, quantity);
@@ -110,5 +110,4 @@ public class TradeItemSystem : MonoBehaviour
         tradePanel.SetActive(false);
     }
 
- 
 }

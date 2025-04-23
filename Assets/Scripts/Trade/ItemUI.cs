@@ -24,7 +24,7 @@ public class ItemUI : MonoBehaviour
         sellButton.onClick.AddListener(() => tradeSystem.SellItem(cityItem, 1));
 
         // Ѕлокировка кнопок если нельз€ совершить сделку
-        buyButton.interactable = (tradeSystem.playerInventory.money >= cityItem.buyPrice && cityItem.stock > 0);
+        buyButton.interactable = (tradeSystem.playerInventory.Money >= cityItem.buyPrice && cityItem.stock > 0);
         //sellButton.interactable = (playerStock > 0 && tradeSystem.currentCity.cityGold >= cityItem.sellPrice);
     }
 }

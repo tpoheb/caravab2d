@@ -14,7 +14,7 @@ public class TeamSystem : MonoBehaviour
     [Header("Unit Data")]
     [SerializeField] private List<UnitData> availableUnits = new List<UnitData>();
 
-    private List<TeamMember> currentTeam = new List<TeamMember>();
+    public List<TeamMember> CurrentTeam = new List<TeamMember>();
     private HirePanelUI hirePanelUI;
     private bool isUILoaded = false;
 
@@ -42,7 +42,7 @@ public class TeamSystem : MonoBehaviour
             InitializeUI();
         }
 
-        hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
+        hirePanelUI.UpdateUI(availableUnits, CurrentTeam, playerInventory.Money);
         hirePanelUI.ShowPanel();
     }
 
@@ -68,7 +68,7 @@ public class TeamSystem : MonoBehaviour
         }
 
         var newMember = new TeamMember(unitData);
-        currentTeam.Add(newMember);
+        CurrentTeam.Add(newMember);
         newMember.ApplyBonuses(playerStats);
 
         UpdateUI();
@@ -78,7 +78,7 @@ public class TeamSystem : MonoBehaviour
     public void FireUnit(TeamMember member)
     {
         member.RemoveBonuses(playerStats);
-        currentTeam.Remove(member);
+        CurrentTeam.Remove(member);
         UpdateUI();
     }
 
@@ -86,7 +86,7 @@ public class TeamSystem : MonoBehaviour
     {
         if (isUILoaded)
         {
-            hirePanelUI.UpdateUI(availableUnits, currentTeam, playerInventory.money);
+            hirePanelUI.UpdateUI(availableUnits, CurrentTeam, playerInventory.Money);
         }
     }
 
@@ -107,7 +107,7 @@ public class TeamSystem : MonoBehaviour
     private int CalculateTotalSalary()
     {
         int total = 0;
-        foreach (var member in currentTeam)
+        foreach (var member in CurrentTeam)
         {
             total += member.unitData.salaryPerTurn;
         }

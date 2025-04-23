@@ -1970,7 +1970,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edd50ad5bcf5f164ba658035426bc54d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  money: 1000
+  startMoney: 1000
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
   items:
   - item: {fileID: 11400000, guid: 4ad36b3587a525d469cd45b237a48b35, type: 2}
@@ -1999,6 +1999,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7b346975308c28844b752f188c19069c, type: 2}
   - {fileID: 11400000, guid: f23e41b7087f2c64d8136ef78196b958, type: 2}
   - {fileID: 11400000, guid: 17dbe2efe8d50ac45b2e3a5501c2f0d3, type: 2}
+  CurrentTeam: []
 --- !u!1 &613881863
 GameObject:
   m_ObjectHideFlags: 0
