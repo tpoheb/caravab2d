@@ -10,7 +10,7 @@ public class PlayerToken : MonoBehaviour
     [SerializeField] private TeamSystem teamSystem;
 
     [Header("Game References")]
-    [SerializeField] private CityManager cityManager; // Менеджер городов
+    [SerializeField] private CityManager cityManager;
 
     private PathCellInitializer currentPath;
     private int currentCellIndex = -1;

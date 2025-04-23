@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: New Player Stats
   m_EditorClassIdentifier: 
   _attack: 10
-  _bargain: 3
+  _bargain: 20
   _capacity: 10
