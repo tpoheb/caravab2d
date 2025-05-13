@@ -39,9 +39,3 @@ public class PathCellInitializer : MonoBehaviour
     }
 }
 
-public class Cell : MonoBehaviour
-{
-    public int cellNumber;
-    public Vector3 Position => transform.position;
-    public bool IsActive => gameObject.activeSelf;
-}

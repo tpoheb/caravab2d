@@ -7,11 +7,14 @@ public class PlayerToken : MonoBehaviour
     [SerializeField] private Button endTurnButton;
     [SerializeField] private GameObject tokenObject;
     [SerializeField] private TeamSystem teamSystem;
+    [SerializeField] private BattleWindow battleWindow;
+    [SerializeField] private EventPopup eventPopup;
 
     [Header("Game References")]
     [SerializeField] private CityManager cityManager;
     [SerializeField] private DiceSystem diceSystem;
     [SerializeField] private PlayerInventory playerInventory;
+
 
     private PathCellInitializer currentPath;
     private int currentCellIndex = -1;
@@ -22,7 +25,6 @@ public class PlayerToken : MonoBehaviour
         endTurnButton.onClick.AddListener(OnEndTurn);
         tokenObject.SetActive(false);
         diceSystem.OnDiceRolled += ApplyDiceEffects;
-
         ValidateReferences();
     }
 
@@ -54,6 +56,7 @@ public class PlayerToken : MonoBehaviour
         else
         {
             ContinueMoving();
+            HandleCurrentCellEffect();
         }
     }
 
@@ -95,6 +98,60 @@ public class PlayerToken : MonoBehaviour
         Debug.Log($"Фишка перемещена на клетку {cellIndex}");
     }
 
+    private void HandleCurrentCellEffect()
+    {
+        if (currentCellIndex < 0 || currentCellIndex >= pathCells.Length)
+        {
+            Debug.LogError($"Индекс клетки {currentCellIndex} вне границ массива!");
+            return;
+        }
+
+        Cell currentCell = pathCells[currentCellIndex];
+        if (currentCell == null)
+        {
+            Debug.LogError($"Клетка {currentCellIndex} равна null!");
+            return;
+        }
+
+        Debug.Log($"[ЯЧЕЙКА] Фишка на клетке {currentCellIndex} ({currentCell.Type})");
+
+        switch (currentCell.Type)
+        {
+            case CellType.Battle:
+                Debug.Log("[БИТВА] Начинаем битву...");
+                if (battleWindow != null)
+                {
+                    battleWindow.OpenWindow();
+                    Debug.Log("[БИТВА] Окно битвы открыто");
+                }
+                else
+                {
+                    Debug.LogError("[БИТВА] Окно битвы не назначено!");
+                }
+                break;
+
+            case CellType.Event:
+                Debug.Log("[СОБЫТИЕ] Активируем случайное событие...");
+                TriggerRandomEvent();
+                break;
+
+            default:
+                Debug.Log($"[ЯЧЕЙКА] Обычная клетка, ничего не происходит");
+                break;
+        }
+    }
+
+    private void TriggerRandomEvent()
+    {
+        int moneyChange = Random.Range(-50, 100);
+        playerInventory.Money += moneyChange;
+
+        if (eventPopup != null)
+            eventPopup.ShowEvent($"Вы {(moneyChange >= 0 ? "получили" : "потеряли")} {Mathf.Abs(moneyChange)} монет");
+        else
+            Debug.LogWarning("Окно событий не назначено!");
+    }
+
     private void OnDestroy()
     {
         diceSystem.OnDiceRolled -= ApplyDiceEffects;
@@ -103,6 +160,8 @@ public class PlayerToken : MonoBehaviour
     private void ValidateReferences()
     {
         if (cityManager == null) Debug.LogError("CityManager не назначен!");
+        if (battleWindow == null) Debug.LogWarning("BattleWindow не назначен!");
+        if (eventPopup == null) Debug.LogWarning("EventPopup не назначен!");
     }
 
     private void InitializePathCells(PathCellInitializer path)
