@@ -16,7 +16,7 @@ public class PlayerToken : MonoBehaviour
     [SerializeField] private CityManager cityManager;
     [SerializeField] private DiceSystem diceSystem;
     [SerializeField] private PlayerInventory playerInventory;
-    [SerializeField] private Transform uiCanvas; // Ссылка на Canvas для создания окон
+   
 
     private PathCellInitializer currentPath;
     private int currentCellIndex = -1;
@@ -133,7 +133,7 @@ public class PlayerToken : MonoBehaviour
         }
 
         // Создаем новое окно
-        currentBattleWindow = Instantiate(battleWindowPrefab, uiCanvas);
+        currentBattleWindow = Instantiate(battleWindowPrefab);
         Debug.Log("Окно битвы создано");
 
         // Получаем компонент окна
@@ -172,7 +172,7 @@ public class PlayerToken : MonoBehaviour
         }
 
         // Создаем новый попап
-        currentEventPopup = Instantiate(eventPopupPrefab, uiCanvas);
+        currentEventPopup = Instantiate(eventPopupPrefab);
 
         // Получаем компонент EventPopup
         EventPopup eventPopupComponent = currentEventPopup.GetComponent<EventPopup>();

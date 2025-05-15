@@ -6,6 +6,8 @@ public class BattleWindow : MonoBehaviour
     [SerializeField] private Button closeButton;
     private System.Action onComplete;
 
+
+
     public void Initialize(System.Action completeCallback)
     {
         onComplete = completeCallback;
