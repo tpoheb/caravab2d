@@ -1,19 +1,21 @@
-﻿using TMPro;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.UI;
 
 public class BattleWindow : MonoBehaviour
 {
-    [SerializeField] private GameObject window;
-    [SerializeField] private TextMeshProUGUI battleText;
+    [SerializeField] private Button closeButton;
+    private System.Action onComplete;
 
-    public void OpenWindow()
+    public void Initialize(System.Action completeCallback)
     {
-        window.SetActive(true);
-        battleText.text = "Началась битва!";
+        onComplete = completeCallback;
+        closeButton.onClick.AddListener(CloseWindow);
+        gameObject.SetActive(true); // Аналог OpenWindow
     }
 
-    public void CloseWindow()
+    private void CloseWindow()
     {
-        window.SetActive(false);
+        onComplete?.Invoke();
+        Destroy(gameObject);
     }
 }

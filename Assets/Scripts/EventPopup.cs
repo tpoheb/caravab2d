@@ -1,19 +1,25 @@
-﻿using TMPro;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class EventPopup : MonoBehaviour
 {
-    [SerializeField] private GameObject popup;
-    [SerializeField] private TextMeshProUGUI eventText;
+    [SerializeField] private TextMeshProUGUI messageText;
+    [SerializeField] private Button closeButton;
 
-    public void ShowEvent(string message)
+    private System.Action onComplete;
+
+    public void Initialize(string message, System.Action completeCallback)
     {
-        popup.SetActive(true);
-        eventText.text = message;
+        messageText.text = message;
+        this.onComplete = completeCallback;
+        closeButton.onClick.AddListener(OnClose);
+        gameObject.SetActive(true);
     }
 
-    public void HideEvent()
+    private void OnClose()
     {
-        popup.SetActive(false);
+        onComplete?.Invoke();
+        Destroy(gameObject);
     }
 }

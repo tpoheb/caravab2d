@@ -7,18 +7,22 @@ public class PlayerToken : MonoBehaviour
     [SerializeField] private Button endTurnButton;
     [SerializeField] private GameObject tokenObject;
     [SerializeField] private TeamSystem teamSystem;
-    [SerializeField] private BattleWindow battleWindow;
-    [SerializeField] private EventPopup eventPopup;
+
+    [Header("Window Prefabs")]
+    [SerializeField] private GameObject battleWindowPrefab;
+    [SerializeField] private GameObject eventPopupPrefab;
 
     [Header("Game References")]
     [SerializeField] private CityManager cityManager;
     [SerializeField] private DiceSystem diceSystem;
     [SerializeField] private PlayerInventory playerInventory;
-
+    [SerializeField] private Transform uiCanvas; // Ссылка на Canvas для создания окон
 
     private PathCellInitializer currentPath;
     private int currentCellIndex = -1;
     private Cell[] pathCells;
+    private GameObject currentBattleWindow;
+    private GameObject currentEventPopup;
 
     private void Start()
     {
@@ -100,44 +104,100 @@ public class PlayerToken : MonoBehaviour
 
     private void HandleCurrentCellEffect()
     {
-        if (currentCellIndex < 0 || currentCellIndex >= pathCells.Length)
-        {
-            Debug.LogError($"Индекс клетки {currentCellIndex} вне границ массива!");
-            return;
-        }
-
         Cell currentCell = pathCells[currentCellIndex];
-        if (currentCell == null)
-        {
-            Debug.LogError($"Клетка {currentCellIndex} равна null!");
-            return;
-        }
-
-        Debug.Log($"[ЯЧЕЙКА] Фишка на клетке {currentCellIndex} ({currentCell.Type})");
 
         switch (currentCell.Type)
         {
             case CellType.Battle:
-                Debug.Log("[БИТВА] Начинаем битву...");
-                if (battleWindow != null)
-                {
-                    battleWindow.OpenWindow();
-                    Debug.Log("[БИТВА] Окно битвы открыто");
-                }
-                else
-                {
-                    Debug.LogError("[БИТВА] Окно битвы не назначено!");
-                }
+                ShowBattleWindow();
                 break;
 
             case CellType.Event:
-                Debug.Log("[СОБЫТИЕ] Активируем случайное событие...");
-                TriggerRandomEvent();
+                ShowEventPopup();
                 break;
+        }
+    }
 
-            default:
-                Debug.Log($"[ЯЧЕЙКА] Обычная клетка, ничего не происходит");
-                break;
+    private void ShowBattleWindow()
+    {
+        if (battleWindowPrefab == null)
+        {
+            Debug.LogError("Префаб окна битвы не назначен!");
+            return;
+        }
+
+        // Удаляем предыдущее окно если есть
+        if (currentBattleWindow != null)
+        {
+            Destroy(currentBattleWindow);
+        }
+
+        // Создаем новое окно
+        currentBattleWindow = Instantiate(battleWindowPrefab, uiCanvas);
+        Debug.Log("Окно битвы создано");
+
+        // Получаем компонент окна
+        var battleWindow = currentBattleWindow.GetComponent<BattleWindow>();
+        if (battleWindow != null)
+        {
+            battleWindow.Initialize(OnBattleComplete); // Используем Initialize вместо OpenWindow
+        }
+        else
+        {
+            Debug.LogError("Компонент BattleWindow не найден на префабе!");
+        }
+    }
+
+    private void OnBattleComplete()
+    {
+        Debug.Log("Битва завершена");
+        if (currentBattleWindow != null)
+        {
+            Destroy(currentBattleWindow);
+        }
+    }
+
+    private void ShowEventPopup()
+    {
+        if (eventPopupPrefab == null)
+        {
+            Debug.LogError("Префаб попапа событий не назначен!");
+            return;
+        }
+
+        // Удаляем предыдущий попап если есть
+        if (currentEventPopup != null)
+        {
+            Destroy(currentEventPopup);
+        }
+
+        // Создаем новый попап
+        currentEventPopup = Instantiate(eventPopupPrefab, uiCanvas);
+
+        // Получаем компонент EventPopup
+        EventPopup eventPopupComponent = currentEventPopup.GetComponent<EventPopup>();
+        if (eventPopupComponent == null)
+        {
+            Debug.LogError("Не найден компонент EventPopup на префабе!");
+            return;
+        }
+
+        // Генерируем событие
+        int moneyChange = Random.Range(-50, 100);
+        playerInventory.Money += moneyChange;
+        string message = $"Вы {(moneyChange >= 0 ? "получили" : "потеряли")} {Mathf.Abs(moneyChange)} монет";
+
+        // Вызываем метод Initialize у компонента
+        eventPopupComponent.Initialize(message, OnEventComplete);
+        Debug.Log("Событие активировано: " + message);
+    }
+
+    private void OnEventComplete()
+    {
+        Debug.Log("Событие завершено");
+        if (currentEventPopup != null)
+        {
+            Destroy(currentEventPopup);
         }
     }
 
@@ -145,23 +205,40 @@ public class PlayerToken : MonoBehaviour
     {
         int moneyChange = Random.Range(-50, 100);
         playerInventory.Money += moneyChange;
+        string message = $"Вы {(moneyChange >= 0 ? "получили" : "потеряли")} {Mathf.Abs(moneyChange)} монет";
 
-        if (eventPopup != null)
-            eventPopup.ShowEvent($"Вы {(moneyChange >= 0 ? "получили" : "потеряли")} {Mathf.Abs(moneyChange)} монет");
+        if (currentEventPopup != null)
+        {
+            EventPopup eventPopupComponent = currentEventPopup.GetComponent<EventPopup>();
+            if (eventPopupComponent != null)
+            {
+                eventPopupComponent.Initialize(message, OnEventComplete);
+            }
+            else
+            {
+                Debug.LogError("Компонент EventPopup не найден на объекте окна!");
+            }
+        }
         else
-            Debug.LogWarning("Окно событий не назначено!");
+        {
+            Debug.LogWarning("Окно событий не создано!");
+        }
     }
 
     private void OnDestroy()
     {
         diceSystem.OnDiceRolled -= ApplyDiceEffects;
+
+        // Удаляем окна при уничтожении объекта
+        if (currentBattleWindow != null) Destroy(currentBattleWindow);
+        if (currentEventPopup != null) Destroy(currentEventPopup);
     }
 
     private void ValidateReferences()
     {
         if (cityManager == null) Debug.LogError("CityManager не назначен!");
-        if (battleWindow == null) Debug.LogWarning("BattleWindow не назначен!");
-        if (eventPopup == null) Debug.LogWarning("EventPopup не назначен!");
+        if (currentBattleWindow == null) Debug.LogWarning("BattleWindow не назначен!");
+        if (currentEventPopup == null) Debug.LogWarning("EventPopup не назначен!");
     }
 
     private void InitializePathCells(PathCellInitializer path)
@@ -206,4 +283,6 @@ public class PlayerToken : MonoBehaviour
     {
         Debug.Log($"Применены эффекты кубика:\nДеньги: {(diceSystem.LastMoneyModifier >= 0 ? "+" : "")}{diceSystem.LastMoneyModifier}\n");
     }
+
+
 }
