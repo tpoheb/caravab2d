@@ -23,7 +23,7 @@ public class CardHandUI : MonoBehaviour
             cardUI.Initialize(hand[i], () =>
             {
                 deckManager.PlayCard(hand[i], player);
-                UpdateHand(deckManager.currentHand, deckManager, player);
+                UpdateHand(deckManager.CurrentHand, deckManager, player);
             });
 
             cardInstances.Add(cardObj);

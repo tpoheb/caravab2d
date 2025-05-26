@@ -2087,6 +2087,7 @@ GameObject:
   - component: {fileID: 550472512}
   - component: {fileID: 550472514}
   - component: {fileID: 550472513}
+  - component: {fileID: 550472515}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -2173,6 +2174,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tokenObject: {fileID: 2111729424}
+--- !u!114 &550472515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 550472509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 43af6e25bca9d4d49994cac86b3af85b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  deck:
+  - {fileID: 11400000, guid: decffb3a32004304bbdd41ba89dc8986, type: 2}
+  - {fileID: 11400000, guid: 3af8db0d41824a64ea88e3a0b9e40d03, type: 2}
+  - {fileID: 11400000, guid: afec2214b133c784fac846da450ffcb2, type: 2}
+  discardPile: []
+  handSize: 5
+  CurrentHand: []
 --- !u!1001 &551449071
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2605,6 +2625,81 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &632660811
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 632660812}
+  - component: {fileID: 632660814}
+  - component: {fileID: 632660813}
+  m_Layer: 5
+  m_Name: HandPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &632660812
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632660811}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 883440107}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: -124}
+  m_SizeDelta: {x: -34.7471, y: -294.5}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &632660813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632660811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &632660814
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 632660811}
+  m_CullTransparentMesh: 1
 --- !u!1 &636947361
 GameObject:
   m_ObjectHideFlags: 0
@@ -3364,6 +3459,7 @@ GameObject:
   - component: {fileID: 883440110}
   - component: {fileID: 883440109}
   - component: {fileID: 883440108}
+  - component: {fileID: 883440111}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -3386,6 +3482,7 @@ RectTransform:
   - {fileID: 287706660}
   - {fileID: 1271458986}
   - {fileID: 707450204}
+  - {fileID: 632660812}
   m_Father: {fileID: 657204561}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -3456,6 +3553,21 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &883440111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 883440106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dac5fbb17a35e5d449932e60a804a6ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cardPrefab: {fileID: 7013766983158800921, guid: f40150fcbcf271d4a858e3f8ce69272f, type: 3}
+  handContainer: {fileID: 632660812}
+  cardSpacing: 10
 --- !u!1 &892489918
 GameObject:
   m_ObjectHideFlags: 0
