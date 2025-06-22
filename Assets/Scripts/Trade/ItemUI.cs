@@ -1,30 +1,42 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class ItemUI : MonoBehaviour
 {
     [Header("UI Elements")]
-    public Text itemNameText;
-    public Text buyPriceText;
-    public Text sellPriceText;
-    public Text cityStockText;
-    public Text playerStockText;
+    public Image icon;
+    public TMP_Text itemName;
+    public TMP_Text cityStock;
+    public TMP_Text cityBuyPrice;
+    public TMP_Text citySellPrice;
+    public TMP_Text playerStock;
     public Button buyButton;
     public Button sellButton;
 
-    public void Initialize(CityData.CityItem cityItem, int playerStock, TradeItemSystem tradeSystem)
+    public CityData.CityItem CityItem { get; private set; }
+
+    public void Initialize(
+        CityData.CityItem cityItem,
+        int currentPlayerStock,
+        System.Action buyAction,
+        System.Action sellAction)
     {
-        itemNameText.text = cityItem.item.itemName;
-        buyPriceText.text = $" {cityItem.buyPrice}";
-        sellPriceText.text = $" {cityItem.sellPrice}";
-        cityStockText.text = $"В городе: {cityItem.stock}";
-        playerStockText.text = $"У вас: {playerStock}";
+        this.CityItem = cityItem;
+        
+        icon.sprite = cityItem.item.icon;
+        itemName.text = cityItem.item.itemName;
+        cityStock.text = cityItem.stock.ToString();
+        cityBuyPrice.text = cityItem.buyPrice.ToString();
+        citySellPrice.text = cityItem.sellPrice.ToString();
+        playerStock.text = currentPlayerStock.ToString();
 
-        buyButton.onClick.AddListener(() => tradeSystem.BuyItem(cityItem, 1));
-        sellButton.onClick.AddListener(() => tradeSystem.SellItem(cityItem, 1));
+        buyButton.onClick.AddListener(() => buyAction());
+        sellButton.onClick.AddListener(() => sellAction());
+    }
 
-        // Блокировка кнопок если нельзя совершить сделку
-        buyButton.interactable = (tradeSystem.playerInventory.Money >= cityItem.buyPrice && cityItem.stock > 0);
-        //sellButton.interactable = (playerStock > 0 && tradeSystem.currentCity.cityGold >= cityItem.sellPrice);
+    public void UpdatePlayerStock(int newStock)
+    {
+        playerStock.text = newStock.ToString();
     }
 }

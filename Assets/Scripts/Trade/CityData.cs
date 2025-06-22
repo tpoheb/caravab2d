@@ -13,7 +13,7 @@ public class CityData : ScriptableObject
     {
         public Item item;
         public int stock;
-        public int buyPrice; // Цена покупки у города
-        public int sellPrice; // Цена продажи городу
+        public int buyPrice;
+        public int sellPrice;
     }
 }

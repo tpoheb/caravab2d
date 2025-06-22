@@ -5,19 +5,19 @@ public class City : MonoBehaviour
 {
     public string CityName => cityData.cityName;
     public CityData cityData;
-    public CityPanel CityPanel; // Индивидуальная панель (опционально)
-    [SerializeField] private string cityName; // Название города
-    [SerializeField] private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // Список путей в городе
+    public CityPanel CityPanel; // РРЅРґРёРІРёРґСѓР°Р»СЊРЅР°СЏ РїР°РЅРµР»СЊ (РѕРїС†РёРѕРЅР°Р»СЊРЅРѕ)
+    [SerializeField] private string cityName; // РќР°Р·РІР°РЅРёРµ РіРѕСЂРѕРґР°
+    [SerializeField] private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // РЎРїРёСЃРѕРє РїСѓС‚РµР№ РІ РіРѕСЂРѕРґРµ
 
    
     public List<PathCellInitializer> Paths => inCityPaths;
 
     void Start()
     {
-        InitializeCity();
+        InitializeCity(); 
     }
 
-    // Инициализация города
+    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РіРѕСЂРѕРґР°
     private void InitializeCity()
     {
         if (string.IsNullOrEmpty(cityName))
@@ -25,7 +25,7 @@ public class City : MonoBehaviour
             cityName = "Unnamed City";
         }
 
-        // Инициализируем все пути в городе
+        // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РІСЃРµ РїСѓС‚Рё РІ РіРѕСЂРѕРґРµ
         foreach (var path in inCityPaths)
         {
             if (path != null)
@@ -34,11 +34,11 @@ public class City : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"Обнаружен пустой путь в городе {cityName}");
+                Debug.LogWarning($"РћР±РЅР°СЂСѓР¶РµРЅ РїСѓСЃС‚РѕР№ РїСѓС‚СЊ РІ РіРѕСЂРѕРґРµ {cityName}");
             }
         }
 
-        Debug.Log($"Город {cityName} инициализирован. Всего путей: {inCityPaths.Count}");
+        Debug.Log($"Р“РѕСЂРѕРґ {cityName} РёРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅ. Р’СЃРµРіРѕ РїСѓС‚РµР№: {inCityPaths.Count}");
     }
 
 

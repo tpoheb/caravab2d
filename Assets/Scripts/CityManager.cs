@@ -10,7 +10,7 @@ public class CityManager : MonoBehaviour
 
     private void Awake()
     {
-        // Инициализация панелей (если у каждого города своя панель)
+        // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РїР°РЅРµР»РµР№ (РµСЃР»Рё Сѓ РєР°Р¶РґРѕРіРѕ РіРѕСЂРѕРґР° СЃРІРѕСЏ РїР°РЅРµР»СЊ)
         foreach (var city in allCities)
         {
             if (city.CityPanel != null)
