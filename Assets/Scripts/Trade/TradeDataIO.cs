@@ -3,6 +3,7 @@ using UnityEditor;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 
 public static class TradeDataIO
 {
@@ -158,82 +159,89 @@ public static class TradeDataIO
     }
 
     private static bool ProcessImportRecord(string[] parts, Item[] existingItems, CityData[] existingCities, out string error)
+{
+    error = string.Empty;
+    
+    string cityName = parts[0].Trim();
+    string productId = parts[1].Trim();
+    string productName = parts[2].Trim();
+    
+    if (!float.TryParse(parts[3], out float weight))
     {
-        error = string.Empty;
-        
-        string cityName = parts[0].Trim();
-        string productId = parts[1].Trim();
-        string productName = parts[2].Trim();
-        
-        if (!float.TryParse(parts[3], out float weight))
-        {
-            error = $"Invalid Weight: {parts[3]}";
-            return false;
-        }
-        
-        if (!int.TryParse(parts[4], out int stock))
-        {
-            error = $"Invalid Stock: {parts[4]}";
-            return false;
-        }
-        
-        if (!int.TryParse(parts[5], out int buyPrice))
-        {
-            error = $"Invalid BuyPrice: {parts[5]}";
-            return false;
-        }
-        
-        if (!int.TryParse(parts[6], out int sellPrice))
-        {
-            error = $"Invalid SellPrice: {parts[6]}";
-            return false;
-        }
+        error = $"Invalid Weight: {parts[3]}";
+        return false;
+    }
+    
+    if (!int.TryParse(parts[4], out int stock))
+    {
+        error = $"Invalid Stock: {parts[4]}";
+        return false;
+    }
+    
+    if (!int.TryParse(parts[5], out int buyPrice))
+    {
+        error = $"Invalid BuyPrice: {parts[5]}";
+        return false;
+    }
+    
+    if (!int.TryParse(parts[6], out int sellPrice))
+    {
+        error = $"Invalid SellPrice: {parts[6]}";
+        return false;
+    }
 
-        // Find or create city
-        var city = existingCities.FirstOrDefault(c => c.cityName == cityName);
-        if (city == null)
-        {
-            city = ScriptableObject.CreateInstance<CityData>();
-            city.cityName = cityName;
-            city.cityGold = 1000; // Default value
-            AssetDatabase.CreateAsset(city, $"{CitiesPath}/{cityName}.asset");
-            Debug.Log($"Created new city: {cityName}");
-        }
+    // 1. Находим или создаем город
+    var city = existingCities.FirstOrDefault(c => c.cityName == cityName);
+    if (city == null)
+    {
+        city = ScriptableObject.CreateInstance<CityData>();
+        city.cityName = cityName;
+        city.cityGold = 1000; // Стартовый капитал
+        city.items = new List<CityData.CityItem>(); // Инициализируем список
+        AssetDatabase.CreateAsset(city, $"{CitiesPath}/{cityName}.asset");
+        Debug.Log($"Создан новый город: {cityName}");
+    }
 
-        // Find or create item
-        var item = existingItems.FirstOrDefault(i => i.name == productId || i.itemName == productName);
-        if (item == null)
-        {
-            item = ScriptableObject.CreateInstance<Item>();
-            item.name = productId; // Unity object name
-            item.itemName = productName;
-            item.weight = weight;
-            AssetDatabase.CreateAsset(item, $"{ItemsPath}/{productId}.asset");
-            Debug.Log($"Created new item: {productName} (ID: {productId})");
-        }
-        else
-        {
-            // Update existing item properties
-            item.itemName = productName;
-            item.weight = weight;
-            EditorUtility.SetDirty(item);
-        }
+    // 2. Находим или создаем товар
+    var item = existingItems.FirstOrDefault(i => i.name == productId);
+    if (item == null)
+    {
+        item = ScriptableObject.CreateInstance<Item>();
+        item.name = productId;
+        item.itemName = productName;
+        item.weight = Mathf.RoundToInt(weight);
+        AssetDatabase.CreateAsset(item, $"{ItemsPath}/{productId}.asset");
+        Debug.Log($"Создан новый товар: {productName} (ID: {productId})");
+    }
 
-        // Find or create city item entry
-        var cityItem = city.items.FirstOrDefault(i => i.item == item);
-        if (cityItem == null)
+    // 3. Проверяем существование товара в городе
+    var cityItem = city.items.FirstOrDefault(i => i.item == item);
+    if (cityItem == null)
+    {
+        // Добавляем новый товар в город
+        cityItem = new CityData.CityItem 
         {
-            cityItem = new CityData.CityItem { item = item };
-            city.items.Add(cityItem);
-        }
-
+            item = item,
+            stock = stock,
+            buyPrice = buyPrice,
+            sellPrice = sellPrice
+        };
+        city.items.Add(cityItem);
+        Debug.Log($"Добавлен товар {productName} в город {cityName}");
+    }
+    else
+    {
+        // Обновляем существующую запись
         cityItem.stock = stock;
         cityItem.buyPrice = buyPrice;
         cityItem.sellPrice = sellPrice;
-
-        EditorUtility.SetDirty(city);
-        return true;
+        Debug.Log($"Обновлен товар {productName} в городе {cityName}");
     }
+
+    EditorUtility.SetDirty(city);
+    EditorUtility.SetDirty(item);
+    return true;
+}
 
     private static void EnsureDirectoryExists(string path)
     {

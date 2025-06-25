@@ -1,4 +1,0 @@
-repository "caravan2d@xtro@cloud"
-  path "/"
-    br "/main"
-    co "/main"
