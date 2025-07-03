@@ -9,13 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f33d9a5e20c08144993d84e2e4915d00, type: 3}
-  m_Name: 2
+  m_Script: {fileID: 11500000, guid: 0d6cf19d755651e4eb91c7ec1bf2f8b6, type: 3}
+  m_Name: uy
   m_EditorClassIdentifier: 
-  cityName: 2
-  cityGold: 1000
-  items:
-  - item: {fileID: 11400000, guid: c9c4f14fb8bb5f44faa0f302ecf75d25, type: 2}
-    stock: 100
-    buyPrice: 75
-    sellPrice: 125
+  itemName: uy
+  icon: {fileID: 0}
+  weight: 1
