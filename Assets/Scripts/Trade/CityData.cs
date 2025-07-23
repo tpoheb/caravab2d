@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New City", menuName = "Trade/City Data")]
+[System.Serializable]
 public class CityData : ScriptableObject
 {
     public string cityName;
@@ -15,5 +15,29 @@ public class CityData : ScriptableObject
         public int stock;
         public int buyPrice;
         public int sellPrice;
+
+        // Добавляем валидацию
+        public bool IsValid()
+        {
+            return item != null && stock >= 0 && buyPrice >= 0 && sellPrice >= 0;
+        }
+    }
+
+    // Метод для проверки валидности данных города
+    public bool IsValid()
+    {
+        if (string.IsNullOrEmpty(cityName))
+            return false;
+
+        if (items == null)
+            items = new List<CityItem>();
+
+        return true;
+    }
+
+    private void OnValidate()
+    {
+        if (items == null)
+            items = new List<CityItem>();
     }
 }

@@ -396,7 +396,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cityData: {fileID: 11400000, guid: 27c2feee6aea5e14db3e359f10fc96f1, type: 2}
+  cityData: {fileID: 11400000, guid: 396b5d2849e4a354e8bfc83141e27c50, type: 2}
   CityPanel: {fileID: 1688781431}
   cityName: 1
   inCityPaths:
@@ -2378,7 +2378,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 84bbb508e5c026440ab75e65c48a1e54, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentCity: {fileID: 731908225}
+  currentCity: {fileID: 93257337}
   pathButtonPrefab: {fileID: 3353085152495750873, guid: 60a873c0af8c6df45bf0e882b2b6c8a4, type: 3}
   pathButtonsContainer: {fileID: 233332441}
   hireTeamButton: {fileID: 672723952}
