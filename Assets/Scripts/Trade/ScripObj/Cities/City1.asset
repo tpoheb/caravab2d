@@ -12,23 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f33d9a5e20c08144993d84e2e4915d00, type: 3}
   m_Name: City1
   m_EditorClassIdentifier: 
-  cityName: 1
-  cityGold: 3470
+  cityName: City1
+  cityGold: 3890
   items:
   - item: {fileID: 11400000, guid: 4ad36b3587a525d469cd45b237a48b35, type: 2}
     stock: 0
     buyPrice: 1
     sellPrice: 2
   - item: {fileID: 11400000, guid: f246d5490dbc44a41a67683e14d7276f, type: 2}
-    stock: 81
+    stock: 77
     buyPrice: 6
     sellPrice: 10
   - item: {fileID: 11400000, guid: 855a9df5c62ad74409ed112988c1a86c, type: 2}
-    stock: 993
+    stock: 991
     buyPrice: 100
     sellPrice: 1
   - item: {fileID: 11400000, guid: b7b5b083b05035e49bb97f6124bccebd, type: 2}
-    stock: 978
+    stock: 976
     buyPrice: 100
     sellPrice: 1
   - item: {fileID: 11400000, guid: 797a65c8403d10449bfcfdb23c60ddfa, type: 2}

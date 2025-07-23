@@ -57,7 +57,7 @@ namespace Editor
                 string[] parts = line.Split('\t');
                 if (parts.Length < 6)
                 {
-                    Debug.LogWarning($"Пропуск строки {i}: неверный формат (найдено {parts.Length} колонок, нужно минимум 6)");
+                    Debug.LogWarning($"Пропуск строки {i}: неверный формат");
                     continue;
                 }
 
@@ -71,24 +71,20 @@ namespace Editor
                     Debug.Log($"Создание нового города: {cityName}");
                     city = ScriptableObject.CreateInstance<CityData>();
                     city.cityName = cityName;
-                    city.cityGold = 1000; // Начальное золото города
                     city.items = new List<CityData.CityItem>();
-                    string cityAssetPath = $"{CitiesPath}/{cityName}.asset";
-                    AssetDatabase.CreateAsset(city, cityAssetPath);
+                    AssetDatabase.CreateAsset(city, $"{CitiesPath}/{cityName}.asset");
                     allCities.Add(city);
                 }
 
                 // Создание/поиск товара
-                var item = allItems.FirstOrDefault(it => it.name == itemName);
+                var item = allItems.FirstOrDefault(it => it.itemName == itemName);
                 if (item == null)
                 {
                     Debug.Log($"Создание нового товара: {itemName}");
                     item = ScriptableObject.CreateInstance<Item>();
-                    item.name = itemName;
                     item.itemName = itemName;
                     item.weight = TryParseInt(parts[2], 1);
-                    string itemAssetPath = $"{ItemsPath}/{itemName}.asset";
-                    AssetDatabase.CreateAsset(item, itemAssetPath);
+                    AssetDatabase.CreateAsset(item, $"{ItemsPath}/{itemName}.asset");
                     allItems.Add(item);
                     createdItems++;
                 }
@@ -121,78 +117,30 @@ namespace Editor
 
         private static List<T> LoadAllAssets<T>(string folder) where T : UnityEngine.Object
         {
-            string folderPath = $"{BaseDataPath}/{folder}";
-            if (!AssetDatabase.IsValidFolder(folderPath))
-            {
-                Debug.Log($"Папка {folderPath} не существует");
-                return new List<T>();
-            }
-            
-            string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] { folderPath });
-            var assets = new List<T>();
-            
-            foreach (string guid in guids)
-            {
-                string assetPath = AssetDatabase.GUIDToAssetPath(guid);
-                T asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
-                if (asset != null)
-                {
-                    assets.Add(asset);
-                }
-            }
-            
-            return assets;
+            string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}", new[] { $"{BaseDataPath}/{folder}" });
+            return guids.Select(guid => 
+                AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid))).ToList();
         }
 
         private static void EnsureDirectoryExists(string path)
         {
             if (!AssetDatabase.IsValidFolder(path))
             {
-                string parentFolder = Path.GetDirectoryName(path).Replace("\\", "/");
-                string folderName = Path.GetFileName(path);
-                
-                // Убедимся, что родительская папка существует
-                if (!AssetDatabase.IsValidFolder(parentFolder))
-                {
-                    string grandParent = Path.GetDirectoryName(parentFolder).Replace("\\", "/");
-                    string parentName = Path.GetFileName(parentFolder);
-                    if (!AssetDatabase.IsValidFolder(grandParent))
-                    {
-                        EnsureDirectoryExists(grandParent);
-                    }
-                    AssetDatabase.CreateFolder(grandParent, parentName);
-                    Debug.Log($"Создана папка: {parentFolder}");
-                }
-                
-                string parent = Path.GetDirectoryName(path).Replace("\\", "/");
-                AssetDatabase.CreateFolder(parent, folderName);
+                string parent = Path.GetDirectoryName(path);
+                string folder = Path.GetFileName(path);
+                AssetDatabase.CreateFolder(parent, folder);
                 Debug.Log($"Создана папка: {path}");
             }
         }
 
         private static int TryParseInt(string value, int defaultValue)
         {
-            if (string.IsNullOrEmpty(value))
-                return defaultValue;
-                
-            // Убираем пробелы и специальные символы
-            value = value.Trim();
-            if (int.TryParse(value, out int result))
-                return result;
-                
-            return defaultValue;
+            return int.TryParse(value, out int result) ? result : defaultValue;
         }
 
         private static float TryParseFloat(string value, float defaultValue)
         {
-            if (string.IsNullOrEmpty(value))
-                return defaultValue;
-                
-            value = value.Trim();
-            if (float.TryParse(value, out float result))
-                return result;
-                
-            return defaultValue;
+            return float.TryParse(value, out float result) ? result : defaultValue;
         }
     }
 }

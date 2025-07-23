@@ -4,10 +4,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Player Stats", menuName = "Game/Player Stats")]
 public class PlayerStats : ScriptableObject
 {
-    [Header("Îñíîâíûå õàğàêòåğèñòèêè")]
+    [Header("Ñ…Ğ°Ñ€Ğ°ĞºÑ‚ĞµÑ€Ğ¸ÑÑ‚Ğ¸ Ğ¸Ğ³Ñ€Ğ¾ĞºĞ°")]
     [SerializeField, Range(1, 100)] private int _attack = 10;
-    [SerializeField, Range(1, 20)] private int _bargain = 1; // Âûãîäà
-    [SerializeField, Range(10, 5000)] private int _capacity = 50; // Ãğóçîïîäúåìíîñòü
+    [SerializeField, Range(-20, 20)] private int _bargain = 1; 
+    [SerializeField, Range(10, 5000)] private int _capacity = 50; 
 
 
     public int Attack => _attack;

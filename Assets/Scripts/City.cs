@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class City : MonoBehaviour
 {
     public string CityName => cityData.cityName;
-    public CityData cityData;
+    private CityData cityData;
     public CityPanel CityPanel; // Индивидуальная панель (опционально)
     [SerializeField] private string cityName; // Название города
     [SerializeField] private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // Список путей в городе
