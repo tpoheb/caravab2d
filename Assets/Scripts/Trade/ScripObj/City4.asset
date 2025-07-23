@@ -10,27 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f33d9a5e20c08144993d84e2e4915d00, type: 3}
-  m_Name: Kras
+  m_Name: City4
   m_EditorClassIdentifier: 
-  cityName: Kras
-  cityGold: 0
+  cityName: City4
+  cityGold: 1000
   items:
-  - item: {fileID: 11400000, guid: 313ca07f71aa0f54bb9728772415e3a8, type: 2}
+  - item: {fileID: 0}
     stock: 100
     buyPrice: 3
     sellPrice: 6
-  - item: {fileID: 11400000, guid: 4ca46a61611aefb4496c79f737b09851, type: 2}
+  - item: {fileID: 11400000, guid: 63e72ea2b84583e4b847b3eff956f1b6, type: 2}
     stock: 100
     buyPrice: 14
     sellPrice: 23
-  - item: {fileID: 11400000, guid: f61a89f148d9fd742a9a9c59045e9f80, type: 2}
-    stock: 100
-    buyPrice: 17
-    sellPrice: 28
-  - item: {fileID: 11400000, guid: 032c63d2eacada744982896cc8492489, type: 2}
-    stock: 100
-    buyPrice: 30
-    sellPrice: 51
   - item: {fileID: 11400000, guid: feff5d497513c2844b7a54d1c6f2d88b, type: 2}
     stock: 1
     buyPrice: 100

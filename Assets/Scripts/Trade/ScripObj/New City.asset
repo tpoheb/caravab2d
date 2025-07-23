@@ -10,28 +10,28 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f33d9a5e20c08144993d84e2e4915d00, type: 3}
-  m_Name: City3
+  m_Name: New City
   m_EditorClassIdentifier: 
-  cityName: City3
-  cityGold: 1048
+  cityName: io
+  cityGold: 100000
   items:
   - item: {fileID: 11400000, guid: 6d7ab418bd1c82342b5c78ed3dd5dc96, type: 2}
-    stock: 15
-    buyPrice: 2
-    sellPrice: 4
+    stock: 10
+    buyPrice: 52
+    sellPrice: 25
   - item: {fileID: 11400000, guid: 36810beae67a03f459a4ba23ca6307a9, type: 2}
-    stock: 100
-    buyPrice: 100
-    sellPrice: 200
-  - item: {fileID: 11400000, guid: 63e72ea2b84583e4b847b3eff956f1b6, type: 2}
-    stock: 100
-    buyPrice: 5
-    sellPrice: 10
-  - item: {fileID: 11400000, guid: 3b491be1c9f42bb4a97e811d919f7b9a, type: 2}
-    stock: 50
-    buyPrice: 20
-    sellPrice: 40
+    stock: 10
+    buyPrice: 57
+    sellPrice: 57
   - item: {fileID: 11400000, guid: 818405fc6ea96874c9d56dd33d741948, type: 2}
-    stock: 9
-    buyPrice: 60
-    sellPrice: 78
+    stock: 555
+    buyPrice: 2
+    sellPrice: 1
+  - item: {fileID: 11400000, guid: 3b491be1c9f42bb4a97e811d919f7b9a, type: 2}
+    stock: 64
+    buyPrice: 152255
+    sellPrice: 11
+  - item: {fileID: 11400000, guid: 63e72ea2b84583e4b847b3eff956f1b6, type: 2}
+    stock: 888
+    buyPrice: 25
+    sellPrice: 336
