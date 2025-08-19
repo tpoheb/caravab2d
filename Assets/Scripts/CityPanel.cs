@@ -2,30 +2,30 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-public class CityPanel : MonoBehaviour
+public class CityPanel : MonoBehaviour //buyitem РЅР°СЃС‚СЂР°РёРІР°РµС‚СЃСЏ РІ РёРЅСЃРїРµРєС‚РѕСЂРµ РІ РЅР°Р¶Р°С‚РёРё РєРЅРѕРїРєРё
 {
-    [SerializeField] private City currentCity; // Ссылка на текущий город
-    [SerializeField] private GameObject pathButtonPrefab; // Префаб кнопки пути
-    [SerializeField] private Transform pathButtonsContainer; // Контейнер для кнопок путей
-    [SerializeField] private Button hireTeamButton; // Кнопка найма команды
-    [SerializeField] private Button buyGoodsButton; // Кнопка покупки товаров
-    [SerializeField] private float buttonSpacing = 10f; // Расстояние между кнопками
-    [SerializeField] private PlayerToken playerToken; // Ссылка на фишку игрока
+    [SerializeField] private City currentCity; // РЎСЃС‹Р»РєР° РЅР° С‚РµРєСѓС‰РёР№ РіРѕСЂРѕРґ
+    [SerializeField] private GameObject pathButtonPrefab; // РџСЂРµС„Р°Р± РєРЅРѕРїРєРё РїСѓС‚Рё
+    [SerializeField] private Transform pathButtonsContainer; // РљРѕРЅС‚РµР№РЅРµСЂ РґР»СЏ РєРЅРѕРїРѕРє РїСѓС‚РµР№
+    [SerializeField] private Button hireTeamButton; // РљРЅРѕРїРєР° РЅР°Р№РјР° РєРѕРјР°РЅРґС‹
+    [SerializeField] private Button buyGoodsButton; // РљРЅРѕРїРєР° РїРѕРєСѓРїРєРё С‚РѕРІР°СЂРѕРІ
+    [SerializeField] private float buttonSpacing = 10f; // Р Р°СЃСЃС‚РѕСЏРЅРёРµ РјРµР¶РґСѓ РєРЅРѕРїРєР°РјРё
+    [SerializeField] private PlayerToken playerToken; // РЎСЃС‹Р»РєР° РЅР° С‚РѕРєРµРЅ РёРіСЂРѕРєР°
     [SerializeField] private TradeItemSystem tradeItemSystem;
 
-    private List<Button> pathButtons = new List<Button>(); // Список созданных кнопок путей
+    private List<Button> pathButtons = new List<Button>(); // РЎРїРёСЃРѕРє СЃРѕР·РґР°РЅРЅС‹С… РєРЅРѕРїРѕРє РїСѓС‚РµР№
 
     void Start()
     {
         InitializePanel();
-        gameObject.SetActive(true); // Панель изначально активна
+        gameObject.SetActive(true); // РђРєС‚РёРІРёСЂРѕРІР°С‚СЊ РїР°РЅРµР»СЊ
     }
 
     public void InitializePanel()
     {
         if (currentCity == null)
         {
-            Debug.LogError("Не задан текущий город для панели!");
+            Debug.LogError("РќРµ СѓРєР°Р·Р°РЅ С‚РµРєСѓС‰РёР№ РіРѕСЂРѕРґ РґР»СЏ РїР°РЅРµР»Рё!");
             return;
         }
 
@@ -44,7 +44,7 @@ public class CityPanel : MonoBehaviour
             Text buttonText = pathButton.GetComponentInChildren<Text>();
             if (buttonText != null)
             {
-                buttonText.text = $"Путь {pathIndex + 1}";
+                buttonText.text = $"РџСѓС‚СЊ {pathIndex + 1}";
             }
 
             pathButton.onClick.AddListener(() => OnPathButtonClicked(pathIndex));
@@ -70,29 +70,16 @@ public class CityPanel : MonoBehaviour
 
     private void OnPathButtonClicked(int pathIndex)
     {
-        Debug.Log($"Выбран путь {pathIndex + 1} в городе {currentCity.CityName}");
-        playerToken.SetPath(currentCity.Paths[pathIndex]); // Устанавливаем путь для фишки
-        ClosePanel(); // Закрываем панель после выбора пути
+        Debug.Log($"Р’С‹Р±СЂР°РЅ РїСѓС‚СЊ {pathIndex + 1} РІ РіРѕСЂРѕРґРµ {currentCity.CityName}");
+        playerToken.SetPath(currentCity.Paths[pathIndex]); // РЈСЃС‚Р°РЅРѕРІРёС‚СЊ РїСѓС‚СЊ РґР»СЏ РёРіСЂРѕРєР°
+        ClosePanel(); // Р—Р°РєСЂС‹С‚СЊ РїР°РЅРµР»СЊ РїРѕСЃР»Рµ РІС‹Р±РѕСЂР° РїСѓС‚Рё
     }
 
     private void OnHireTeamClicked()
     {
-        Debug.Log($"Нажата кнопка найма команды в городе {currentCity.CityName}");
+        Debug.Log($"РќР°РµРј РєРѕРјР°РЅРґС‹ РІ РіРѕСЂРѕРґРµ {currentCity.CityName}");
     }
-
-    /* private void OnBuyGoodsClicked()
-     {
-         if (tradeSystem != null)
-         {
-             tradeSystem.OpenTradePanel(); // Открываем панель торговли
-         }
-         else
-         {
-             Debug.LogError("TradeSystem не найден!");
-         }
-         Debug.Log($"Нажата кнопка покупки товаров в городе {currentCity.CityName}");
-     }*/
-
+    
     private void ClearPathButtons()
     {
         foreach (var button in pathButtons)

@@ -396,6 +396,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityData: {fileID: 11400000, guid: 396b5d2849e4a354e8bfc83141e27c50, type: 2}
   CityPanel: {fileID: 1688781431}
   cityName: 1
   inCityPaths:
@@ -859,6 +860,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityData: {fileID: 11400000, guid: 71ed10100c26ad94aa1dc79a31f818d3, type: 2}
   CityPanel: {fileID: 339053616}
   cityName: 5
   inCityPaths:
@@ -3852,6 +3854,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityData: {fileID: 11400000, guid: 44bd788926a67ce488ea9e929afea5e0, type: 2}
   CityPanel: {fileID: 199834706}
   cityName: 3
   inCityPaths:
@@ -4634,6 +4637,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityData: {fileID: 11400000, guid: f08a3172d1ae0bc44afa552b29e8787e, type: 2}
   CityPanel: {fileID: 1581099910}
   cityName: 4
   inCityPaths:
@@ -10011,6 +10015,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityData: {fileID: 11400000, guid: 26d693366e31bd24a85ea5013bb06e19, type: 2}
   CityPanel: {fileID: 966360121}
   cityName: 2
   inCityPaths:
