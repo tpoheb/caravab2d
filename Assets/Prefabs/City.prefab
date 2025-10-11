@@ -104,6 +104,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5520971714515997920}
+  - component: {fileID: 8556862173484020781}
   m_Layer: 0
   m_Name: City
   m_TagString: Untagged
@@ -121,13 +122,29 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -167.68686, y: 1.3389091, z: 563.7192}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2604639324392655450}
   - {fileID: 8044343771650697994}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8556862173484020781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3931422933746099781}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cityData: {fileID: 0}
+  CityPanel: {fileID: 0}
+  cityName: 
+  inCityPaths: []
 --- !u!1 &7071360770794272984
 GameObject:
   m_ObjectHideFlags: 0
