@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class TradeItemSystem : MonoBehaviour
 {
@@ -10,9 +11,9 @@ public class TradeItemSystem : MonoBehaviour
     public List<CityData> allCities = new List<CityData>();
     
     [Header("UI Elements")]
-    public Text playerMoneyText;
-    public Text cityMoneyText;
-    public Text cityNameText;
+    public TMP_Text playerMoneyText;
+    public TMP_Text cityMoneyText;
+    public TMP_Text cityNameText;
     public GameObject tradePanel;
     public Transform itemsContainer;
     public GameObject itemUIPrefab;
