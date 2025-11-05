@@ -32,10 +32,10 @@ public class TradeUIManager
     public void UpdateMoneyUI(PlayerInventory playerInventory, CityData city)
     {
         if (tradeSystem.playerMoneyText != null)
-            tradeSystem.playerMoneyText.text = $"Деньги: {playerInventory.Money}";
+            tradeSystem.playerMoneyText.text = $"{playerInventory.Money}";
             
         if (tradeSystem.cityMoneyText != null && city != null)
-            tradeSystem.cityMoneyText.text = $"Город: {city.cityGold}";
+            tradeSystem.cityMoneyText.text = $"{city.cityGold}";
     }
 
     private void CreateItemUIs(CityData city, PlayerInventory playerInventory)

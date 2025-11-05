@@ -835,7 +835,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ff4f577d925e014ca57a43b8537d301, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  icon: {fileID: 0}
+  icon: {fileID: 1949897672217778893}
   itemName: {fileID: 5306720918415026520}
   cityStock: {fileID: 3533733723438859174}
   cityBuyPrice: {fileID: 709167017442941569}

@@ -5,7 +5,7 @@ using TMPro;
 public class ItemUI : MonoBehaviour
 {
     [Header("UI Elements")]
-    public Image icon;
+    //public Image icon;
     public TMP_Text itemName;
     public TMP_Text cityStock;
     public TMP_Text cityBuyPrice;
@@ -24,7 +24,7 @@ public class ItemUI : MonoBehaviour
     {
         this.CityItem = cityItem;
         
-        icon.sprite = cityItem.item.icon;
+        //icon.sprite = cityItem.item.icon;
         itemName.text = cityItem.item.itemName;
         cityStock.text = cityItem.stock.ToString();
         cityBuyPrice.text = cityItem.buyPrice.ToString();
