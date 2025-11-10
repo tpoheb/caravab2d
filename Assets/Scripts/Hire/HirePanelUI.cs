@@ -17,14 +17,14 @@ public class HirePanelUI : MonoBehaviour
     {
         teamSystem = system;
 
-        // Получаем ссылки автоматически, если не назначены
+       
         if (moneyText == null)
             moneyText = GetComponentInChildren<TextMeshProUGUI>();
     }
 
     public void UpdateUI(List<UnitData> availableUnits, List<TeamMember> currentTeam, int currentMoney)
     {
-        moneyText.text = $"Золото: {currentMoney}";
+        moneyText.text = $" {currentMoney}";
 
         ClearContainer(availableUnitsContainer);
         ClearContainer(currentTeamContainer);
@@ -44,7 +44,7 @@ public class HirePanelUI : MonoBehaviour
     {
         var button = Instantiate(unitButtonPrefab, parent);
         var text = button.GetComponentInChildren<TextMeshProUGUI>();
-        text.text = $"{data.unitName}\nЦена: {data.hireCost}";
+        text.text = $"{data.unitName}\nпїЅпїЅпїЅпїЅ: {data.hireCost}";
 
         button.GetComponent<Button>().onClick.AddListener(action);
     }
