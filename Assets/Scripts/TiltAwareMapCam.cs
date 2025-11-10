@@ -20,7 +20,7 @@ public class TiltAwareMapCam : MonoBehaviour
     void Update()
     {
         HandleMovement();
-        HandleZoom();
+        //HandleZoom();
     }
 
     // Движение относительно собственных осей камеры
@@ -38,12 +38,12 @@ public class TiltAwareMapCam : MonoBehaviour
         right.Normalize();
         forward.Normalize();
 
-        Vector3 dir = (right * input.x + forward * input.y).normalized;
-        transform.position += dir * moveSpeed * Time.deltaTime;
+        /*Vector3 dir = (right * input.x + forward * input.y).normalized;
+        transform.position += dir * moveSpeed * Time.deltaTime;*/
     }
 
     // Зум без сдвига центра
-    void HandleZoom()
+    /*void HandleZoom()
     {
         float scroll = -Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) > 0f)
@@ -51,5 +51,5 @@ public class TiltAwareMapCam : MonoBehaviour
             cam.orthographicSize = Mathf.Clamp(cam.orthographicSize + scroll * zoomSpeed,
                 zoomMin, zoomMax);
         }
-    }
+    }*/
 }
