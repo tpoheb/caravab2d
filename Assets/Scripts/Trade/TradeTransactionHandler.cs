@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class TradeTransactionHandler
 {
-    private TradeItemSystem tradeSystem;
+    private TradeSystem tradeSystem;
 
-    public TradeTransactionHandler(TradeItemSystem system)
+    public TradeTransactionHandler(TradeSystem system)
     {
         tradeSystem = system;
     }

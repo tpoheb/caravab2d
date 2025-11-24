@@ -6,6 +6,8 @@ public class City : MonoBehaviour
     // --- ИСПРАВЛЕНИЕ: Прямой доступ к внутреннему полю cityName ---
     // Теперь CityName возвращает поле, которое вы сериализовали (cityData больше не нужен для имени).
     public string CityName => cityName; 
+    [SerializeField] private CityData cityDataSO; // Ссылка на ScriptableObject
+    public CityData CityData => cityDataSO; // Свойство для безопасного доступа
     
 
     [Header("Данные города")]

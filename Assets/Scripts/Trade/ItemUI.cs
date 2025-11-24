@@ -6,35 +6,54 @@ public class ItemUI : MonoBehaviour
 {
     [Header("UI Elements")]
     //public Image icon;
-    public TMP_Text itemName;
-    public TMP_Text cityStock;
-    public TMP_Text cityBuyPrice;
-    public TMP_Text citySellPrice;
-    public TMP_Text playerStock;
-    public Button buyButton;
-    public Button sellButton;
+    [SerializeField] private TMP_Text itemName;
+    [SerializeField] private TMP_Text cityStock;
+    [SerializeField] private TMP_Text cityBuyPrice;
+    [SerializeField] private TMP_Text citySellPrice;
+    [SerializeField] private TMP_Text playerStock;
+    [SerializeField] private Button buyButton;
+    [SerializeField] private Button sellButton;
 
+    // Свойство для доступа к данным (делаем его сериализованным, если нужно для отладки)
     public CityData.CityItem CityItem { get; private set; }
 
+    /// <summary>
+    /// Инициализирует UI элемент и привязывает кнопки к TradeSystem.
+    /// </summary>
     public void Initialize(
         CityData.CityItem cityItem,
         int currentPlayerStock,
-        System.Action buyAction,
-        System.Action sellAction)
+        TradeSystem tradeSystem) // Теперь принимаем TradeSystem
     {
         this.CityItem = cityItem;
         
+        // --- Обновление визуальных данных ---
+        
         //icon.sprite = cityItem.item.icon;
-        itemName.text = cityItem.item.itemName;
+        itemName.text = cityItem.item.itemName ?? "Unknown Item";
         cityStock.text = cityItem.stock.ToString();
         cityBuyPrice.text = cityItem.buyPrice.ToString();
         citySellPrice.text = cityItem.sellPrice.ToString();
         playerStock.text = currentPlayerStock.ToString();
 
-        buyButton.onClick.AddListener(() => buyAction());
-        sellButton.onClick.AddListener(() => sellAction());
+        // --- Привязка кнопок к TradeSystem ---
+        
+        // Очищаем предыдущие слушатели (важно при переиспользовании UI-элементов)
+        buyButton.onClick.RemoveAllListeners();
+        sellButton.onClick.RemoveAllListeners();
+        
+        // Привязываем кнопки к методам TradeSystem, используя лямбда-выражения
+        // (предполагаем покупку/продажу 1 единицы за раз)
+        buyButton.onClick.AddListener(() => tradeSystem.BuyItem(cityItem, 1));
+        sellButton.onClick.AddListener(() => tradeSystem.SellItem(cityItem, 1));
+        
+        // NOTE: Если вы хотите, чтобы кнопки отключались при нулевом запасе, 
+        // эту логику нужно добавить здесь или в UpdatePlayerStock/TradeSystem.
     }
 
+    /// <summary>
+    /// Обновляет количество этого предмета у игрока.
+    /// </summary>
     public void UpdatePlayerStock(int newStock)
     {
         playerStock.text = newStock.ToString();

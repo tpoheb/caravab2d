@@ -1,18 +1,68 @@
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro; // Добавьте для работы с TMP_Text
 
-public class TradeUIManager
+// TradeUIManager теперь является компонентом MonoBehaviour
+public class TradeUIManager : MonoBehaviour
 {
-    private TradeItemSystem tradeSystem;
-    private List<ItemUI> activeItemUIs = new List<ItemUI>();
+    // --- UI Elements (Сериализуются в Инспекторе этого скрипта) ---
+    [Header("UI Elements")]
+    [SerializeField] private TMP_Text playerMoneyText;
+    [SerializeField] private TMP_Text cityMoneyText;
+    [SerializeField] private TMP_Text cityNameText;
+    [SerializeField] private GameObject tradePanel; // Панель, которую нужно включать/выключать
+    [SerializeField] private Transform itemsContainer;
+    [SerializeField] private GameObject itemUIPrefab;
+    
+    // --- Системная ссылка (Требуется для вызова логики Buy/Sell) ---
+    // Используем TradeSystem (рефакторинг TradeItemSystem)
+    [Header("System References")]
+    [SerializeField] private TradeSystem tradeSystem; 
 
-    public List<ItemUI> ActiveItemUIs => activeItemUIs;
+    private readonly List<ItemUI> _activeItemUIs = new List<ItemUI>();
 
-    public TradeUIManager(TradeItemSystem system)
+    // Свойство для внешнего доступа (ActiveItemUIs)
+    public List<ItemUI> ActiveItemUIs => _activeItemUIs; 
+
+    private void Awake()
     {
-        tradeSystem = system;
+        // Проверка необходимых ссылок
+        ValidateReferences();
+        // Панель должна быть закрыта по умолчанию
+        tradePanel.SetActive(false); 
+    }
+    
+    // Новая функция для проверки ссылок (лучшая практика)
+    private void ValidateReferences()
+    {
+        if (tradeSystem == null) Debug.LogError($"{nameof(TradeSystem)} не назначен в {nameof(TradeUIManager)}!");
+        if (tradePanel == null) Debug.LogError($"{nameof(tradePanel)} не назначен!");
+        if (itemsContainer == null) Debug.LogError($"{nameof(itemsContainer)} не назначен!");
+        if (itemUIPrefab == null) Debug.LogError($"{nameof(itemUIPrefab)} не назначен!");
+    }
+    
+    // --- Методы управления панелью ---
+
+    public void OpenTradePanel(CityData cityData, PlayerInventory inventory)
+    {
+        if (cityData == null || inventory == null) return;
+
+        tradePanel.SetActive(true);
+        
+        RefreshTradeUI(cityData, inventory);
+    }
+    
+    public void CloseTradePanel()
+    {
+        ClearItemUIs();
+        tradePanel.SetActive(false);
     }
 
+    // --- Центральный метод обновления ---
+
+    /// <summary>
+    /// Обновляет весь UI для нового города.
+    /// </summary>
     public void RefreshTradeUI(CityData city, PlayerInventory playerInventory)
     {
         ClearItemUIs();
@@ -22,21 +72,40 @@ public class TradeUIManager
         
         CreateItemUIs(city, playerInventory);
     }
+    
+    // --- Обновление данных ---
 
     private void UpdateCityInfo(CityData city)
     {
-        if (tradeSystem.cityNameText != null)
-            tradeSystem.cityNameText.text = city.cityName ?? "Unknown City";
+        if (cityNameText != null)
+            cityNameText.text = city.cityName ?? "Unknown City";
     }
 
     public void UpdateMoneyUI(PlayerInventory playerInventory, CityData city)
     {
-        if (tradeSystem.playerMoneyText != null)
-            tradeSystem.playerMoneyText.text = $"{playerInventory.Money}";
+        if (playerMoneyText != null)
+            playerMoneyText.text = $"{playerInventory.Money}";
             
-        if (tradeSystem.cityMoneyText != null && city != null)
-            tradeSystem.cityMoneyText.text = $"{city.cityGold}";
+        // Примечание: предполагается, что CityData имеет поле cityGold
+        if (cityMoneyText != null && city != null) 
+            cityMoneyText.text = $"{city.cityGold}"; 
     }
+
+    public void RefreshItemStocks(PlayerInventory playerInventory)
+    {
+        Debug.Log("Refreshing item UIs stocks");
+        foreach (var itemUI in _activeItemUIs)
+        {
+            if (itemUI == null) continue;
+            
+            // Если ItemUI хранит ссылку на CityItem, используем ее для получения ItemSO
+            int playerStock = playerInventory.GetItemStock(itemUI.CityItem.item); 
+            itemUI.UpdatePlayerStock(playerStock);
+            // Debug.Log($"Refreshed UI for {itemUI.CityItem.item.name}, stock: {playerStock}");
+        }
+    }
+
+    // --- Построение UI ---
 
     private void CreateItemUIs(CityData city, PlayerInventory playerInventory)
     {
@@ -45,8 +114,6 @@ public class TradeUIManager
             Debug.LogWarning($"City {city.cityName} has no items to trade!");
             return;
         }
-
-        Debug.Log($"Creating UI for {city.items.Count} items");
 
         foreach (var cityItem in city.items)
         {
@@ -59,74 +126,56 @@ public class TradeUIManager
 
     private bool ValidateCityItem(CityData.CityItem cityItem)
     {
-        if (cityItem == null)
+        if (cityItem == null || cityItem.item == null)
         {
-            Debug.LogError("Found null cityItem in city items list!");
+            Debug.LogError("Found null CityItem or null Item reference!");
             return false;
         }
-
-        if (cityItem.item == null)
-        {
-            Debug.LogError("Found cityItem with null item reference!");
-            return false;
-        }
-
         return true;
     }
 
     private void CreateItemUI(CityData.CityItem cityItem, PlayerInventory playerInventory)
     {
-        if (tradeSystem.itemUIPrefab == null || tradeSystem.itemsContainer == null)
-        {
-            Debug.LogError("Item UI prefab or container not set!");
-            return;
-        }
-
+        // Проверка ссылок уже сделана в Awake
+        
         int playerStock = playerInventory.GetItemStock(cityItem.item);
-        Debug.Log($"Player stock for {cityItem.item.name}: {playerStock}");
 
-        var itemUIObject = Object.Instantiate(tradeSystem.itemUIPrefab, tradeSystem.itemsContainer);
+        var itemUIObject = Instantiate(itemUIPrefab, itemsContainer);
         var itemUI = itemUIObject.GetComponent<ItemUI>();
         
         if (itemUI == null)
         {
-            Debug.LogError("Instantiated item doesn't have ItemUI component!");
-            Object.Destroy(itemUIObject);
+            Debug.LogError($"Instantiated item UI prefab '{itemUIPrefab.name}' is missing the ItemUI component!");
+            Destroy(itemUIObject);
             return;
         }
         
+        // --- Прямая связь с TradeSystem ---
+        // ItemUI вызывает BuyItem/SellItem через TradeSystem, который обрабатывает транзакцию.
+        // ЭТОТ МЕТОД ЛУЧШЕ, ЧЕМ ПЕРЕДАЧА ЛЯМБДЫ (TRADE SYSTEM должен иметь ссылку)
+        
+        // Предполагается, что ItemUI.Initialize принимает TradeSystem
         itemUI.Initialize(
             cityItem,
             playerStock,
-            () => tradeSystem.BuyItem(cityItem, 1),
-            () => tradeSystem.SellItem(cityItem, 1)
-        );
+            tradeSystem // Передаем TradeSystem напрямую
+        ); 
         
-        activeItemUIs.Add(itemUI);
-        Debug.Log($"Successfully created UI for item: {cityItem.item.name}");
-    }
-
-    public void RefreshItemStocks(PlayerInventory playerInventory)
-    {
-        Debug.Log("Refreshing item UIs");
-        foreach (var itemUI in activeItemUIs)
-        {
-            if (itemUI == null) continue;
-            
-            int playerStock = playerInventory.GetItemStock(itemUI.CityItem.item);
-            itemUI.UpdatePlayerStock(playerStock);
-            Debug.Log($"Refreshed UI for {itemUI.CityItem.item.name}, stock: {playerStock}");
-        }
+        _activeItemUIs.Add(itemUI);
+        // Debug.Log($"Successfully created UI for item: {cityItem.item.name}");
     }
 
     public void ClearItemUIs()
     {
-        Debug.Log($"Clearing {activeItemUIs.Count} item UIs");
-        foreach (var itemUI in activeItemUIs)
+        Debug.Log($"Clearing {_activeItemUIs.Count} item UIs");
+        
+        // Использование цикла for-backwards для безопасного удаления
+        for (int i = _activeItemUIs.Count - 1; i >= 0; i--)
         {
-            if(itemUI != null && itemUI.gameObject != null) 
-                Object.Destroy(itemUI.gameObject);
+            var ui = _activeItemUIs[i];
+            if(ui != null && ui.gameObject != null) 
+                Destroy(ui.gameObject);
         }
-        activeItemUIs.Clear();
+        _activeItemUIs.Clear();
     }
 }

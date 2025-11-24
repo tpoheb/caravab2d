@@ -8,6 +8,7 @@ public class CityPanel : MonoBehaviour
     // --- ИЗДАТЕЛЬ ---
     // Событие: Выбран путь. PlayerToken (или Game Manager) подпишется.
     public static event Action<PathCellInitializer> OnPathSelected;
+    
 
     // --- UI/Настройки ---
     [Header("UI Настройки")]
@@ -102,11 +103,14 @@ public class CityPanel : MonoBehaviour
 
     private void OnBuyGoodsClicked()
     {
-        // Здесь можно вызвать другое статическое событие, например: 
-        // GoodsSystem.OnBuyGoodsRequest?.Invoke(_currentCity);
-        Debug.Log($"Покупка товаров в городе {_currentCity?.CityName}");
-    }
+        if (_currentCity == null) return; 
 
+        // --- ИСПРАВЛЕНИЕ: Вызываем публичный статический метод-помощник ---
+        TradeSystem.RequestTrade(_currentCity); 
+
+        ClosePanel();
+        // Debug.Log($"Запрос на открытие торговли в городе {_currentCity.CityName}");
+    }
     private void ClearPathButtons()
     {
         // Удаляем кнопки в обратном порядке
