@@ -1,28 +1,55 @@
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections.Generic;
+using System;
 
 public class CityManager : MonoBehaviour
 {
+    // --- Зависимости ---
+    [Header("Настройки")]
     [SerializeField] private List<City> allCities;
-    [SerializeField] private CityPanel defaultCityPanel;
 
-    private Dictionary<City, CityPanel> cityPanels = new Dictionary<City, CityPanel>();
+    [Header("Общие UI-панели")]
+    [SerializeField] private CityPanel cityPanel; 
 
-    private void Awake()
+    private void Start()
     {
-        // Инициализация панелей (если у каждого города своя панель)
-        foreach (var city in allCities)
+        ValidateReferences();
+
+        // Подписка на событие прибытия (PlayerToken - Издатель, CityManager - Подписчик)
+        PlayerToken.OnPlayerArrivedAtCity += OpenCityPanelFor;
+    }
+
+    private void OnDestroy()
+    {
+        // --- ИСПРАВЛЕНИЕ: Удаляем проверку на null ---
+        // Оператор -= безопасен и всегда должен использоваться для отписки.
+        PlayerToken.OnPlayerArrivedAtCity -= OpenCityPanelFor;
+    }
+
+    /// <summary>
+    /// Метод-обработчик, который вызывается, когда игрок прибывает в город.
+    /// </summary>
+    private void OpenCityPanelFor(City city)
+    {
+        if (cityPanel != null)
         {
-            if (city.CityPanel != null)
-                cityPanels.Add(city, city.CityPanel);
+            cityPanel.OpenPanel(city);
+        }
+        else
+        {
+            Debug.LogError("CityManager: Общая CityPanel не назначена! UI не будет открыт.");
         }
     }
 
-    public CityPanel GetCityPanel(City city)
+    private void ValidateReferences()
     {
-        if (cityPanels.TryGetValue(city, out CityPanel panel))
-            return panel;
-
-        return defaultCityPanel;
+        if (cityPanel == null)
+        {
+            Debug.LogError($"{nameof(CityPanel)} не назначен в {nameof(CityManager)}.");
+        }
+        if (allCities == null || allCities.Count == 0)
+        {
+            Debug.LogWarning("Список городов пуст или не назначен.");
+        }
     }
 }

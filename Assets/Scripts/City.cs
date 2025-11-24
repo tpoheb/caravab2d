@@ -3,16 +3,22 @@ using System.Collections.Generic;
 
 public class City : MonoBehaviour
 {
-    public string CityName => cityData.cityName;
-    public CityPanel CityPanel; // Индивидуальная панель (опционально)
-    [SerializeField] private string cityName; // Название города
-    [SerializeField] private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // Список путей в городе
+    // --- ИСПРАВЛЕНИЕ: Прямой доступ к внутреннему полю cityName ---
+    // Теперь CityName возвращает поле, которое вы сериализовали (cityData больше не нужен для имени).
+    public string CityName => cityName; 
     
-    private CityData cityData; //!!! был private, возможно нужно для импорта
-   
+
+    [Header("Данные города")]
+    [SerializeField] private string cityName = "Unnamed City"; // Название города (заполняется в Инспекторе)
+    
+    [SerializeField] 
+    private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // Список путей в городе
+    
+    // [УБРАТЬ] private CityData cityData; // УДАЛИТЬ, если не используется для других данных
+
     public List<PathCellInitializer> Paths => inCityPaths;
 
-    void Start()
+    void Awake() // Используем Awake для инициализации, чтобы быть уверенными, что CityName доступен в Start у PlayerToken
     {
         InitializeCity(); 
     }
@@ -20,9 +26,11 @@ public class City : MonoBehaviour
     // Инициализация города
     private void InitializeCity()
     {
-        if (string.IsNullOrEmpty(cityName))
+        // Проверка и инициализация (лучше, чем просто string.IsNullOrEmpty)
+        if (string.IsNullOrWhiteSpace(cityName))
         {
-            cityName = "Unnamed City";
+            cityName = gameObject.name; // Использование имени объекта как резервного
+            Debug.LogWarning($"Имя города не задано. Используется имя объекта: {cityName}");
         }
 
         // Инициализируем все пути в городе
@@ -30,16 +38,15 @@ public class City : MonoBehaviour
         {
             if (path != null)
             {
+                // Предполагается, что InitializeCells() что-то делает с данными пути
                 path.InitializeCells();
             }
             else
             {
-                Debug.LogWarning($"Обнаружен пустой путь в городе {cityName}");
+                Debug.LogWarning($"Обнаружен пустой (null) путь в городе {cityName}");
             }
         }
 
         Debug.Log($"Город {cityName} инициализирован. Всего путей: {inCityPaths.Count}");
     }
-
-
 }

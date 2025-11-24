@@ -1,95 +1,134 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System;
 
-public class CityPanel : MonoBehaviour //buyitem настраивается в инспекторе в нажатии кнопки
+public class CityPanel : MonoBehaviour
 {
-    [SerializeField] private City currentCity; // Ссылка на текущий город
-    [SerializeField] private GameObject pathButtonPrefab; // Префаб кнопки пути
-    [SerializeField] private Transform pathButtonsContainer; // Контейнер для кнопок путей
-    [SerializeField] private Button hireTeamButton; // Кнопка найма команды
-    [SerializeField] private Button buyGoodsButton; // Кнопка покупки товаров
-    [SerializeField] private float buttonSpacing = 10f; // Расстояние между кнопками
-    [SerializeField] private PlayerToken playerToken; // Ссылка на токен игрока
-    [SerializeField] private TradeItemSystem tradeItemSystem;
+    // --- ИЗДАТЕЛЬ ---
+    // Событие: Выбран путь. PlayerToken (или Game Manager) подпишется.
+    public static event Action<PathCellInitializer> OnPathSelected;
 
-    private List<Button> pathButtons = new List<Button>(); // Список созданных кнопок путей
+    // --- UI/Настройки ---
+    [Header("UI Настройки")]
+    [SerializeField] private GameObject pathButtonPrefab;
+    [SerializeField] private Transform pathButtonsContainer;
+    [SerializeField] private Button hireTeamButton;
+    [SerializeField] private Button buyGoodsButton;
+    //[SerializeField] private float buttonSpacing = 10f; // Убрано, если используется Layout Group
 
-    void Start()
+    // --- Внутренние данные ---
+    private City _currentCity;
+    private readonly List<Button> _pathButtons = new List<Button>();
+
+    private void Awake()
     {
-        InitializePanel();
-        gameObject.SetActive(true); // Активировать панель
+        ValidateReferences();
+        
+    }
+    
+    public void OpenPanel(City city)
+    {
+        if (gameObject.activeSelf && _currentCity == city)
+            return;
+        
+        if (city == null) return;
+
+        _currentCity = city;
+
+        BuildPathButtons();
+        SetupActionButtons(); // Настройка кнопок действий
+
+        gameObject.SetActive(true);
+        Debug.Log($"CityPanel открыта для города: {_currentCity.CityName}");
     }
 
-    public void InitializePanel()
+    private void BuildPathButtons()
     {
-        if (currentCity == null)
+        ClearPathButtons();
+
+        if (_currentCity.Paths == null || _currentCity.Paths.Count == 0)
         {
-            Debug.LogError("Не указан текущий город для панели!");
+            Debug.Log($"CityPanel: В городе {_currentCity.CityName} нет доступных путей.");
             return;
         }
 
-        ClearPathButtons();
-
-        for (int i = 0; i < currentCity.Paths.Count; i++)
+        for (int i = 0; i < _currentCity.Paths.Count; i++)
         {
-            int pathIndex = i;
+            PathCellInitializer path = _currentCity.Paths[i]; 
+            
             GameObject buttonObj = Instantiate(pathButtonPrefab, pathButtonsContainer);
             Button pathButton = buttonObj.GetComponent<Button>();
 
-            RectTransform buttonRect = buttonObj.GetComponent<RectTransform>();
-            float buttonHeight = buttonRect.sizeDelta.y;
-            buttonRect.anchoredPosition = new Vector2(0, -i * (buttonHeight + buttonSpacing));
-
             Text buttonText = pathButton.GetComponentInChildren<Text>();
             if (buttonText != null)
-            {
-                buttonText.text = $"Путь {pathIndex + 1}";
-            }
+                buttonText.text = $"Путь к {path.FinishCity?.CityName ?? "????"}";
 
-            pathButton.onClick.AddListener(() => OnPathButtonClicked(pathIndex));
+            // Привязываем путь к кнопке.
+            pathButton.onClick.AddListener(() => OnPathButtonClicked(path)); 
 
-            pathButtons.Add(pathButton);
+            _pathButtons.Add(pathButton);
         }
+    }
+    
+    private void SetupActionButtons()
+    {
+        // Отписка перед подпиской для безопасности
+        hireTeamButton.onClick.RemoveAllListeners();
+        buyGoodsButton.onClick.RemoveAllListeners();
 
+        // Подписываемся
         hireTeamButton.onClick.AddListener(OnHireTeamClicked);
-        // buyGoodsButton.onClick.AddListener(OnBuyGoodsClicked);
+        buyGoodsButton.onClick.AddListener(OnBuyGoodsClicked);
     }
 
-    public void OpenPanel(City city)
+    private void OnPathButtonClicked(PathCellInitializer path)
     {
-        currentCity = city;
-        InitializePanel();
-        gameObject.SetActive(true);
+        if (path == null) return;
+
+        // --- ИЗДАТЕЛЬ ---
+        // Вызываем событие выбора пути! PlayerToken подхватит его.
+        OnPathSelected?.Invoke(path);
+
+        ClosePanel();
+    }
+
+    private void OnHireTeamClicked()
+    {
+        // Здесь можно вызвать другое статическое событие, например: 
+        // TeamSystem.OnHireTeamRequest?.Invoke(_currentCity);
+        Debug.Log($"Наем команды в городе {_currentCity?.CityName}");
+    }
+
+    private void OnBuyGoodsClicked()
+    {
+        // Здесь можно вызвать другое статическое событие, например: 
+        // GoodsSystem.OnBuyGoodsRequest?.Invoke(_currentCity);
+        Debug.Log($"Покупка товаров в городе {_currentCity?.CityName}");
+    }
+
+    private void ClearPathButtons()
+    {
+        // Удаляем кнопки в обратном порядке
+        for (int i = _pathButtons.Count - 1; i >= 0; i--)
+        {
+            if (_pathButtons[i] != null)
+            {
+                _pathButtons[i].onClick.RemoveAllListeners();
+                Destroy(_pathButtons[i].gameObject);
+            }
+        }
+        _pathButtons.Clear();
     }
 
     public void ClosePanel()
     {
         gameObject.SetActive(false);
     }
-
-    private void OnPathButtonClicked(int pathIndex)
+    
+    private void ValidateReferences()
     {
-        Debug.Log($"Выбран путь {pathIndex + 1} в городе {currentCity.CityName}");
-        playerToken.SetPath(currentCity.Paths[pathIndex]); // Установить путь для игрока
-        ClosePanel(); // Закрыть панель после выбора пути
-    }
-
-    private void OnHireTeamClicked()
-    {
-        Debug.Log($"Наем команды в городе {currentCity.CityName}");
+        // ... (проверки ссылок)
     }
     
-    private void ClearPathButtons()
-    {
-        foreach (var button in pathButtons)
-        {
-            if (button != null)
-            {
-                button.onClick.RemoveAllListeners();
-                Destroy(button.gameObject);
-            }
-        }
-        pathButtons.Clear();
-    }
 }
