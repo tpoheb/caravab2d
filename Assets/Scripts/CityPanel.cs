@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 using System.Collections.Generic;
 using System;
 
@@ -16,7 +17,7 @@ public class CityPanel : MonoBehaviour
     [SerializeField] private Transform pathButtonsContainer;
     [SerializeField] private Button hireTeamButton;
     [SerializeField] private Button buyGoodsButton;
-    //[SerializeField] private float buttonSpacing = 10f; // Убрано, если используется Layout Group
+    [SerializeField] private TMP_Text cityNameText;
 
     // --- Внутренние данные ---
     private City _currentCity;
@@ -40,11 +41,19 @@ public class CityPanel : MonoBehaviour
 
         BuildPathButtons();
         SetupActionButtons(); 
+        
+        UpdateCityNameUI(city.CityName);
 
         gameObject.SetActive(true);
         Debug.Log($"CityPanel открыта для города: {_currentCity.CityName}");
     }
-
+    private void UpdateCityNameUI(string cityName)
+    {
+        if (cityNameText != null)
+        {
+            cityNameText.text = cityName ?? "Unknown City";
+        }
+    }
     private void BuildPathButtons()
     {
         ClearPathButtons();
@@ -133,7 +142,7 @@ public class CityPanel : MonoBehaviour
     
     private void ValidateReferences()
     {
-        // ... (проверки ссылок)
+        if (cityNameText == null) Debug.LogWarning("CityPanel: Поле City Name Text не назначено!");
     }
     
 }
