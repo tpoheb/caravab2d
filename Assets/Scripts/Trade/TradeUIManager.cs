@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro; // Добавьте для работы с TMP_Text
+using UnityEngine.UI; // Добавьте для работы с Button
 
 // TradeUIManager теперь является компонентом MonoBehaviour
 public class TradeUIManager : MonoBehaviour
@@ -13,6 +14,7 @@ public class TradeUIManager : MonoBehaviour
     [SerializeField] private GameObject tradePanel; // Панель, которую нужно включать/выключать
     [SerializeField] private Transform itemsContainer;
     [SerializeField] private GameObject itemUIPrefab;
+    [SerializeField] private Button closeTradeButton; // НОВОЕ ПОЛЕ: Кнопка "Закрыть"
     
     // --- Системная ссылка (Требуется для вызова логики Buy/Sell) ---
     // Используем TradeSystem (рефакторинг TradeItemSystem)
@@ -23,13 +25,25 @@ public class TradeUIManager : MonoBehaviour
 
     // Свойство для внешнего доступа (ActiveItemUIs)
     public List<ItemUI> ActiveItemUIs => _activeItemUIs; 
+    
+    public static event System.Action OnTradeClosedRequest;
 
     private void Awake()
     {
         // Проверка необходимых ссылок
         ValidateReferences();
+        if (closeTradeButton != null)
+        {
+            // Привязываем кнопку "Закрыть" к методу, который закрывает UI и издает событие
+            closeTradeButton.onClick.RemoveAllListeners();
+            closeTradeButton.onClick.AddListener(OnCloseTradeButtonClicked);
+        }
+        
+        tradePanel.SetActive(false); 
+    
         // Панель должна быть закрыта по умолчанию
         tradePanel.SetActive(false); 
+        
     }
     
     // Новая функция для проверки ссылок (лучшая практика)
@@ -39,6 +53,7 @@ public class TradeUIManager : MonoBehaviour
         if (tradePanel == null) Debug.LogError($"{nameof(tradePanel)} не назначен!");
         if (itemsContainer == null) Debug.LogError($"{nameof(itemsContainer)} не назначен!");
         if (itemUIPrefab == null) Debug.LogError($"{nameof(itemUIPrefab)} не назначен!");
+        if (closeTradeButton == null) Debug.LogError($"{nameof(closeTradeButton)} не назначен в {nameof(TradeUIManager)}!");
     }
     
     // --- Методы управления панелью ---
@@ -56,6 +71,16 @@ public class TradeUIManager : MonoBehaviour
     {
         ClearItemUIs();
         tradePanel.SetActive(false);
+    }
+    private void OnCloseTradeButtonClicked()
+    {
+        // 1. Закрываем саму панель торговли
+        CloseTradePanel();
+        
+        // 2. ИЗДАЕМ СОБЫТИЕ: сообщаем всем, что нужно открыть панель города.
+        OnTradeClosedRequest?.Invoke(); 
+        
+        Debug.Log("TradeUIManager: Запрос на открытие панели города.");
     }
 
     // --- Центральный метод обновления ---
@@ -178,4 +203,5 @@ public class TradeUIManager : MonoBehaviour
         }
         _activeItemUIs.Clear();
     }
+    
 }

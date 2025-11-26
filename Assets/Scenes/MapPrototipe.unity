@@ -2396,7 +2396,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1836032680}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: TradeItemSystem, Assembly-CSharp
         m_MethodName: CloseTrade
         m_Mode: 1
@@ -8839,15 +8839,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0849bef73eb12694ea1eec368b774fbc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerInventory: {fileID: 2041521372}
-  playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
-  allCities: []
-  playerMoneyText: {fileID: 0}
-  cityMoneyText: {fileID: 0}
-  cityNameText: {fileID: 0}
-  tradePanel: {fileID: 2085502321}
-  itemsContainer: {fileID: 1087506288}
-  itemUIPrefab: {fileID: 136934706907709637, guid: cdb1d6302c39003458b26fe0b71937ea, type: 3}
 --- !u!114 &723130757
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9056,6 +9047,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityDataSO: {fileID: 0}
   cityName: 3
   inCityPaths:
   - {fileID: 484411821}
@@ -9386,6 +9378,7 @@ RectTransform:
   m_LocalScale: {x: 0.59538996, y: 0.59538996, z: 0.85055995}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 894541178}
   - {fileID: 400652124}
   - {fileID: 197601721}
   - {fileID: 1109007776}
@@ -10558,6 +10551,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+      propertyPath: cityDataSO
+      value: 
+      objectReference: {fileID: 11400000, guid: 1d41c1c13e3d949478c8d9563df5bc94, type: 2}
+    - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: inCityPaths.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -11010,6 +11007,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+      propertyPath: cityDataSO
+      value: 
+      objectReference: {fileID: 11400000, guid: c06c4587bf1cf9d4ebbbb2fb92559741, type: 2}
+    - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: inCityPaths.Array.size
       value: 1
       objectReference: {fileID: 0}
@@ -11354,6 +11355,81 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5074066171074888127, guid: b8c5edca6b9707249bdee190239a0d1e, type: 3}
   m_PrefabInstance: {fileID: 891536664}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &894541177
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 894541178}
+  - component: {fileID: 894541180}
+  - component: {fileID: 894541179}
+  m_Layer: 5
+  m_Name: Panel (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &894541178
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894541177}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 748714972}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -267.1178, y: 185.337}
+  m_SizeDelta: {x: 1476.6235, y: 708.8191}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &894541179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894541177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.9529412, g: 0.70463264, b: 0, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &894541180
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 894541177}
+  m_CullTransparentMesh: 1
 --- !u!1 &907887335
 GameObject:
   m_ObjectHideFlags: 0
@@ -11823,6 +11899,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityDataSO: {fileID: 0}
   cityName: 2
   inCityPaths:
   - {fileID: 1743936951}
@@ -14498,7 +14575,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1836032680}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: TradeItemSystem, Assembly-CSharp
         m_MethodName: OpenCityTrade
         m_Mode: 2
@@ -18191,6 +18268,7 @@ MonoBehaviour:
   zoomSpeed: 150
   zoomMin: 5
   zoomMax: 500
+  cam: {fileID: 0}
 --- !u!114 &1468831708
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19784,7 +19862,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -418, y: 205.45999}
+  m_AnchoredPosition: {x: -418, y: 205.45998}
   m_SizeDelta: {x: 836, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1581091265
@@ -20410,6 +20488,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cityDataSO: {fileID: 0}
   cityName: 1
   inCityPaths:
   - {fileID: 1362395668}
@@ -20698,7 +20777,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1716299608}
-  - component: {fileID: 1716299609}
   m_Layer: 0
   m_Name: GameBoard
   m_TagString: Untagged
@@ -20723,23 +20801,6 @@ Transform:
   - {fileID: 858163781}
   m_Father: {fileID: 1554062533}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1716299609
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1716299607}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d7203dacebb0f5d48a3102608eb8f433, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  allCities:
-  - {fileID: 1672208481}
-  - {fileID: 947260900}
-  - {fileID: 727309088}
-  cityPanel: {fileID: 0}
 --- !u!1 &1718170151
 GameObject:
   m_ObjectHideFlags: 0
@@ -21726,7 +21787,7 @@ GameObject:
   - component: {fileID: 1792685067}
   - component: {fileID: 1792685066}
   m_Layer: 5
-  m_Name: Text (TMP) (1)
+  m_Name: CityName (TMP) (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -22538,24 +22599,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1836032675}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0849bef73eb12694ea1eec368b774fbc, type: 3}
+  m_Script: {fileID: 11500000, guid: 317a12dae8e953a4a97fd0122450cf0b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
-  playerInventory: {fileID: 2041521372}
-  playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
-  allCities:
-  - {fileID: 11400000, guid: a4baa8ebea6518d4699b34833e79851f, type: 2}
-  - {fileID: 11400000, guid: 65735cdb476a24c4db89be03ea5ee645, type: 2}
-  - {fileID: 11400000, guid: df13fc2862d62914a9a9692a13615764, type: 2}
-  - {fileID: 11400000, guid: 1d41c1c13e3d949478c8d9563df5bc94, type: 2}
-  - {fileID: 11400000, guid: b76e18ccfd8f8fd458c649958604ef5e, type: 2}
-  - {fileID: 11400000, guid: c06c4587bf1cf9d4ebbbb2fb92559741, type: 2}
+  m_EditorClassIdentifier: Assembly-CSharp::TradeUIManager
   playerMoneyText: {fileID: 1841593791}
   cityMoneyText: {fileID: 1191229690}
-  cityNameText: {fileID: 1899534770}
+  cityNameText: {fileID: 1792685066}
   tradePanel: {fileID: 748714971}
   itemsContainer: {fileID: 1581091264}
   itemUIPrefab: {fileID: 3456432510961398477, guid: 08b971b7f11e3ac4e9ec9944ba278e45, type: 3}
+  closeTradeButton: {fileID: 197601724}
+  tradeSystem: {fileID: 2041521373}
 --- !u!1 &1841593789
 GameObject:
   m_ObjectHideFlags: 0
@@ -22996,6 +23050,10 @@ PrefabInstance:
       propertyPath: CityPanel
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+      propertyPath: cityDataSO
+      value: 
+      objectReference: {fileID: 11400000, guid: 65735cdb476a24c4db89be03ea5ee645, type: 2}
     - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: inCityPaths.Array.size
       value: 3
@@ -25896,6 +25954,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+      propertyPath: cityDataSO
+      value: 
+      objectReference: {fileID: 11400000, guid: df13fc2862d62914a9a9692a13615764, type: 2}
+    - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: inCityPaths.Array.size
       value: 3
       objectReference: {fileID: 0}
@@ -26153,6 +26215,7 @@ GameObject:
   - component: {fileID: 2041521371}
   - component: {fileID: 2041521372}
   - component: {fileID: 2041521370}
+  - component: {fileID: 2041521373}
   m_Layer: 0
   m_Name: Manager
   m_TagString: Untagged
@@ -26211,6 +26274,21 @@ MonoBehaviour:
   startMoney: 1000
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
   items: []
+--- !u!114 &2041521373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041521369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a10b5d55ddca72249991e8eef92b60ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TradeSystem
+  playerInventory: {fileID: 2041521372}
+  playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
+  tradeUIManager: {fileID: 1836032680}
 --- !u!1001 &2045621562
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -26932,6 +27010,10 @@ PrefabInstance:
       propertyPath: CityPanel
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+      propertyPath: cityDataSO
+      value: 
+      objectReference: {fileID: 11400000, guid: b76e18ccfd8f8fd458c649958604ef5e, type: 2}
     - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: inCityPaths.Array.size
       value: 1
@@ -27743,6 +27825,10 @@ PrefabInstance:
       propertyPath: CityPanel
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+      propertyPath: cityDataSO
+      value: 
+      objectReference: {fileID: 11400000, guid: a4baa8ebea6518d4699b34833e79851f, type: 2}
     - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: inCityPaths.Array.size
       value: 1

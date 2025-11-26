@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System;
+
 
 public class CityManager : MonoBehaviour
 {
@@ -10,20 +10,33 @@ public class CityManager : MonoBehaviour
 
     [Header("Общие UI-панели")]
     [SerializeField] private CityPanel cityPanel; 
+    
+    private City _lastArrivedCity; // НОВОЕ ПОЛЕ: Храним последний посещенный город
 
+    private void Awake()
+    {
+        // 1. Подписки - делаем их только здесь.
+        PlayerToken.OnPlayerArrivedAtCity += OpenCityPanelFor;
+        TradeUIManager.OnTradeClosedRequest += ReOpenCityPanel;
+    
+        // ВАЖНО: УДАЛИТЕ ValidateReferences() из Awake()
+        // Это предотвратит ошибку, если CityPanel еще не полностью загружен.
+        // ValidateReferences(); // <-- УДАЛЕНО!
+    }
     private void Start()
     {
+        // 2. Проверка и валидация внешних ссылок - делаем это только здесь.
         ValidateReferences();
-
-        // Подписка на событие прибытия (PlayerToken - Издатель, CityManager - Подписчик)
-        PlayerToken.OnPlayerArrivedAtCity += OpenCityPanelFor;
+    
+        // ВАЖНО: УДАЛИТЕ ПОВТОРНУЮ ПОДПИСКУ!
+        //TradeUIManager.OnTradeClosedRequest += ReOpenCityPanel; // <-- УДАЛЕНО!
     }
 
     private void OnDestroy()
     {
-        // --- ИСПРАВЛЕНИЕ: Удаляем проверку на null ---
-        // Оператор -= безопасен и всегда должен использоваться для отписки.
+        // Обязательная отписка
         PlayerToken.OnPlayerArrivedAtCity -= OpenCityPanelFor;
+        TradeUIManager.OnTradeClosedRequest -= ReOpenCityPanel;
     }
 
     /// <summary>
@@ -31,6 +44,7 @@ public class CityManager : MonoBehaviour
     /// </summary>
     private void OpenCityPanelFor(City city)
     {
+        _lastArrivedCity = city; // Сохраняем город
         if (cityPanel != null)
         {
             cityPanel.OpenPanel(city);
@@ -38,6 +52,22 @@ public class CityManager : MonoBehaviour
         else
         {
             Debug.LogError("CityManager: Общая CityPanel не назначена! UI не будет открыт.");
+        }
+    }
+    /// <summary>
+    /// Метод-обработчик, вызываемый после закрытия торговой панели.
+    /// </summary>
+    private void ReOpenCityPanel()
+    {
+        if (_lastArrivedCity != null)
+        {
+            Debug.Log($"CityManager: Повторно открываем панель для города {_lastArrivedCity.CityName}");
+            // Вызываем существующий метод открытия панели
+            OpenCityPanelFor(_lastArrivedCity); 
+        }
+        else
+        {
+            Debug.LogError("CityManager: Невозможно повторно открыть CityPanel, _lastArrivedCity is null.");
         }
     }
 

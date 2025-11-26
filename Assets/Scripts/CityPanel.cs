@@ -30,15 +30,16 @@ public class CityPanel : MonoBehaviour
     
     public void OpenPanel(City city)
     {
+        // Если панель уже активна для этого города, просто выходим (для избежания перестроения UI)
         if (gameObject.activeSelf && _currentCity == city)
             return;
-        
+    
         if (city == null) return;
 
         _currentCity = city;
 
         BuildPathButtons();
-        SetupActionButtons(); // Настройка кнопок действий
+        SetupActionButtons(); 
 
         gameObject.SetActive(true);
         Debug.Log($"CityPanel открыта для города: {_currentCity.CityName}");
@@ -124,7 +125,7 @@ public class CityPanel : MonoBehaviour
         }
         _pathButtons.Clear();
     }
-
+    
     public void ClosePanel()
     {
         gameObject.SetActive(false);

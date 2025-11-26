@@ -15,7 +15,6 @@ public class TradeSystem : MonoBehaviour
     [SerializeField] private PlayerInventory playerInventory;
     [SerializeField] private PlayerStats playerStats;
     [SerializeField] private TradeUIManager tradeUIManager; // Теперь отдельный компонент
-    [SerializeField] private TradeTransactionHandler transactionHandler; // Теперь отдельный компонент
     
     // --- Данные ---
     // Используем City, так как это компонент на сцене, а CityData, вероятно, ScriptableObject для товаров.
@@ -61,8 +60,10 @@ public class TradeSystem : MonoBehaviour
     {
         if (_currentCity?.CityData == null) return;
         
-        transactionHandler.ProcessBuyTransaction(cityItem, quantity, _currentCity.CityData, playerInventory, playerStats);
-        
+        // ВЫЗОВ СТАТИЧЕСКОГО МЕТОДА:
+        TradeTransactionHandler.ProcessBuyTransaction(cityItem, quantity, 
+            _currentCity.CityData, playerInventory, playerStats);
+
         UpdateTradeUI();
     }
 
@@ -70,8 +71,10 @@ public class TradeSystem : MonoBehaviour
     {
         if (_currentCity?.CityData == null) return;
 
-        transactionHandler.ProcessSellTransaction(cityItem, quantity, _currentCity.CityData, playerInventory, playerStats);
-        
+        // ВЫЗОВ СТАТИЧЕСКОГО МЕТОДА:
+        TradeTransactionHandler.ProcessSellTransaction(cityItem, quantity, 
+            _currentCity.CityData, playerInventory, playerStats);
+    
         UpdateTradeUI();
     }
 
@@ -93,7 +96,6 @@ public class TradeSystem : MonoBehaviour
         if (playerInventory == null) Debug.LogError($"{nameof(PlayerInventory)} не назначен!");
         if (playerStats == null) Debug.LogError($"{nameof(PlayerStats)} не назначен!");
         if (tradeUIManager == null) Debug.LogError($"{nameof(TradeUIManager)} не назначен!");
-        if (transactionHandler == null) Debug.LogError($"{nameof(TradeTransactionHandler)} не назначен!");
     }
     public static void RequestTrade(City city)
     {
