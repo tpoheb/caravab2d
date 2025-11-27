@@ -44,7 +44,7 @@ public class HirePanelUI : MonoBehaviour
     {
         var button = Instantiate(unitButtonPrefab, parent);
         var text = button.GetComponentInChildren<TextMeshProUGUI>();
-        text.text = $"{data.unitName}\n����: {data.hireCost}";
+        text.text = $"{data.unitName}\nЦена: {data.hireCost}";
 
         button.GetComponent<Button>().onClick.AddListener(action);
     }

@@ -66,14 +66,42 @@ public class CityPanel : MonoBehaviour
 
         for (int i = 0; i < _currentCity.Paths.Count; i++)
         {
-            PathCellInitializer path = _currentCity.Paths[i]; 
+            PathCellInitializer path = _currentCity.Paths[i];
+            
+            // Проверяем, что путь и конечный город существуют
+            if (path == null || path.FinishCity == null)
+            {
+                Debug.LogWarning($"Путь #{i} в городе {_currentCity.CityName} имеет пустую ссылку на конечный город.");
+                continue;
+            }
+            
+            // --- НОВОЕ: ПОЛУЧАЕМ НАЗВАНИЕ КОНЕЧНОГО ГОРОДА ---
+            string destinationName = path.FinishCity.CityName;
             
             GameObject buttonObj = Instantiate(pathButtonPrefab, pathButtonsContainer);
             Button pathButton = buttonObj.GetComponent<Button>();
 
-            Text buttonText = pathButton.GetComponentInChildren<Text>();
+            // Ищем компонент Text или TMP_Text на самой кнопке или ее дочерних элементах
+            TMP_Text buttonText = pathButton.GetComponentInChildren<TMP_Text>();
+            
             if (buttonText != null)
-                buttonText.text = $"Путь к {path.FinishCity?.CityName ?? "????"}";
+            {
+                // Устанавливаем текст кнопки с именем конечного города
+                buttonText.text = $"Путь к {destinationName}";
+            }
+            else
+            {
+                // Если используется обычный Text
+                Text legacyText = pathButton.GetComponentInChildren<Text>();
+                if (legacyText != null)
+                {
+                    legacyText.text = $"Путь к {destinationName}";
+                }
+                else
+                {
+                    Debug.LogWarning("Кнопка пути не содержит компонента Text или TMP_Text!");
+                }
+            }
 
             // Привязываем путь к кнопке.
             pathButton.onClick.AddListener(() => OnPathButtonClicked(path)); 

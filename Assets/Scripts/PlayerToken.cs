@@ -1,28 +1,30 @@
 using UnityEngine;
-using UnityEngine.UI;
 using System;
+using UnityEngine.UI;
+using System.Collections.Generic; 
 
 public class PlayerToken : MonoBehaviour
 {
     // --- ИЗДАТЕЛЬ ---
-    // Событие: Игрок прибыл в город (публичное статическое событие для подписки UI и менеджеров)
+    /// <summary>Событие: Игрок прибыл в город.</summary>
     public static event Action<City> OnPlayerArrivedAtCity; 
-
-    // --- ПОДПИСЧИК ---
-    // Подписка на событие выбора пути, которое будет издавать CityPanel.
-    // Это заменяет playerToken.SetPath(path) в CityPanel.
+    /// <summary>Событие: Игрок переместился на клетку.</summary>
+    public static event Action OnPlayerMoved; 
     
+    /// <summary>Публичное свойство для доступа GameManager к PathController.</summary>
+    public PathController PathController => pathController;
+
     // --- Системы ---
     [Header("Системы")]
     [SerializeField] private PathController pathController;
-    [SerializeField] private UIHandler uiHandler;
+    [SerializeField] private UIHandler uiHandler; 
     [SerializeField] private TeamSystem teamSystem;
-    [SerializeField] private DiceSystem diceSystem;
-    [SerializeField] private PlayerInventory playerInventory;
-    
+    [SerializeField] private DiceSystem diceSystem; 
+    [SerializeField] private PlayerInventory playerInventory; 
+
     // --- UI/Данные ---
     [Header("UI")]
-    [SerializeField] private Button endTurnButton;
+    [SerializeField] private Button endTurnButton; 
     
     [Header("Стартовые настройки")]
     [SerializeField] private City startCity;
@@ -34,28 +36,40 @@ public class PlayerToken : MonoBehaviour
 
     private void Start()
     {
-        // Подписки на UI/системы
-        endTurnButton.onClick.AddListener(OnEndTurn);
-        diceSystem.OnDiceRolled += ApplyDiceEffects;
+        // 1. Подписка на UI: Оповещение GameManager о запросе хода.
+        endTurnButton.onClick.AddListener(OnEndTurnRequested); 
         
-        // --- Устранение прямой зависимости ---
-        // Подписываемся на событие выбора пути, которое придет от CityPanel
+        // 2. Подписка на событие выбора пути от CityPanel
         CityPanel.OnPathSelected += SetPath; 
 
         InitializeStartCity();
     }
+    
+    private void OnDestroy()
+    {
+        // Обязательная отписка
+        if (endTurnButton != null)
+        {
+            endTurnButton.onClick.RemoveListener(OnEndTurnRequested);
+        }
+        CityPanel.OnPathSelected -= SetPath;
+    }
 
+    private void ValidateReferences()
+    {
+        if (pathController == null) Debug.LogError($"{nameof(PathController)} не назначен!");
+        if (diceSystem == null) Debug.LogError($"{nameof(DiceSystem)} не назначен!");
+        if (uiHandler == null) Debug.LogError($"{nameof(UIHandler)} не назначен!");
+        if (teamSystem == null) Debug.LogError($"{nameof(TeamSystem)} не назначен!");
+        if (playerInventory == null) Debug.LogError($"{nameof(PlayerInventory)} не назначен!");
+        if (endTurnButton == null) Debug.LogError($"{nameof(endTurnButton)} не назначен!");
+    }
+    
     private void InitializeStartCity()
     {
         if (startCity != null)
         {
-            // Использование оператора ?? для безопасного доступа к CityName
-            string cityName = startCity.CityName ?? "Безымянный город"; 
-        
-            // Теперь Debug.Log не упадет, даже если startCity.CityName == null
-            Debug.Log($"PlayerToken: Игрок начинает в {cityName}"); 
-        
-            // Вызываем событие прибытия
+            Debug.Log($"PlayerToken: Игрок начинает в {startCity.CityName}"); 
             OnPlayerArrivedAtCity?.Invoke(startCity); 
         }
         else
@@ -69,25 +83,37 @@ public class PlayerToken : MonoBehaviour
     /// </summary>
     public void SetPath(PathCellInitializer path)
     {
-        // Игрок выбрал путь, начинаем движение.
         pathController.SetPath(path);
         
-        // Закрываем весь UI (CityPanel должен был уже закрыться сам, 
-        // но на всякий случай закрываем всю общую панель UI).
-        uiHandler.CloseAll(); 
-        
         Debug.Log($"PlayerToken: Установлен путь к {path.FinishCity.CityName}");
+        
+        // Оповещаем GameManager, что движение началось.
+        OnPlayerMoved?.Invoke(); 
     }
     
-    private void OnEndTurn()
+    /// <summary>
+    /// ИЗДАТЕЛЬ: Сигнал о том, что игрок хочет завершить текущую фазу.
+    /// </summary>
+    private void OnEndTurnRequested()
+    {
+        GameManager.Instance?.HandleEndTurnRequest(); 
+    }
+
+    // --- ОСНОВНАЯ ЛОГИКА ДВИЖЕНИЯ (Вызывается из GameManager) ---
+
+    /// <summary>
+    /// Продвигает токен на одну клетку по пути.
+    /// </summary>
+    public void AdvanceToken()
     {
         if (!pathController.HasActivePath())
         {
-            diceSystem.RollDice();
+            Debug.LogWarning("PlayerToken: Попытка движения без активного пути.");
             return;
         }
 
         pathController.Advance();
+        OnPlayerMoved?.Invoke(); 
 
         if (pathController.IsPathCompleted())
         {
@@ -95,16 +121,16 @@ public class PlayerToken : MonoBehaviour
         }
         else
         {
+            // 1. Физическое перемещение фишки
             pathController.MoveCurrent();
+            
+            // 2. Выполнение постоянных эффектов (оплата)
             teamSystem.PaySalaries();
-            pathController.HandleCurrentCellEffect(uiHandler, playerInventory);
+            
+            // 3. УДАЛЕНО: ЛОГИКА СОБЫТИЯ
+            // pathController.HandleCurrentCellEffect(uiHandler, playerInventory); 
+            // События теперь обрабатываются GameManager после броска кубика.
         }
-    }
-
-    private void ApplyDiceEffects(int diceResult)
-    {
-        playerInventory.Money += diceSystem.LastMoneyModifier;
-        Debug.Log($"Деньги после броска кубика: {(diceSystem.LastMoneyModifier >= 0 ? "+" : "")}{diceSystem.LastMoneyModifier}");
     }
 
     private void ArriveAtDestination()
@@ -117,31 +143,15 @@ public class PlayerToken : MonoBehaviour
             return;
         }
 
+        // 1. Сброс пути для возможности выбора нового
         pathController.ResetToken();
-        uiHandler.CloseAll(); 
         
-        // --- ИЗДАТЕЛЬ ---
-        // Игрок прибыл, издаем событие. CityPanel подхватит его.
+        // 2. Издаем событие прибытия (CityPanel подхватит его)
         OnPlayerArrivedAtCity?.Invoke(finishCity);
 
         Debug.Log($"Игрок достиг города {finishCity.CityName}");
-    }
-
-    private void ValidateReferences()
-    {
-        if (pathController == null) Debug.LogError($"{nameof(PathController)} не назначен!");
-        if (diceSystem == null) Debug.LogError($"{nameof(DiceSystem)} не назначен!");
-        // ... (остальные проверки)
-    }
-
-    private void OnDestroy()
-    {
-        // Обязательная отписка
-        if (diceSystem != null)
-        {
-            diceSystem.OnDiceRolled -= ApplyDiceEffects;
-        }
-        // Отписка от события CityPanel
-        CityPanel.OnPathSelected -= SetPath;
+        
+        // 3. Оповещаем GameManager о завершении фазы
+        GameManager.Instance?.CompleteMovementPhase();
     }
 }

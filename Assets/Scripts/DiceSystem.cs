@@ -1,35 +1,62 @@
 using UnityEngine;
+using System; // Р”РѕР±Р°РІР»РµРЅРѕ РґР»СЏ Action
 
 public class DiceSystem : MonoBehaviour
 {
-    [Header("Настройки кубика")]
-    [SerializeField] private int minValue = 1;
-    [SerializeField] private int maxValue = 6;
+    [Header("РќР°СЃС‚СЂРѕР№РєРё РєСѓР±РёРєР°")]
+    // РСЃРїРѕР»СЊР·СѓРµРј СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ РєСѓР±РёРє D6
+    [SerializeField] private int minValue = 1; 
+    [SerializeField] private int maxValue = 6; 
 
-    [Header("Бонусы/штрафы")]
-    [SerializeField] private int[] moneyModifiers = new int[6]; // Бонусы к деньгам для каждого значения
-    [SerializeField] private int[] attackModifiers = new int[6]; // Бонусы к атаке
-
-    public int LastRollResult { get; private set; }
+    // --- РЈР”РђР›Р•РќР« РЈРЎРўРђР Р•Р’РЁРР• РџРћР›РЇ ---
+    /*
+    [SerializeField] private int[] moneyModifiers = new int[6];
+    [SerializeField] private int[] attackModifiers = new int[6];
     public int LastMoneyModifier { get; private set; }
     public int LastAttackModifier { get; private set; }
+    */
 
-    public event System.Action<int> OnDiceRolled;
+    public int LastRollResult { get; private set; }
+    
+    // --- РќРћР’РћР• РЎРћР‘Р«РўРР•: РР·РґР°РµС‚ С‚РёРї СЃРѕР±С‹С‚РёСЏ ---
+    public static event Action<DiceEventType> OnDiceEvent;
+
+    // РЈР”РђР›Р•РќРћ: public event System.Action<int> OnDiceRolled; // Р—Р°РјРµРЅРµРЅРѕ РЅР° OnDiceEvent
 
     public void RollDice()
     {
-        // Генерация случайного результата
-        LastRollResult = Random.Range(minValue, maxValue + 1);
+        // Р‘СЂРѕСЃР°РµРј РєСѓР±РёРє (1d6)
+        LastRollResult = UnityEngine.Random.Range(minValue, maxValue + 1);
+        
+        // РћРїСЂРµРґРµР»СЏРµРј С‚РёРї СЃРѕР±С‹С‚РёСЏ
+        DiceEventType eventType = DetermineEventType(LastRollResult);
 
-        // Определение модификаторов
-        LastMoneyModifier = moneyModifiers[LastRollResult - 1];
-        LastAttackModifier = attackModifiers[LastRollResult - 1];
+        // РР·РґР°РµРј СЃРѕР±С‹С‚РёРµ
+        OnDiceEvent?.Invoke(eventType);
 
-        // Логирование
-        Debug.Log($"Бросок кубика: {LastRollResult}\n" +
-                 $"Модификатор денег: {LastMoneyModifier}\n" +
-                 $"Модификатор атаки: {LastAttackModifier}");
+        // Р›РѕРіРёСЂРѕРІР°РЅРёРµ
+        Debug.Log($"Р РµР·СѓР»СЊС‚Р°С‚ Р±СЂРѕСЃРєР°: {LastRollResult}. РЎРѕР±С‹С‚РёРµ: {eventType}");
+    }
 
-        OnDiceRolled?.Invoke(LastRollResult);
+    private DiceEventType DetermineEventType(int result)
+    {
+        if (result >= 1 && result <= 2)
+        {
+            return DiceEventType.Battle;
+        }
+        else if (result >= 3 && result <= 4)
+        {
+            return DiceEventType.ShadowInfluence;
+        }
+        else if (result >= 5 && result <= 6)
+        {
+            return DiceEventType.PeacefulPass;
+        }
+        else
+        {
+            // РќР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№
+            Debug.LogError($"РќРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ СЂРµР·СѓР»СЊС‚Р°С‚ РєСѓР±РёРєР°: {result}");
+            return DiceEventType.None;
+        }
     }
 }

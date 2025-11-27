@@ -18,4 +18,4 @@ MonoBehaviour:
   bargainBonus: 10
   capacityBonus: 0
   hireCost: 150
-  salaryPerTurn: 5
+  salaryPerTurn: 0
