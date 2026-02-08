@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f33d9a5e20c08144993d84e2e4915d00, type: 3}
+  m_Name: City5
+  m_EditorClassIdentifier: 
+  cityName: City5
+  cityGold: 1000
+  items:
+  - item: {fileID: 11400000, guid: feff5d497513c2844b7a54d1c6f2d88b, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 4
+  - item: {fileID: 11400000, guid: dbed6d9609f2a614b8baa972ce0de966, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 17
+  - item: {fileID: 11400000, guid: 36810beae67a03f459a4ba23ca6307a9, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 21
+  - item: {fileID: 11400000, guid: 46cdb3f89da35c747bc13bbf8a0bfb82, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 37
+  - item: {fileID: 11400000, guid: c1b795b085f74fc4aa0cc84bc1e5aa77, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 50
+  - item: {fileID: 11400000, guid: 818405fc6ea96874c9d56dd33d741948, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 10
+  - item: {fileID: 11400000, guid: 63e72ea2b84583e4b847b3eff956f1b6, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 17
+  - item: {fileID: 11400000, guid: 1c9865571f2a65248a6d443a86c713a7, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 34
+  - item: {fileID: 11400000, guid: f2a3332df1f8f1b408d7725dbf274a7d, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 37
+  - item: {fileID: 11400000, guid: bcdeb35deebe9a845b7764ac5dac67f1, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 68
+  - item: {fileID: 11400000, guid: b7b5b083b05035e49bb97f6124bccebd, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 8
+  - item: {fileID: 11400000, guid: 3b491be1c9f42bb4a97e811d919f7b9a, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 45
+  - item: {fileID: 11400000, guid: bc6f1bd4280d35c4db824eecfcdc8944, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 33
+  - item: {fileID: 11400000, guid: f2574acc5fb9f53499a4b2e4d1294b86, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 58
+  - item: {fileID: 11400000, guid: 62a213ed3f12f354086e114d72a8fa81, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 120
+  - item: {fileID: 11400000, guid: 6d7ab418bd1c82342b5c78ed3dd5dc96, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 750
+  - item: {fileID: 11400000, guid: 797a65c8403d10449bfcfdb23c60ddfa, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 300
+  - item: {fileID: 11400000, guid: e8fe444af98aa6843825f28ea25245b4, type: 2}
+    stock: 1
+    buyPrice: 100
+    sellPrice: 75
