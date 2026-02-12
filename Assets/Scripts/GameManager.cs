@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private BattleManager battleManager;
     [SerializeField] private CardManager cardManager;
     [SerializeField] private HandManager handManager;
+    [SerializeField] private PlayerStats playerStats;
     
 
     public GameState State { get; private set; } = GameState.Idle;
@@ -49,6 +50,7 @@ public class GameManager : MonoBehaviour
         var ui = battleManager.GetUIManager();
         ui.ShowBattleRollButton(false); // Вне боя не видна
         ui.ShowEndTurnButton(false);   // Скрыта, пока фишка не встанет на клетку
+        playerStats.Initialize();
     }
 
     // --------------------

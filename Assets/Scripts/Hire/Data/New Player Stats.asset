@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8ae591f857e7825409eb4235dd78f95b, type: 3}
   m_Name: New Player Stats
   m_EditorClassIdentifier: 
-  _attack: 7
-  _bargain: 0
-  _capacity: 98
+  _baseAttack: 10
+  _baseBargain: 0
+  _baseCapacity: 50

@@ -25,57 +25,68 @@ public class TopBarUI : MonoBehaviour
 
     private void OnEnable()
     {
+        // 1. Подписка на инвентарь (деньги и вес)
         if (playerInventory != null)
         {
-            // Подписываемся на события инвентаря
             playerInventory.OnMoneyChanged += UpdateUI;
             playerInventory.OnInventoryChanged += UpdateUI;
         }
 
-        // Подписка на выбор пути (статическое событие из CityPanel)
-        //CityPanel.OnPathSelected += HandlePathSelected;
+        // 2. ВАЖНО: Подписка на изменение характеристик (атака, торг, лимит)
+        if (playerStats != null)
+        {
+            playerStats.OnStatsChanged += UpdateUI;
+        }
     }
 
     private void OnDisable()
     {
+        // Отписываемся от всего
         if (playerInventory != null)
         {
-            // Отписываемся, чтобы избежать утечек памяти
             playerInventory.OnMoneyChanged -= UpdateUI;
             playerInventory.OnInventoryChanged -= UpdateUI;
         }
 
-        //CityPanel.OnPathSelected -= HandlePathSelected;
-    }
-
-    private void HandlePathSelected(PathCellInitializer path)
-    {
-        UpdateUI();
+        if (playerStats != null)
+        {
+            playerStats.OnStatsChanged -= UpdateUI;
+        }
     }
 
     public void OpenPanel()
     {
-        UpdateUI();
         if (panel != null) panel.SetActive(true);
+        UpdateUI();
     }
 
     public void UpdateUI()
     {
+        // Проверка на null, чтобы не было ошибок в консоли, если ссылки не назначены
         if (playerInventory == null || playerStats == null) return;
 
-        // 1. Обновление денег (берем напрямую из Money)
-        moneyText.text = playerInventory.Money.ToString();
+        // 1. Обновление денег
+        if (moneyText != null)
+            moneyText.text = playerInventory.Money.ToString();
 
-        // 2. Обновление атаки (Сумма игрока и всей команды)
-        int totalAttack = (teamSystem != null) ? teamSystem.GetTotalAttack() : playerStats.Attack;
-        attackText.text = totalAttack.ToString();
+        // 2. Обновление атаки (Берем актуальную сумму из команды, которая теперь учитывает playerStats.Attack)
+        if (attackText != null)
+        {
+            int totalAttack = (teamSystem != null) ? teamSystem.GetTotalAttack() : playerStats.Attack;
+            attackText.text = totalAttack.ToString();
+        }
     
-        // 3. Обновление грузоподъемности (показываем текущий вес / макс. вместимость)
-        // Если хочешь видеть просто общую емкость, оставь только playerStats.Capacity
-        int currentWeight = playerInventory.GetCurrentWeight();
-        capacityText.text = $"{currentWeight}/{playerStats.Capacity}";
+        // 3. Обновление грузоподъемности
+        if (capacityText != null)
+        {
+            int currentWeight = playerInventory.GetCurrentWeight();
+            capacityText.text = $"{currentWeight}/{playerStats.Capacity}";
+        }
 
         // 4. Обновление торга
-        bargainText.text = playerStats.Bargain.ToString();
+        if (bargainText != null)
+            bargainText.text = (playerStats.Bargain >= 0 ? "+" : "") + playerStats.Bargain.ToString();
+        
+        Debug.Log("[UI] Верхняя панель обновлена актуальными данными.");
     }
 }
