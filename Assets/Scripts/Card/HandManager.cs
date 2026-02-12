@@ -4,6 +4,7 @@ using System.Collections.Generic;
 public class HandManager : MonoBehaviour
 {
     public static HandManager Instance { get; private set; }
+    [SerializeField] private BattleManager battleManager;
 
     [Header("Настройки руки")]
     [SerializeField] private int maxHandSize = 5;
@@ -66,16 +67,15 @@ public class HandManager : MonoBehaviour
             case HandCardData.CardEffectType.Reroll:
                 if (GameManager.Instance.State == GameState.InBattle)
                 {
-                    Debug.Log("HandManager: Применен ПЕРЕБРОС");
-                    GameManager.Instance.RequestBattleDiceRoll();
-                    wasUsed = true;
-                }
-                else
-                {
-                    Debug.Log("HandManager: Переброс доступен только в бою!");
+                    // Удаляем карту
+                    currentHand.RemoveAt(index);
+                    RefreshUI();
+
+                    // Просим BattleManager бросить кубик ЗАНОВО
+                    // Это обновит lastDiceRoll и пересчитает предварительный итог
+                    battleManager.RequestNewRoll(); 
                 }
                 break;
-
             // Сюда добавим новые кейсы (AddBonus, GoldBoost и т.д.)
         }
 
@@ -115,24 +115,26 @@ public class HandManager : MonoBehaviour
 
     public void RefreshUI()
     {
-        if (handTransform == null || cardPrefab == null)
-        {
-            Debug.LogWarning("HandManager: Ссылки на UI не назначены в инспекторе.");
-            return;
-        }
+        if (handTransform == null || cardPrefab == null) return;
 
-        // Очищаем старые префабы
+        // 1. Проверяем состояние: если мы в городе, скрываем всю панель
+        bool isCity = GameManager.Instance.State == GameState.InCity;
+        handTransform.gameObject.SetActive(!isCity);
+
+        // Если мы в городе, дальше ничего рисовать не нужно
+        if (isCity) return;
+
+        // 2. Очищаем старые префабы
         foreach (Transform child in handTransform)
         {
             Destroy(child.gameObject);
         }
 
-        // Создаем новые префабы для текущих карт
+        // 3. Создаем новые объекты
         for (int i = 0; i < currentHand.Count; i++)
         {
             GameObject newCardObj = Instantiate(cardPrefab, handTransform);
             CardSlotUI slot = newCardObj.GetComponent<CardSlotUI>();
-            
             if (slot != null)
             {
                 slot.Setup(currentHand[i], i);

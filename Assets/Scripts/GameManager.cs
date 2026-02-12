@@ -83,6 +83,11 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log($"FSM: переход состояния {State} → {newState}");
         State = newState;
+        
+        if (HandManager.Instance != null)
+        {
+            HandManager.Instance.RefreshUI();
+        }
     }
 
     // --------------------

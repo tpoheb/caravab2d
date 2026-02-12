@@ -5,39 +5,32 @@ using System;
 
 public class BattleUIManager : MonoBehaviour
 {
-    // --- ИЗДАТЕЛЬ СОБЫТИЯ ---
-    
     [Header("Панель событий")]
-    [SerializeField] private TMP_Text eventDescriptionText; // Текст: "Мирный проход", "Засада!" и т.д.
+    [SerializeField] private TMP_Text eventDescriptionText; 
     [SerializeField] private Button endTurnButton;
     [SerializeField] private Button rollForAttackButton;
     
     [Header("UI Элементы Битвы")]
-    [SerializeField] private GameObject battlePanel; // Основная панель (ВСЕГДА АКТИВНА)
+    [SerializeField] private GameObject battlePanel; 
     [SerializeField] private TMP_Text enemyNameText; 
     [SerializeField] private TMP_Text requiredAttackText; 
     [SerializeField] private TMP_Text effectText; 
-    
+    [SerializeField] private TMP_Text resultText; // Изменил тип на TMP_Text для консистентности
+    [SerializeField] private Button finalizeButton;    
+
     [Header("Элементы Кубика")]
     [SerializeField] private TMP_Text diceResultText; 
 
     private void Start()
     {
-        // Панель активируется один раз при старте
         battlePanel.SetActive(true); 
-        
         ValidateReferences();
-        
-        // Устанавливаем начальное состояние
         SetIdleState();
-    }
-    
-    // --- ДОБАВЛЕНО: ЛОГИКА НАЖАТИЯ КНОПКИ ---
-   
 
-    /// <summary>
-    /// ДОБАВЛЕНО: Проверка назначенных ссылок.
-    /// </summary>
+        // Скрываем кнопку финализации в начале
+        EnableFinishBattleButton(false);
+    }
+
     private void ValidateReferences()
     {
         if (battlePanel == null) Debug.LogError($"{nameof(battlePanel)} не назначен!");
@@ -45,158 +38,142 @@ public class BattleUIManager : MonoBehaviour
         if (requiredAttackText == null) Debug.LogError($"{nameof(requiredAttackText)} не назначен!");
         if (effectText == null) Debug.LogError($"{nameof(effectText)} не назначен!");
         if (diceResultText == null) Debug.LogError($"{nameof(diceResultText)} не назначен!");
+        if (finalizeButton == null) Debug.LogWarning("Кнопка 'Finalize' не назначена!");
     }
 
-
-    // --- НОВЫЙ МЕТОД ---
-    /// <summary>
-    /// Устанавливает UI в состояние ожидания, когда битва не активна.
-    /// </summary>
     public void SetIdleState()
     {
         enemyNameText.text = "Ожидание события...";
         requiredAttackText.text = "";
         effectText.text = "";
         diceResultText.text = "";
+        EnableFinishBattleButton(false);
     }
 
-    /// <summary>
-    /// (ШАГ 1) Отображает вызов битвы.
-    /// </summary>
     public void DisplayChallenge(BattleCardData card)
     {
         if (card == null)
         {
-            SetIdleState(); // Возврат к ожиданию, если карты нет
+            SetIdleState();
             return;
         }
 
-        // Заполнение полей вызова
         enemyNameText.text = $"Битва: {card.enemyName}";
         requiredAttackText.text = $"Требуемая Атака: {card.requiredAttack}";
         effectText.text = "Бросьте кубик!"; 
         diceResultText.text = "Базовая атака: ...";
-        
+        EnableFinishBattleButton(false);
     }
     
     public void DisplayDiceRoll(int result, int baseAttack)
     {
-        // Отображение базовой атаки игрока + результат кубика
         diceResultText.text = $"Базовая атака: {baseAttack}\nКубик: <color=yellow>+{result}</color>";
-        effectText.text = "Расчет результата...";
+        effectText.text = "Ожидание решения...";
     }
 
-    /// <summary>
-    /// (ШАГ 2) Отображает ФИНАЛЬНЫЙ результат битвы.
-    /// </summary>
-    public void DisplayBattleResult(bool victory, BattleCardData card, int playerFinalAttack)
+    // --- НОВЫЙ МЕТОД: Предварительный результат ---
+    public void ShowPreliminaryResult(bool wouldWin)
     {
-        string resultMessage;
-        int moneyChange = victory ? card.rewardMoney : card.penaltyMoney;
-        string moneyString = moneyChange.ToString("+#;-#;0");
-        
-        // Отображение финальной атаки игрока
-        requiredAttackText.text = $"Ваша Атака: {playerFinalAttack} (Требуется: {card.requiredAttack})";
-
-        if (victory)
+        if (wouldWin)
         {
-            resultMessage = $"<color=green>ПОБЕДА!</color>\nНаграда: {moneyString} фелсов.";
+            effectText.text = "<color=green>СИЛ ДОСТАТОЧНО!</color>\nНажмите 'Принять результат'.";
         }
         else
         {
-            resultMessage = $"<color=red>ПОРАЖЕНИЕ!</color>\nШтраф: {Mathf.Abs(moneyChange)} фелсов.";
+            effectText.text = "<color=red>СИЛ НЕ ХВАТАЕТ!</color>\nИспользуйте карту или примите поражение.";
         }
+    }
+
+    // --- НОВЫЙ МЕТОД: Управление кнопкой завершения ---
+    public void EnableFinishBattleButton(bool isActive)
+    {
+        if (finalizeButton != null)
+        {
+            finalizeButton.gameObject.SetActive(isActive);
+        }
+    }
+
+    public void DisplayBattleResult(bool victory, BattleCardData card, int playerFinalAttack)
+    {
+        int moneyChange = victory ? card.rewardMoney : card.penaltyMoney;
+        string moneyString = moneyChange.ToString("+#;-#;0");
+        
+        requiredAttackText.text = $"Ваша Атака: {playerFinalAttack} (Требуется: {card.requiredAttack})";
+
+        string resultMessage = victory 
+            ? $"<color=green>ПОБЕДА!</color>\nНаграда: {moneyString} фелсов." 
+            : $"<color=red>ПОРАЖЕНИЕ!</color>\nШтраф: {Mathf.Abs(moneyChange)} фелсов.";
 
         effectText.text = resultMessage;
-        
     }
+
+    public void UpdateBattleResultUI(string resultTextContent)
+    {
+        if (eventDescriptionText != null)
+            eventDescriptionText.text = resultTextContent; 
+        
+        ShowBattleRollButton(false);
+        EnableFinishBattleButton(false); // Прячем кнопку финала после завершения
+        ShowEndTurnButton(true);
+    }
+
+    // --- Остальные методы без изменений ---
     public Button EndTurnButton => endTurnButton;
-    /// <summary>
-    /// Выводит описание результата броска на экран.
-    /// </summary>
+
     public void DisplayEventInfo(DiceEventType type, int diceValue)
     {
         string message = "";
-
         switch (type)
         {
             case DiceEventType.Battle:
-                message = $"Выпало {diceValue}: Впереди враги! Приготовьтесь к бою.";
+                message = $"Выпало {diceValue}: Впереди враги!";
                 break;
             case DiceEventType.ShadowInfluence:
-                message = $"Выпало {diceValue}: Тень сгущается... Вы тянете карту судьбы.";
+                message = $"Выпало {diceValue}: Тень сгущается...";
                 break;
             case DiceEventType.PeacefulPass:
-                message = $"Выпало {diceValue}: Путь чист. Можно продолжать движение.";
+                message = $"Выпало {diceValue}: Путь чист.";
                 break;
         }
 
         if (eventDescriptionText != null)
             eventDescriptionText.text = message;
 
-        // Активируем кнопку "Завершить ход", чтобы игрок мог нажать её и пойти дальше
         if (endTurnButton != null)
             endTurnButton.interactable = true;
     }
+
     public void ShowBattleRollButton(bool isVisible)
     {
         if (rollForAttackButton != null)
-        {
             rollForAttackButton.gameObject.SetActive(isVisible);
-            Debug.Log($"UI: Кнопка броска атаки {(isVisible ? "ПОКАЗАНА" : "СКРЫТА")}");
-        }
     }
+
     public void ShowEndTurnButton(bool isVisible)
     {
         if (endTurnButton != null)
-        {
             endTurnButton.gameObject.SetActive(isVisible);
-            Debug.Log($"UI: Кнопка завершения хода {(isVisible ? "ПОКАЗАНА" : "СКРЫТА")}");
-        }
     }
-    public void UpdateBattleResultUI(string resultText)
-    {
-    if (eventDescriptionText != null)
-        eventDescriptionText.text = resultText; 
-    ShowBattleRollButton(false); // Прячем кнопку атаки
-    ShowEndTurnButton(true);     // Показываем кнопку завершения хода
-    }
+
     public void DisplayShadowCard(ShadowCardData card)
     {
         if (card == null) return;
-
-        // Используем уже имеющийся eventDescriptionText
         string color = card.value >= 0 ? "green" : "red";
         string sign = card.value >= 0 ? "+" : "";
-    
-        string message = $"<b><color=purple>ВЛИЯНИЕ ТЕНИ:</color></b> {card.cardName}\n";
-        message += $"{card.description}\n";
+        string message = $"<b><color=purple>ВЛИЯНИЕ ТЕНИ:</color></b> {card.cardName}\n{card.description}\n";
         message += $"Эффект: <color={color}>{sign}{card.value} {card.effectType}</color>";
-    
         if (card.isTemporary) message += $" (на {card.duration} ходов)";
 
-        if (eventDescriptionText != null)
-            eventDescriptionText.text = message;
-
-        ShowEndTurnButton(true); // Даем игроку нажать "Завершить ход" после прочтения
+        if (eventDescriptionText != null) eventDescriptionText.text = message;
+        ShowEndTurnButton(true);
     }
+
     public void ClearEventText()
     {
-        // Очистка основного описания события
-        if (eventDescriptionText != null) 
-            eventDescriptionText.text = "";
-
-        // Очистка данных карточки битвы
-        if (enemyNameText != null) 
-            enemyNameText.text = "";
-
-        if (requiredAttackText != null) 
-            requiredAttackText.text = "";
-
-        // Очистка результата броска кубика (число и бонус)
-        if (diceResultText != null) 
-            diceResultText.text = "";
-
-        Debug.Log("UI: Все текстовые поля события очищены.");
+        if (eventDescriptionText != null) eventDescriptionText.text = "";
+        if (enemyNameText != null) enemyNameText.text = "";
+        if (requiredAttackText != null) requiredAttackText.text = "";
+        if (diceResultText != null) diceResultText.text = "";
+        EnableFinishBattleButton(false);
     }
 }

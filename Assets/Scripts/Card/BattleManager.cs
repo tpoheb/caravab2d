@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 
+
 public class BattleManager : MonoBehaviour
 {
     public event Action OnBattleWon;
@@ -13,6 +14,7 @@ public class BattleManager : MonoBehaviour
     // Ссылка на текущую карту битвы
     private BattleCardData _currentCard;
     private int _currentEnemyAttack;
+    private int lastDiceRoll;
 
     public BattleUIManager GetUIManager() => uiManager;
 
@@ -40,16 +42,30 @@ public class BattleManager : MonoBehaviour
     {
         if (_currentCard == null) return;
 
+        lastDiceRoll = diceValue; // Запоминаем бросок
         int playerBaseAttack = teamSystem.GetTotalAttack();
         int totalPlayerAttack = playerBaseAttack + diceValue;
 
-        // Выводим информацию о броске в специальное поле кубика
+        // Визуализируем бросок
         uiManager.DisplayDiceRoll(diceValue, playerBaseAttack);
 
-        // Определяем исход
+        // ОПРЕДЕЛЯЕМ ПРЕДВАРИТЕЛЬНЫЙ ИСХОД
+        bool wouldWin = totalPlayerAttack >= _currentEnemyAttack;
+
+        // ВЫЗЫВАЕМ ТЕ САМЫЕ МЕТОДЫ (Ошибки исчезнут после сохранения BattleUIManager)
+        uiManager.ShowPreliminaryResult(wouldWin);
+        uiManager.EnableFinishBattleButton(true); 
+    }
+
+// Этот метод ты должен назначить на OnClick кнопки finalizeButton в инспекторе
+    public void FinalizeBattle()
+    {
+        int playerBaseAttack = teamSystem.GetTotalAttack();
+        int totalPlayerAttack = playerBaseAttack + lastDiceRoll;
+
         bool isVictory = totalPlayerAttack >= _currentEnemyAttack;
 
-        // Вызываем финальный UI результат (в нем уже заложена логика текста награды/штрафа)
+        uiManager.EnableFinishBattleButton(false);
         uiManager.DisplayBattleResult(isVictory, _currentCard, totalPlayerAttack);
 
         if (isVictory) Win();
@@ -71,7 +87,20 @@ public class BattleManager : MonoBehaviour
 
         OnBattleWon?.Invoke();
     }
+    
+    public void RequestNewRoll()
+    {
+        // 1. Скрываем кнопку принятия результата, так как мы перебрасываем
+        uiManager.EnableFinishBattleButton(false);
 
+        // 2. Генерируем новое значение (от 1 до 6)
+        int newDiceValue = UnityEngine.Random.Range(1, 7);
+
+        Debug.Log($"[Battle] Переброс! Новое значение кубика: {newDiceValue}");
+
+        // 3. Вызываем существующую логику расчета битвы с новым значением
+        ExecuteBattle(newDiceValue);
+    }
     private void Lose()
     {
         // Берем штраф напрямую из карточки (используем Mathf.Abs, чтобы случайно не прибавить деньги, если в SO записано отрицательное число)
