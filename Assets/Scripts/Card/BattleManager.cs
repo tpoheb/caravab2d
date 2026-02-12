@@ -58,10 +58,17 @@ public class BattleManager : MonoBehaviour
 
     private void Win()
     {
-        // Берем награду напрямую из карточки
         teamSystem.AddMoney(_currentCard.rewardMoney);
-        // Выдаем карту руки в качестве награды
-        HandManager.Instance.GiveRandomReward();
+
+        if (HandManager.Instance != null)
+        {
+            HandManager.Instance.GiveRandomReward();
+        }
+        else
+        {
+            Debug.LogError("BattleManager: HandManager.Instance не найден! Проверь, есть ли скрипт на сцене.");
+        }
+
         OnBattleWon?.Invoke();
     }
 

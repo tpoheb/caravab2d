@@ -12844,7 +12844,6 @@ GameObject:
   - component: {fileID: 973928746}
   - component: {fileID: 973928745}
   - component: {fileID: 973928744}
-  - component: {fileID: 973928742}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -12869,25 +12868,6 @@ Transform:
   - {fileID: 1373296202}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &973928742
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 973928740}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 43af6e25bca9d4d49994cac86b3af85b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  deck:
-  - {fileID: 11400000, guid: decffb3a32004304bbdd41ba89dc8986, type: 2}
-  - {fileID: 11400000, guid: 3af8db0d41824a64ea88e3a0b9e40d03, type: 2}
-  - {fileID: 11400000, guid: afec2214b133c784fac846da450ffcb2, type: 2}
-  discardPile: []
-  handSize: 5
-  CurrentHand: []
 --- !u!114 &973928744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -17314,8 +17294,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 12
-  m_fontSizeBase: 12
+  m_fontSize: 24
+  m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -24393,6 +24373,7 @@ RectTransform:
   - {fileID: 748714972}
   - {fileID: 108987382}
   - {fileID: 349972366}
+  - {fileID: 2133158012}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -28083,8 +28064,10 @@ GameObject:
   - component: {fileID: 2041521374}
   - component: {fileID: 2041521375}
   - component: {fileID: 2041521376}
+  - component: {fileID: 2041521377}
+  - component: {fileID: 2041521378}
   m_Layer: 0
-  m_Name: Manager
+  m_Name: Managers
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28173,6 +28156,7 @@ MonoBehaviour:
   diceSystem: {fileID: 973928745}
   battleManager: {fileID: 2041521376}
   cardManager: {fileID: 2041521375}
+  handManager: {fileID: 2041521377}
 --- !u!114 &2041521375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28186,6 +28170,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardManager
   gameManager: {fileID: 2041521374}
+  allShadowCards:
+  - {fileID: 11400000, guid: a705059cedca37441b90902a46c0fdc8, type: 2}
+  - {fileID: 11400000, guid: 4f63010065ea4884384fb884530eb2a2, type: 2}
+  - {fileID: 11400000, guid: 2a45fac0afa4e8d4893e18c545a0fb1a, type: 2}
+  - {fileID: 11400000, guid: 4cf7c9a4b29ef8e43b891371dfdcd03c, type: 2}
+  - {fileID: 11400000, guid: 973f9b93c509ee5479bcdc471e1ea767, type: 2}
+  - {fileID: 11400000, guid: b22b905732e7a2c4da7745c070fdecdc, type: 2}
+  uiManager: {fileID: 1836032681}
+  effectManager: {fileID: 2041521378}
+  allBattleCards:
+  - {fileID: 11400000, guid: e033656835eed614382096a36be7c66c, type: 2}
+  - {fileID: 11400000, guid: 638df7f93d3e0e648b35a1ec2a5e2581, type: 2}
+  - {fileID: 11400000, guid: 5aadb84b97c42254abc3f8573c73ec82, type: 2}
+  - {fileID: 11400000, guid: 506528bbd045c6f41ab764a98dd8a0df, type: 2}
+  - {fileID: 11400000, guid: 053704f590a92fd4780d19ef788f0585, type: 2}
+  - {fileID: 11400000, guid: 8710b7a40532f644f9a0c1749d623aff, type: 2}
+  - {fileID: 11400000, guid: d1de86461dea9fd4eb420a9385343624, type: 2}
 --- !u!114 &2041521376
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -28200,8 +28201,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BattleManager
   teamSystem: {fileID: 2041521370}
   uiManager: {fileID: 1836032681}
-  rewardMoney: 100
-  penaltyMoney: 50
+--- !u!114 &2041521377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041521369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 53ebf6bdfae59844e98d6ab0e4ba5ecc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandManager
+  maxHandSize: 5
+  currentHand:
+  - {fileID: 11400000, guid: dc9a07f317096c64b96265ccde607ad1, type: 2}
+  rewardPool:
+  - {fileID: 11400000, guid: dc9a07f317096c64b96265ccde607ad1, type: 2}
+  handTransform: {fileID: 0}
+  cardPrefab: {fileID: 0}
+--- !u!114 &2041521378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041521369}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52e795c952693424ea8e9b55daee9259, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShadowEffectManager
+  playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
+  playerInventory: {fileID: 2041521372}
 --- !u!1001 &2045621562
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29449,6 +29481,81 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3903557657475554374, guid: 22418a4d1fc1f3a4a881346c6bd613d0, type: 3}
   m_PrefabInstance: {fileID: 2130037064}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2133158011
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2133158012}
+  - component: {fileID: 2133158014}
+  - component: {fileID: 2133158013}
+  m_Layer: 5
+  m_Name: HandPanel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2133158012
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2133158011}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1836032679}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -216.87556, y: -200}
+  m_SizeDelta: {x: -458.2372, y: -428.5043}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2133158013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2133158011}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.392}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &2133158014
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2133158011}
+  m_CullTransparentMesh: 1
 --- !u!1 &2135638681
 GameObject:
   m_ObjectHideFlags: 0

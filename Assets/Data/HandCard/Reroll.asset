@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HandCardData
   cardName: Reroll
   description: ',kf,fk'
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 5bd934cc7756d1248bae35bbc6a95a4d, type: 3}
   category: 0
   effectType: 0
   value: 1
