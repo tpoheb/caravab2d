@@ -98,6 +98,7 @@ public class GameManager : MonoBehaviour
 
         var ui = battleManager.GetUIManager();
         ui.ShowEndTurnButton(false);
+        ui.ShowDiceButton(true);  // Восстанавливаем кубик для следующей клетки
         ui.ClearEventText();
 
         SetState(GameState.Moving);
@@ -213,7 +214,9 @@ public class GameManager : MonoBehaviour
     private void OnEventResolved()
     {
         SetState(GameState.ResolvingEvent);
-        battleManager.GetUIManager().ShowEndTurnButton(true);
+        var ui = battleManager.GetUIManager();
+        ui.ShowEndTurnButton(true);
+        ui.ShowDiceButton(false); // Кубик недоступен пока ход не завершён
     }
 
     // Оставлен для обратной совместимости с CardManager

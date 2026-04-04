@@ -7,11 +7,11 @@ public class BattleUIManager : MonoBehaviour
     [Header("Панель событий")]
     [SerializeField] private TMP_Text eventDescriptionText;
     [SerializeField] private Button endTurnButton;
-    // rollForAttackButton удалён — автобросок не требует кнопки
-    // finalizeButton удалён — финализация автоматическая
+    [SerializeField] private Button diceButton; // Общая кнопка броска кубика
 
     [Header("UI Элементы Битвы")]
     [SerializeField] private GameObject battlePanel;
+    [SerializeField] private GameObject cardPanel; // GameObject "Card" из иерархии
     [SerializeField] private TMP_Text enemyNameText;
     [SerializeField] private TMP_Text requiredAttackText;
     [SerializeField] private TMP_Text effectText;
@@ -34,6 +34,8 @@ public class BattleUIManager : MonoBehaviour
         if (effectText == null)         Debug.LogError($"{nameof(effectText)} не назначен!");
         if (diceResultText == null)     Debug.LogError($"{nameof(diceResultText)} не назначен!");
         if (endTurnButton == null)      Debug.LogError($"{nameof(endTurnButton)} не назначен!");
+        if (cardPanel == null)          Debug.LogWarning($"{nameof(cardPanel)} не назначен!");
+        if (diceButton == null)         Debug.LogWarning($"{nameof(diceButton)} не назначен!");
     }
 
     // --------------------
@@ -47,16 +49,14 @@ public class BattleUIManager : MonoBehaviour
         effectText.text         = "";
         diceResultText.text     = "";
         ShowEndTurnButton(false);
+        ShowDiceButton(true); // В начале хода кнопка броска доступна
+        ShowCardPanel(false);  // Карточка врага скрыта вне боя
     }
 
     // --------------------
     // БОЙ
     // --------------------
 
-    /// <summary>
-    /// Показывает данные врага. Вызывается сразу при входе в бой,
-    /// до автоброска кубика.
-    /// </summary>
     public void DisplayChallenge(BattleCardData card)
     {
         if (card == null) { SetIdleState(); return; }
@@ -65,20 +65,14 @@ public class BattleUIManager : MonoBehaviour
         requiredAttackText.text = $"Требуемая атака: {card.requiredAttack}";
         effectText.text         = "Бросаем кубик...";
         diceResultText.text     = "";
+        ShowCardPanel(true);   // Показываем карточку врага только в бою
     }
 
-    /// <summary>
-    /// Показывает результат броска кубика.
-    /// </summary>
     public void DisplayDiceRoll(int diceResult, int baseAttack)
     {
         diceResultText.text = $"Базовая атака: {baseAttack}\nКубик: <color=yellow>+{diceResult}</color>";
     }
 
-    /// <summary>
-    /// Показывает предварительный итог — победа или поражение.
-    /// Игрок видит результат и может сыграть карту переброса.
-    /// </summary>
     public void ShowPreliminaryResult(bool wouldWin)
     {
         effectText.text = wouldWin
@@ -86,16 +80,13 @@ public class BattleUIManager : MonoBehaviour
             : "<color=red>СИЛ НЕ ХВАТАЕТ!</color> Сыграйте карту или завершите ход.";
     }
 
-    /// <summary>
-    /// Показывает финальный итог боя с наградой или штрафом.
-    /// </summary>
     public void DisplayBattleResult(bool victory, BattleCardData card, int playerFinalAttack)
     {
         requiredAttackText.text = $"Ваша атака: {playerFinalAttack} (требуется: {card.requiredAttack})";
 
-        int moneyChange   = victory ? card.rewardMoney : card.penaltyMoney;
-        string moneyStr   = moneyChange.ToString("+#;-#;0");
-        effectText.text   = victory
+        int moneyChange = victory ? card.rewardMoney : card.penaltyMoney;
+        string moneyStr = moneyChange.ToString("+#;-#;0");
+        effectText.text = victory
             ? $"<color=green>ПОБЕДА!</color> Награда: {moneyStr} фелсов."
             : $"<color=red>ПОРАЖЕНИЕ!</color> Штраф: {Mathf.Abs(moneyChange)} фелсов.";
     }
@@ -144,6 +135,22 @@ public class BattleUIManager : MonoBehaviour
             endTurnButton.gameObject.SetActive(isVisible);
     }
 
+    public void ShowCardPanel(bool isVisible)
+    {
+        if (cardPanel != null)
+            cardPanel.SetActive(isVisible);
+    }
+
+    /// <summary>
+    /// Управляет видимостью кнопки броска кубика.
+    /// Скрывается при входе в ResolvingEvent, возвращается при новом ходе.
+    /// </summary>
+    public void ShowDiceButton(bool isVisible)
+    {
+        if (diceButton != null)
+            diceButton.gameObject.SetActive(isVisible);
+    }
+
     public void ClearEventText()
     {
         if (eventDescriptionText != null) eventDescriptionText.text = "";
@@ -151,17 +158,16 @@ public class BattleUIManager : MonoBehaviour
         if (requiredAttackText != null)   requiredAttackText.text   = "";
         if (diceResultText != null)       diceResultText.text       = "";
         if (effectText != null)           effectText.text           = "";
+        ShowCardPanel(false);  // Прячем карточку врага после завершения хода
     }
 
     // --------------------
     // ЗАГЛУШКИ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ
-    // Оставлены чтобы не ломать компиляцию если где-то в сцене
-    // есть старые OnClick-ссылки. Удалить после чистки инспектора.
     // --------------------
 
-    [System.Obsolete("Кнопка броска удалена. Метод-заглушка для совместимости.")]
+    [System.Obsolete("Используй ShowDiceButton(). Заглушка для совместимости.")]
     public void ShowBattleRollButton(bool isVisible) { }
 
-    [System.Obsolete("Кнопка финализации удалена. Метод-заглушка для совместимости.")]
+    [System.Obsolete("Кнопка финализации удалена. Заглушка для совместимости.")]
     public void EnableFinishBattleButton(bool isActive) { }
 }
