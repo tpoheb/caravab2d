@@ -4,18 +4,19 @@ using System.Collections.Generic;
 public class HandManager : MonoBehaviour
 {
     public static HandManager Instance { get; private set; }
+
     [SerializeField] private BattleManager battleManager;
 
     [Header("Настройки руки")]
     [SerializeField] private int maxHandSize = 5;
     [SerializeField] private List<HandCardData> currentHand = new List<HandCardData>();
-    
-    [Header("Пул наград (заполнить в инспекторе)")]
+
+    [Header("Пул наград")]
     [SerializeField] private List<HandCardData> rewardPool = new List<HandCardData>();
 
-    [Header("UI Интеграция")]
-    [SerializeField] private Transform handTransform; // Объект с Horizontal Layout Group
-    [SerializeField] private GameObject cardPrefab;    // Префаб карты с компонентом CardSlotUI
+    [Header("UI")]
+    [SerializeField] private Transform handTransform;
+    [SerializeField] private GameObject cardPrefab;
 
     private void Awake()
     {
@@ -27,10 +28,7 @@ public class HandManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
-    {
-        RefreshUI();
-    }
+    private void Start() => RefreshUI();
 
     // --------------------
     // ЛОГИКА КАРТ
@@ -42,103 +40,96 @@ public class HandManager : MonoBehaviour
 
         if (currentHand.Count >= maxHandSize)
         {
-            Debug.LogWarning("HandManager: Рука полна! Сбросьте карту.");
-            // Тут можно вызвать UI-сообщение для игрока
+            Debug.LogWarning("HandManager: Рука полна!");
             return false;
         }
 
         currentHand.Add(card);
         Debug.Log($"HandManager: Добавлена карта {card.cardName}");
-        
         RefreshUI();
         return true;
     }
 
+    /// <summary>
+    /// Вызывается при нажатии игрока на карту в руке.
+    /// Карты можно играть в любой момент хода (ResolvingEvent или InBattle).
+    /// </summary>
     public void UseCard(int index)
     {
         if (index < 0 || index >= currentHand.Count) return;
 
-        HandCardData card = currentHand[index];
-        bool wasUsed = false;
+        GameState state = GameManager.Instance.State;
 
-        // Обработка эффектов
+        // Карты руки доступны в бою и после его завершения (пока ход не закрыт)
+        bool canUseCard = state == GameState.InBattle || state == GameState.ResolvingEvent;
+        if (!canUseCard)
+        {
+            Debug.LogWarning($"HandManager: Карту нельзя сыграть в состоянии {state}");
+            return;
+        }
+
+        HandCardData card = currentHand[index];
+
         switch (card.effectType)
         {
             case HandCardData.CardEffectType.Reroll:
-                if (GameManager.Instance.State == GameState.InBattle)
-                {
-                    // Удаляем карту
-                    currentHand.RemoveAt(index);
-                    RefreshUI();
-
-                    // Просим BattleManager бросить кубик ЗАНОВО
-                    // Это обновит lastDiceRoll и пересчитает предварительный итог
-                    battleManager.RequestNewRoll(); 
-                }
+                // Удаляем карту из руки и запрашиваем переброс
+                currentHand.RemoveAt(index);
+                RefreshUI();
+                battleManager.RequestNewRoll();
                 break;
-            // Сюда добавим новые кейсы (AddBonus, GoldBoost и т.д.)
-        }
 
-        if (wasUsed)
-        {
-            currentHand.RemoveAt(index);
-            RefreshUI();
+            // Сюда добавляем новые эффекты по мере расширения:
+            // case HandCardData.CardEffectType.AddBonus:
+            //     ApplyAttackBonus(card.value);
+            //     currentHand.RemoveAt(index);
+            //     RefreshUI();
+            //     break;
         }
     }
 
     public void DiscardCard(int index)
     {
-        if (index >= 0 && index < currentHand.Count)
-        {
-            Debug.Log($"HandManager: Сброшена карта {currentHand[index].cardName}");
-            currentHand.RemoveAt(index);
-            RefreshUI();
-        }
+        if (index < 0 || index >= currentHand.Count) return;
+
+        Debug.Log($"HandManager: Сброшена карта {currentHand[index].cardName}");
+        currentHand.RemoveAt(index);
+        RefreshUI();
     }
 
-    // Метод для BattleManager
     public void GiveRandomReward()
     {
         if (rewardPool == null || rewardPool.Count == 0)
         {
-            Debug.LogError("HandManager: Список Reward Pool пуст!");
+            Debug.LogError("HandManager: Reward Pool пуст!");
             return;
         }
 
-        int randomIndex = Random.Range(0, rewardPool.Count);
-        AddCard(rewardPool[randomIndex]);
+        AddCard(rewardPool[Random.Range(0, rewardPool.Count)]);
     }
 
     // --------------------
-    // ОБНОВЛЕНИЕ UI
+    // UI
     // --------------------
 
     public void RefreshUI()
     {
         if (handTransform == null || cardPrefab == null) return;
 
-        // 1. Проверяем состояние: если мы в городе, скрываем всю панель
+        // Скрываем руку в городе
         bool isCity = GameManager.Instance.State == GameState.InCity;
         handTransform.gameObject.SetActive(!isCity);
-
-        // Если мы в городе, дальше ничего рисовать не нужно
         if (isCity) return;
 
-        // 2. Очищаем старые префабы
+        // Пересоздаём карты
         foreach (Transform child in handTransform)
-        {
             Destroy(child.gameObject);
-        }
 
-        // 3. Создаем новые объекты
         for (int i = 0; i < currentHand.Count; i++)
         {
-            GameObject newCardObj = Instantiate(cardPrefab, handTransform);
-            CardSlotUI slot = newCardObj.GetComponent<CardSlotUI>();
-            if (slot != null)
-            {
-                slot.Setup(currentHand[i], i);
-            }
+            GameObject obj = Instantiate(cardPrefab, handTransform);
+            CardSlotUI slot = obj.GetComponent<CardSlotUI>();
+            slot?.Setup(currentHand[i], i);
         }
     }
 }

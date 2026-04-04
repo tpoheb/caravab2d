@@ -1,7 +1,6 @@
 using UnityEngine;
 using System;
 
-
 public class BattleManager : MonoBehaviour
 {
     public event Action OnBattleWon;
@@ -11,100 +10,126 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private TeamSystem teamSystem;
     [SerializeField] private BattleUIManager uiManager;
 
-    // Ссылка на текущую карту битвы
     private BattleCardData _currentCard;
     private int _currentEnemyAttack;
-    private int lastDiceRoll;
+    private int _lastDiceRoll;
+
+    // Флаг: награда/штраф ещё не применялись в этом бою
+    private bool _battleResolved = false;
 
     public BattleUIManager GetUIManager() => uiManager;
 
-    // Теперь принимаем карточку как параметр
+    // --------------------
+    // ПОДГОТОВКА БОЯ
+    // --------------------
+
+    /// <summary>
+    /// Вызывается из GameManager при старте боя.
+    /// Сбрасывает флаг, показывает врага. Кубик летит автоматически следом.
+    /// </summary>
     public void PrepareBattle(BattleCardData card)
     {
         if (card == null)
         {
-            Debug.LogError("BattleManager: Попытка начать бой без карточки!");
+            Debug.LogError("BattleManager: карточка боя не передана!");
             return;
         }
 
-        _currentCard = card;
-        // Берем атаку из данных карточки (можно добавить небольшой рандом, если хочешь)
+        _currentCard        = card;
         _currentEnemyAttack = card.requiredAttack;
-        
-        Debug.Log($"BattleManager: Битва с {card.enemyName}! Требуемая атака: {_currentEnemyAttack}");
-        
-        // Показываем вызов в UI (имя врага, нужная атака)
+        _lastDiceRoll       = 0;
+        _battleResolved     = false;
+
+        Debug.Log($"BattleManager: бой с {card.enemyName}, требуемая атака: {_currentEnemyAttack}");
         uiManager.DisplayChallenge(card);
-        uiManager.ShowBattleRollButton(true);
     }
 
+    // --------------------
+    // БРОСОК КУБИКА
+    // --------------------
+
+    /// <summary>
+    /// Вызывается при каждом броске (первичном или перебросе через карту).
+    /// Только обновляет UI — награда/штраф НЕ применяются здесь.
+    /// </summary>
     public void ExecuteBattle(int diceValue)
     {
         if (_currentCard == null) return;
 
-        lastDiceRoll = diceValue; // Запоминаем бросок
-        int playerBaseAttack = teamSystem.GetTotalAttack();
-        int totalPlayerAttack = playerBaseAttack + diceValue;
+        _lastDiceRoll = diceValue;
 
-        // Визуализируем бросок
-        uiManager.DisplayDiceRoll(diceValue, playerBaseAttack);
+        int playerBase  = teamSystem.GetTotalAttack();
+        int playerTotal = playerBase + diceValue;
+        bool wouldWin   = playerTotal >= _currentEnemyAttack;
 
-        // ОПРЕДЕЛЯЕМ ПРЕДВАРИТЕЛЬНЫЙ ИСХОД
-        bool wouldWin = totalPlayerAttack >= _currentEnemyAttack;
-
-        // ВЫЗЫВАЕМ ТЕ САМЫЕ МЕТОДЫ (Ошибки исчезнут после сохранения BattleUIManager)
+        uiManager.DisplayDiceRoll(diceValue, playerBase);
         uiManager.ShowPreliminaryResult(wouldWin);
-        uiManager.EnableFinishBattleButton(true); 
+
+        // Показываем предварительный результат.
+        // Игрок решает: сыграть карту переброса или нажать "Завершить ход".
+        // Деньги НЕ меняются до FinalizeBattle().
     }
 
-// Этот метод ты должен назначить на OnClick кнопки finalizeButton в инспекторе
+    /// <summary>
+    /// Переброс через карту из руки.
+    /// Пересчитывает UI, но не применяет награду/штраф повторно.
+    /// </summary>
+    public void RequestNewRoll()
+    {
+        int newDice = UnityEngine.Random.Range(1, 7);
+        Debug.Log($"BattleManager: переброс -> {newDice}");
+        ExecuteBattle(newDice);
+    }
+
+    // --------------------
+    // ФИНАЛИЗАЦИЯ (один раз за бой)
+    // --------------------
+
+    /// <summary>
+    /// Вызывается из GameManager.RequestEndTurn() — ровно один раз за бой.
+    /// Применяет награду или штраф по последнему значению кубика.
+    /// </summary>
     public void FinalizeBattle()
     {
-        int playerBaseAttack = teamSystem.GetTotalAttack();
-        int totalPlayerAttack = playerBaseAttack + lastDiceRoll;
+        if (_currentCard == null)
+        {
+            Debug.LogWarning("BattleManager: FinalizeBattle вызван без активного боя.");
+            return;
+        }
 
-        bool isVictory = totalPlayerAttack >= _currentEnemyAttack;
+        if (_battleResolved)
+        {
+            Debug.LogWarning("BattleManager: FinalizeBattle вызван повторно — проигнорировано.");
+            return;
+        }
 
-        uiManager.EnableFinishBattleButton(false);
-        uiManager.DisplayBattleResult(isVictory, _currentCard, totalPlayerAttack);
+        _battleResolved = true;
+
+        int playerTotal = teamSystem.GetTotalAttack() + _lastDiceRoll;
+        bool isVictory  = playerTotal >= _currentEnemyAttack;
+
+        uiManager.DisplayBattleResult(isVictory, _currentCard, playerTotal);
 
         if (isVictory) Win();
-        else Lose();
+        else           Lose();
     }
+
+    // --------------------
+    // ИСХОДЫ
+    // --------------------
 
     private void Win()
     {
         teamSystem.AddMoney(_currentCard.rewardMoney);
-
-        if (HandManager.Instance != null)
-        {
-            HandManager.Instance.GiveRandomReward();
-        }
-        else
-        {
-            Debug.LogError("BattleManager: HandManager.Instance не найден! Проверь, есть ли скрипт на сцене.");
-        }
-
+        HandManager.Instance?.GiveRandomReward();
         OnBattleWon?.Invoke();
+        Debug.Log($"BattleManager: победа, +{_currentCard.rewardMoney} фелсов");
     }
-    
-    public void RequestNewRoll()
-    {
-        // 1. Скрываем кнопку принятия результата, так как мы перебрасываем
-        uiManager.EnableFinishBattleButton(false);
 
-        // 2. Генерируем новое значение (от 1 до 6)
-        int newDiceValue = UnityEngine.Random.Range(1, 7);
-
-        Debug.Log($"[Battle] Переброс! Новое значение кубика: {newDiceValue}");
-
-        // 3. Вызываем существующую логику расчета битвы с новым значением
-        ExecuteBattle(newDiceValue);
-    }
     private void Lose()
     {
-        // Берем штраф напрямую из карточки (используем Mathf.Abs, чтобы случайно не прибавить деньги, если в SO записано отрицательное число)
         teamSystem.RemoveMoney(Mathf.Abs(_currentCard.penaltyMoney));
         OnBattleLost?.Invoke();
+        Debug.Log($"BattleManager: поражение, -{Mathf.Abs(_currentCard.penaltyMoney)} фелсов");
     }
 }
