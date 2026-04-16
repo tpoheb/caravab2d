@@ -7,6 +7,7 @@ public class InventoryItem
 {
     public Item item;
     public int quantity;
+    public float averagePurchasePrice; // НОВОЕ ПОЛЕ: Средняя цена покупки
 }
 
 public class PlayerInventory : MonoBehaviour
@@ -37,7 +38,7 @@ public class PlayerInventory : MonoBehaviour
     }
 
     #region Inventory Operations
-    public bool AddItem(Item item, int quantity)
+    public bool AddItem(Item item, int quantity, int totalTransactionCost = 0)
     {
         if (!CanCarryItem(item, quantity))
         {
@@ -48,15 +49,31 @@ public class PlayerInventory : MonoBehaviour
         var existing = items.Find(i => i.item == item);
         if (existing != null)
         {
+            // Считаем новую среднюю цену
+            float currentTotalValue = existing.quantity * existing.averagePurchasePrice;
             existing.quantity += quantity;
+            existing.averagePurchasePrice = (currentTotalValue + totalTransactionCost) / existing.quantity;
         }
         else
         {
-            items.Add(new InventoryItem { item = item, quantity = quantity });
+            // Если товара не было, средняя цена = стоимость / количество
+            float initialAvgPrice = quantity > 0 ? (float)totalTransactionCost / quantity : 0;
+            items.Add(new InventoryItem { 
+                item = item, 
+                quantity = quantity, 
+                averagePurchasePrice = initialAvgPrice 
+            });
         }
 
         OnInventoryChanged?.Invoke();
         return true;
+    }
+
+    // НОВЫЙ МЕТОД: Для получения средней цены UI менеджером
+    public float GetItemAveragePrice(Item item)
+    {
+        var existing = items.Find(i => i.item == item);
+        return existing != null ? existing.averagePurchasePrice : 0f;
     }
 
     public bool RemoveItem(Item item, int quantity)

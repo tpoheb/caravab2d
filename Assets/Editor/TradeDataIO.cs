@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -16,7 +17,7 @@ namespace Editor
         public static void ImportTradeData()
         {
             Debug.Log("=== НАЧАЛО ИМПОРТА ===");
-        
+            
             // 1. Выбор файла
             string csvPath = EditorUtility.OpenFilePanel("Выберите CSV файл", "", "csv");
             if (string.IsNullOrEmpty(csvPath)) 
@@ -30,11 +31,11 @@ namespace Editor
             EnsureDirectoryExists(BaseDataPath);
             EnsureDirectoryExists(ItemsPath);
             EnsureDirectoryExists(CitiesPath);
-        
+            
             // 3. Загрузка существующих данных
             var allCities = LoadAllAssets<CityData>("Cities");
             var allItems = LoadAllAssets<Item>("Items");
-        
+            
             Debug.Log($"Найдено: {allCities.Count} городов, {allItems.Count} товаров");
 
             // 4. Чтение CSV
@@ -48,16 +49,18 @@ namespace Editor
             // 5. Обработка данных
             int createdItems = 0;
             int updatedCities = 0;
-        
+            
             for (int i = 1; i < lines.Length; i++)
             {
                 string line = lines[i];
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
-                string[] parts = line.Split('\t');
-                if (parts.Length < 6)
+                string[] parts = line.Split('\t'); // Предполагается TSV (разделение табуляцией). Если у тебя запятые, поменяй на ','
+                
+                // Нам нужно минимум 5 колонок (Город, Товар, Вес, Запас, Базовая цена)
+                if (parts.Length < 5)
                 {
-                    Debug.LogWarning($"Пропуск строки {i}: неверный формат");
+                    Debug.LogWarning($"Пропуск строки {i}: неверный формат (нужно минимум 5 колонок)");
                     continue;
                 }
 
@@ -97,9 +100,47 @@ namespace Editor
                     city.items.Add(cityItem);
                 }
 
+                // --- ЗАПОЛНЕНИЕ ДИНАМИЧЕСКИХ ДАННЫХ ---
                 cityItem.stock = TryParseInt(parts[3], 0);
-                cityItem.buyPrice = TryParseInt(parts[4], 0);
-                cityItem.sellPrice = TryParseInt(parts[5], 0);
+                
+                // Читаем цены из старого формата CSV (колонки 5 и 6)
+                float importedBuyPrice = TryParseFloat(parts[4], 10f);
+                float importedSellPrice = TryParseFloat(parts[5], 8f);
+
+                // Базовые и текущие цены
+                cityItem.baseBuyPrice = importedBuyPrice;
+                cityItem.currentBuyPrice = importedBuyPrice;
+
+                cityItem.baseSellPrice = importedSellPrice;
+                cityItem.currentSellPrice = importedSellPrice;
+
+                // Если таблица расширенная (9+ колонок)
+                if (parts.Length >= 9)
+                {
+                    // Предполагаем, что в расширенной мы задали лимиты для цены покупки
+                    // А лимиты для продажи высчитаем пропорционально
+                    cityItem.minBuyPrice = TryParseFloat(parts[6], importedBuyPrice * 0.5f);
+                    cityItem.maxBuyPrice = TryParseFloat(parts[7], importedBuyPrice * 2.0f);
+                    
+                    float spreadRatio = importedBuyPrice > 0 ? (importedSellPrice / importedBuyPrice) : 0.8f;
+                    cityItem.minSellPrice = cityItem.minBuyPrice * spreadRatio;
+                    cityItem.maxSellPrice = cityItem.maxBuyPrice * spreadRatio;
+
+                    cityItem.volatility = TryParseFloat(parts[8], 0.02f);
+                    cityItem.regenRate = parts.Length >= 10 ? TryParseFloat(parts[9], 0.1f) : 0.1f;
+                }
+                else
+                {
+                    // Для старого формата: генерируем адекватные лимиты автоматически
+                    cityItem.minBuyPrice = Mathf.Max(1f, importedBuyPrice * 0.5f); 
+                    cityItem.maxBuyPrice = importedBuyPrice * 2.0f;                
+                    
+                    cityItem.minSellPrice = Mathf.Max(1f, importedSellPrice * 0.5f); 
+                    cityItem.maxSellPrice = importedSellPrice * 2.0f;                
+
+                    cityItem.volatility = 0.02f;                         
+                    cityItem.regenRate = 0.10f;                          
+                }
 
                 EditorUtility.SetDirty(city);
                 updatedCities++;
@@ -108,7 +149,7 @@ namespace Editor
             // 6. Сохранение
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-        
+            
             Debug.Log("=== РЕЗУЛЬТАТ ===");
             Debug.Log($"Создано товаров: {createdItems}");
             Debug.Log($"Обновлено городов: {updatedCities}");
@@ -138,9 +179,14 @@ namespace Editor
             return int.TryParse(value, out int result) ? result : defaultValue;
         }
 
+        // Немного улучшил метод для надежного парсинга чисел с точкой из CSV
         private static float TryParseFloat(string value, float defaultValue)
         {
-            return float.TryParse(value, out float result) ? result : defaultValue;
+            // Заменяем запятые на точки, чтобы парсер не сломался из-за региональных настроек ОС
+            string normalizedValue = value.Replace(',', '.').Trim(); 
+            return float.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out float result) 
+                ? result 
+                : defaultValue;
         }
     }
 }

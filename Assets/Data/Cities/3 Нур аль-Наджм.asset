@@ -17,73 +17,217 @@ MonoBehaviour:
   items:
   - item: {fileID: 11400000, guid: 699307780d7841241b3d5583469d1f20, type: 2}
     stock: 100
-    buyPrice: 8
-    sellPrice: 5
+    baseBuyPrice: 8
+    currentBuyPrice: 8
+    minBuyPrice: 4
+    maxBuyPrice: 16
+    baseSellPrice: 5
+    currentSellPrice: 5
+    minSellPrice: 2.5
+    maxSellPrice: 10
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: d57e2685d2ad9ef4aab18252b4f095bf, type: 2}
     stock: 100
-    buyPrice: 32
-    sellPrice: 19
+    baseBuyPrice: 32
+    currentBuyPrice: 32
+    minBuyPrice: 16
+    maxBuyPrice: 64
+    baseSellPrice: 19
+    currentSellPrice: 19
+    minSellPrice: 9.5
+    maxSellPrice: 38
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: c0e69d0d846197a458b1f4c278e96d38, type: 2}
     stock: 100
-    buyPrice: 38
-    sellPrice: 23
+    baseBuyPrice: 38
+    currentBuyPrice: 38
+    minBuyPrice: 19
+    maxBuyPrice: 76
+    baseSellPrice: 23
+    currentSellPrice: 23
+    minSellPrice: 11.5
+    maxSellPrice: 46
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 6b2ee8bee89b0624fbf1cca0bec39c72, type: 2}
     stock: 100
-    buyPrice: 70
-    sellPrice: 42
+    baseBuyPrice: 70
+    currentBuyPrice: 70
+    minBuyPrice: 35
+    maxBuyPrice: 140
+    baseSellPrice: 42
+    currentSellPrice: 42
+    minSellPrice: 21
+    maxSellPrice: 84
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 4f19769dcf549554b8161cc284f8abd5, type: 2}
     stock: 100
-    buyPrice: 94
-    sellPrice: 56
+    baseBuyPrice: 94
+    currentBuyPrice: 94
+    minBuyPrice: 47
+    maxBuyPrice: 188
+    baseSellPrice: 56
+    currentSellPrice: 56
+    minSellPrice: 28
+    maxSellPrice: 112
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 9bd3e8dfeb65f744d865ddae09917651, type: 2}
     stock: 100
-    buyPrice: 16
-    sellPrice: 10
+    baseBuyPrice: 16
+    currentBuyPrice: 16
+    minBuyPrice: 8
+    maxBuyPrice: 32
+    baseSellPrice: 10
+    currentSellPrice: 10
+    minSellPrice: 5
+    maxSellPrice: 20
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: fec4a101c9a9ffb4a902a4134594d610, type: 2}
     stock: 100
-    buyPrice: 25
-    sellPrice: 15
+    baseBuyPrice: 25
+    currentBuyPrice: 25
+    minBuyPrice: 12.5
+    maxBuyPrice: 50
+    baseSellPrice: 15
+    currentSellPrice: 15
+    minSellPrice: 7.5
+    maxSellPrice: 30
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: c8a444dd49749914b842538afdf7fc66, type: 2}
     stock: 100
-    buyPrice: 45
-    sellPrice: 27
+    baseBuyPrice: 45
+    currentBuyPrice: 45
+    minBuyPrice: 22.5
+    maxBuyPrice: 90
+    baseSellPrice: 27
+    currentSellPrice: 27
+    minSellPrice: 13.5
+    maxSellPrice: 54
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: cc9df6069e26a494db5398f3bb0e050b, type: 2}
     stock: 100
-    buyPrice: 60
-    sellPrice: 36
+    baseBuyPrice: 60
+    currentBuyPrice: 60
+    minBuyPrice: 30
+    maxBuyPrice: 120
+    baseSellPrice: 36
+    currentSellPrice: 36
+    minSellPrice: 18
+    maxSellPrice: 72
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 51fbfb228c90ac34ea816bef98f82703, type: 2}
     stock: 100
-    buyPrice: 99
-    sellPrice: 59
+    baseBuyPrice: 99
+    currentBuyPrice: 99
+    minBuyPrice: 49.5
+    maxBuyPrice: 198
+    baseSellPrice: 59
+    currentSellPrice: 59
+    minSellPrice: 29.5
+    maxSellPrice: 118
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 4c9360b89d4e14c43a0adcec002a0cb1, type: 2}
     stock: 100
-    buyPrice: 14
-    sellPrice: 9
+    baseBuyPrice: 14
+    currentBuyPrice: 14
+    minBuyPrice: 7
+    maxBuyPrice: 28
+    baseSellPrice: 9
+    currentSellPrice: 9
+    minSellPrice: 4.5
+    maxSellPrice: 18
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 84c9307eac007fb4e96cd654ccfbc00a, type: 2}
     stock: 100
-    buyPrice: 79
-    sellPrice: 47
+    baseBuyPrice: 79
+    currentBuyPrice: 79
+    minBuyPrice: 39.5
+    maxBuyPrice: 158
+    baseSellPrice: 47
+    currentSellPrice: 47
+    minSellPrice: 23.5
+    maxSellPrice: 94
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: bca410cd4e719b44f845ac67bdc2edb5, type: 2}
     stock: 100
-    buyPrice: 58
-    sellPrice: 35
+    baseBuyPrice: 58
+    currentBuyPrice: 58
+    minBuyPrice: 29
+    maxBuyPrice: 116
+    baseSellPrice: 35
+    currentSellPrice: 35
+    minSellPrice: 17.5
+    maxSellPrice: 70
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: f0b306675939e4a468260d6985350f6e, type: 2}
     stock: 100
-    buyPrice: 99
-    sellPrice: 59
+    baseBuyPrice: 99
+    currentBuyPrice: 99
+    minBuyPrice: 49.5
+    maxBuyPrice: 198
+    baseSellPrice: 59
+    currentSellPrice: 59
+    minSellPrice: 29.5
+    maxSellPrice: 118
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 69d1d071e72992a4d8f584e2338cc2d0, type: 2}
     stock: 100
-    buyPrice: 228
-    sellPrice: 137
+    baseBuyPrice: 228
+    currentBuyPrice: 228
+    minBuyPrice: 114
+    maxBuyPrice: 456
+    baseSellPrice: 137
+    currentSellPrice: 137
+    minSellPrice: 68.5
+    maxSellPrice: 274
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 6ded63af44c4eb54c805713c4f931eca, type: 2}
     stock: 100
-    buyPrice: 313
-    sellPrice: 188
+    baseBuyPrice: 313
+    currentBuyPrice: 313
+    minBuyPrice: 156.5
+    maxBuyPrice: 626
+    baseSellPrice: 188
+    currentSellPrice: 188
+    minSellPrice: 94
+    maxSellPrice: 376
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 8fa1d16fc1dd3cf45ab92740111a463e, type: 2}
     stock: 100
-    buyPrice: 500
-    sellPrice: 300
+    baseBuyPrice: 500
+    currentBuyPrice: 500
+    minBuyPrice: 250
+    maxBuyPrice: 1000
+    baseSellPrice: 300
+    currentSellPrice: 300
+    minSellPrice: 150
+    maxSellPrice: 600
+    volatility: 0.02
+    regenRate: 0.1
   - item: {fileID: 11400000, guid: 5f64eb1784dd4b74a95860e0457e7712, type: 2}
     stock: 100
-    buyPrice: 125
-    sellPrice: 75
+    baseBuyPrice: 125
+    currentBuyPrice: 125
+    minBuyPrice: 62.5
+    maxBuyPrice: 250
+    baseSellPrice: 75
+    currentSellPrice: 75
+    minSellPrice: 37.5
+    maxSellPrice: 150
+    volatility: 0.02
+    regenRate: 0.1

@@ -118,15 +118,19 @@ public class TradeUIManager : MonoBehaviour
 
     public void RefreshItemStocks(PlayerInventory playerInventory)
     {
-        Debug.Log("Refreshing item UIs stocks");
+        Debug.Log("Refreshing item UIs stocks and prices");
         foreach (var itemUI in _activeItemUIs)
         {
             if (itemUI == null) continue;
             
-            // Если ItemUI хранит ссылку на CityItem, используем ее для получения ItemSO
+            // Получаем запасы игрока
             int playerStock = playerInventory.GetItemStock(itemUI.CityItem.item); 
-            itemUI.UpdatePlayerStock(playerStock);
-            // Debug.Log($"Refreshed UI for {itemUI.CityItem.item.name}, stock: {playerStock}");
+            
+            // НОВОЕ: Получаем среднюю цену из инвентаря
+            float avgPrice = playerInventory.GetItemAveragePrice(itemUI.CityItem.item);
+            
+            // Передаем оба значения в UI
+            itemUI.RefreshData(playerStock, avgPrice); 
         }
     }
 
@@ -164,6 +168,7 @@ public class TradeUIManager : MonoBehaviour
         // Проверка ссылок уже сделана в Awake
         
         int playerStock = playerInventory.GetItemStock(cityItem.item);
+        float avgPrice = playerInventory.GetItemAveragePrice(cityItem.item);
 
         var itemUIObject = Instantiate(itemUIPrefab, itemsContainer);
         var itemUI = itemUIObject.GetComponent<ItemUI>();
@@ -183,6 +188,7 @@ public class TradeUIManager : MonoBehaviour
         itemUI.Initialize(
             cityItem,
             playerStock,
+            avgPrice,
             tradeSystem // Передаем TradeSystem напрямую
         ); 
         
