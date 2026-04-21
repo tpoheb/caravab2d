@@ -216019,11 +216019,11 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: -119.8
-  far clip plane: 2000
+  near clip plane: -500
+  far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 1.51
+  orthographic size: 90
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -216048,7 +216048,7 @@ Transform:
   m_GameObject: {fileID: 1468831702}
   serializedVersion: 2
   m_LocalRotation: {x: -0.18132342, y: -0.12735906, z: 0.023682809, w: -0.97485423}
-  m_LocalPosition: {x: 45.179867, y: 16.499105, z: -154.41621}
+  m_LocalPosition: {x: 1440.4546, y: -17.373686, z: 657.2333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -216112,7 +216112,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IsoCameraFollow
   target: {fileID: 1373296202}
   smoothSpeed: 5
-  offset: {x: -10, y: 0, z: 50}
+  offset: {x: 8.3, y: -22.2, z: 32}
 --- !u!1001 &1469113778
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -296870,6 +296870,14 @@ MonoBehaviour:
   playerInventory: {fileID: 2041521372}
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
   tradeUIManager: {fileID: 1836032680}
+  playerToken: {fileID: 973928746}
+  allCities:
+  - {fileID: 11400000, guid: a4baa8ebea6518d4699b34833e79851f, type: 2}
+  - {fileID: 11400000, guid: 65735cdb476a24c4db89be03ea5ee645, type: 2}
+  - {fileID: 11400000, guid: df13fc2862d62914a9a9692a13615764, type: 2}
+  - {fileID: 11400000, guid: 1d41c1c13e3d949478c8d9563df5bc94, type: 2}
+  - {fileID: 11400000, guid: b76e18ccfd8f8fd458c649958604ef5e, type: 2}
+  - {fileID: 11400000, guid: c06c4587bf1cf9d4ebbbb2fb92559741, type: 2}
 --- !u!114 &2041521374
 MonoBehaviour:
   m_ObjectHideFlags: 0
