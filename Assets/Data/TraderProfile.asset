@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1ea34ecab806434f92623dcf3446442, type: 3}
+  m_Name: TraderProfile
+  m_EditorClassIdentifier: Assembly-CSharp::TraderProfile
+  displayName: Unnamed Trader
+  initiative: 5
+  startGold: 1000
+  greedWeight: 1
+  aggressionWeight: 0.3
+  minProfitThreshold: 0
+  tokenPrefab: {fileID: 2624477461133048294, guid: aaebe064a2877df4298770bbe2790eaf, type: 3}

@@ -6,19 +6,20 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 /// <summary>
-/// Оркестрирует ходы всех участников.
+/// Обрабатывает один ход всех ИИ-торговцев.
+/// Вызывается из GameManager.RequestEndTurn() — один раз за нажатие кнопки.
 ///
-/// Последовательность каждого хода:
-/// 1. TakeSnapshot()     — снимок мира
-/// 2. PlanTurn() × все  — ИИ думают в Task.Run, ждём игрока
-/// 3. PathClaims         — раздаём пути по инициативе
-/// 4. ExecuteTrade()     — торговля по инициативе
-/// 5. ExecuteMovement()  — движение (корутина) по инициативе
+/// Последовательность:
+/// 1. Снимок мира
+/// 2. ИИ планируют (Task.Run)
+/// 3. Раздача путей по инициативе (PathClaims)
+/// 4. Торговля по инициативе
+/// 5. Один шаг движения каждого ИИ
 /// </summary>
 public class TurnQueue
 {
-    private readonly List<ITrader>  _traders;
-    private readonly WorldEconomy   _economy;
+    private readonly List<ITrader> _traders;
+    private readonly WorldEconomy  _economy;
 
     public int TurnNumber { get; private set; }
 
@@ -31,79 +32,72 @@ public class TurnQueue
         _economy = economy;
     }
 
-    // ------------------------------------------------------------------
-    // Главная корутина — вызывается из GameManager каждый ход
-    // ------------------------------------------------------------------
-
-    public IEnumerator ProcessTurnCoroutine(PlayerTraderAdapter playerAdapter)
+    /// <summary>
+    /// Один ход всех ИИ. Вызывай через StartCoroutine из GameManager.
+    /// </summary>
+    public IEnumerator ProcessTurnCoroutine()
     {
         TurnNumber++;
         OnTurnStarted?.Invoke(TurnNumber);
 
         var snapshot = _economy.TakeSnapshot();
 
-        // 1. ИИ планируют в фоне
+        if (snapshot.Cities.Count == 0)
+        {
+            Debug.LogWarning("[TurnQueue] Snapshot пустой — проверь CityBindings в WorldEconomy.");
+            OnTurnResolved?.Invoke(TurnNumber);
+            yield break;
+        }
+
+        // 1. Все ИИ планируют параллельно
         var aiTraders = _traders.OfType<AITrader>().ToList();
         var aiTasks   = aiTraders
             .Select(t => Task.Run(() => t.PlanTurn(snapshot)))
             .ToArray();
 
-        // 2. Ждём решения игрока
-        while (!playerAdapter.IsReady)
-            yield return null;
-
-        TurnIntent playerIntent = playerAdapter.ConsumeIntent();
-
-        // 3. Ждём ИИ (обычно уже готовы)
         while (!Task.WhenAll(aiTasks).IsCompleted)
             yield return null;
 
-        // 4. Собираем все интенты
-        var intents = new List<TurnIntent> { playerIntent };
-        intents.AddRange(aiTasks.Select(t => t.Result));
+        var intents = aiTasks.Select(t => t.Result).ToList();
 
-        // Сортируем по инициативе — высокая идёт первой везде
-        var sorted = intents
-            .OrderByDescending(i => i.Trader.Initiative)
-            .ToList();
+        // Лог решений
+        foreach (var intent in intents)
+            Debug.Log($"[TurnQueue] {intent.Trader.DisplayName}: " +
+                      $"путь={intent.SelectedPath?.name ?? "нет"} | " +
+                      $"покупок={intent.BuyOrders.Count} | " +
+                      $"продаж={intent.SellOrders.Count}");
 
-        // 5. Раздаём пути по инициативе (PathClaims)
+        // 2. Раздача путей по инициативе
+        var sorted = intents.OrderByDescending(i => i.Trader.Initiative).ToList();
         AssignPaths(sorted);
 
-        // 6. Торговля по инициативе
+        // 3. Торговля
         foreach (var intent in sorted)
             intent.Trader.ExecuteTrade(intent, _economy);
 
-        // 7. Движение по инициативе (пошагово, корутина)
-        foreach (var intent in sorted)
-            yield return intent.Trader.ExecuteMovement(intent);
+        // 4. Один шаг движения для каждого ИИ — одновременно
+        var moveCoroutines = sorted
+            .Select(intent => intent.Trader.ExecuteMovement(intent))
+            .ToList();
+
+        // Запускаем все движения параллельно через AITurnManager
+        yield return AITurnManager.Instance.RunParallel(moveCoroutines);
 
         OnTurnResolved?.Invoke(TurnNumber);
     }
 
-    // ------------------------------------------------------------------
-    // PathClaims — раздача путей по инициативе
-    // ------------------------------------------------------------------
-
-    private void AssignPaths(List<TurnIntent> sortedByInitiative)
+    private void AssignPaths(List<TurnIntent> sorted)
     {
         var claims = new PathClaims();
-
-        foreach (var intent in sortedByInitiative)
+        foreach (var intent in sorted)
         {
             if (intent.SelectedPath == null) continue;
-
-            if (claims.TryClaim(intent.SelectedPath))
+            if (!claims.TryClaim(intent.SelectedPath))
             {
-                // Путь получен — движение разрешено
-            }
-            else
-            {
-                // Путь занят — обнуляем выбор
+                var blocked = intent.SelectedPath;
                 intent.SelectedPath = null;
-
                 if (intent.Trader is AITrader ai)
-                    ai.NotifyPathBlocked(intent.SelectedPath);
+                    ai.NotifyPathBlocked(blocked);
             }
         }
     }

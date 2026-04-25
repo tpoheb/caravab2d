@@ -3,13 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// Стратегия ИИ-торговца.
-///
-/// Арбитраж с раздельными ценами (как в CityData):
-///   buyPrice  — сколько ИИ платит чтобы купить товар в городе A
-///   sellPrice — сколько ИИ получает если продаёт товар в городе B
-///
-/// Реальная маржа = sellPrice(B) - buyPrice(A)
-/// Именно эту разницу мы ищем.
+/// Ищет арбитраж: купить дёшево в городе A, продать дорого в городе B.
+/// Реальная маржа = sellPrice(B) - buyPrice(A).
 /// </summary>
 public class AiStrategy
 {
@@ -23,13 +18,12 @@ public class AiStrategy
     }
 
     // ------------------------------------------------------------------
-    // Главный метод — вызывается из AITrader.PlanTurn()
+    // Главный метод
     // ------------------------------------------------------------------
 
     public TurnIntent Evaluate(GameSnapshot snapshot, AITrader trader)
     {
-        var intent = new TurnIntent { Trader = trader };
-
+        var intent      = new TurnIntent { Trader = trader };
         var currentSnap = GetCitySnapshot(snapshot, trader.CurrentCity);
 
         // 1. Продаём что везём если цена выгодная
@@ -60,14 +54,19 @@ public class AiStrategy
     }
 
     // ------------------------------------------------------------------
-    // Поиск арбитража — buyPrice(A) vs sellPrice(B)
+    // Поиск арбитража
     // ------------------------------------------------------------------
 
-    private ArbitrageOpportunity FindBestArbitrage(
-        GameSnapshot snapshot, AITrader trader)
+    private ArbitrageOpportunity FindBestArbitrage(GameSnapshot snapshot, AITrader trader)
     {
         ArbitrageOpportunity best      = null;
-        float                bestScore = _profile.minProfitThreshold;
+        float                bestScore = float.MinValue; // лучший score среди подходящих маршрутов
+        int                  checked_  = 0;
+        float                bestMargin = float.MinValue;
+
+        Debug.Log($"[AiStrategy] {trader.DisplayName}: планирую из '{trader.CurrentCity?.CityName}'. " +
+                  $"Городов: {snapshot.Cities.Count}, товаров: {snapshot.AllGoods.Count}, " +
+                  $"порог: {_profile.minProfitThreshold}");
 
         foreach (var buySnap in snapshot.Cities)
         foreach (var sellSnap in snapshot.Cities)
@@ -76,30 +75,27 @@ public class AiStrategy
 
             foreach (var goodId in snapshot.AllGoods)
             {
-                // buyPrice — сколько платим в buySnap (снимок хранит currentBuyPrice)
                 float buyPrice = buySnap.GetPrice(goodId);
                 int   stock    = buySnap.GetStock(goodId);
-
                 if (stock == 0 || buyPrice <= 0) continue;
 
-                // sellPrice — сколько получим в sellSnap
-                // WorldEconomy.GetSellPrice возвращает currentSellPrice
                 float sellPrice = _economy.GetSellPrice(sellSnap.City, goodId);
-
                 if (sellPrice <= 0) continue;
 
                 float margin = sellPrice - buyPrice;
-                if (margin <= 0) continue;
+                if (margin > bestMargin) bestMargin = margin;
 
-                // Расстояние: от текущей позиции до города покупки + до продажи
+                // Порог применяется к марже — понятная единица измерения (золото)
+                if (margin < _profile.minProfitThreshold) continue;
+
                 int distToBuy  = GetCityDistance(trader.CurrentCity, buySnap.City);
                 int distToSell = GetCityDistance(buySnap.City, sellSnap.City);
                 int totalDist  = distToBuy + distToSell;
-
                 if (totalDist == int.MaxValue) continue;
 
-                float score = (margin / Mathf.Max(1, totalDist))
-                              * _profile.greedWeight;
+                // Score используется только для выбора лучшего из подходящих маршрутов
+                float score = (margin / Mathf.Max(1, totalDist)) * _profile.greedWeight;
+                checked_++;
 
                 if (score > bestScore)
                 {
@@ -118,6 +114,15 @@ public class AiStrategy
             }
         }
 
+        if (best == null)
+            Debug.Log($"[AiStrategy] {trader.DisplayName}: арбитраж не найден. " +
+                      $"Маршрутов: {checked_}, лучшая маржа: {bestMargin:F1}, " +
+                      $"порог score: {_profile.minProfitThreshold}");
+        else
+            Debug.Log($"[AiStrategy] {trader.DisplayName}: " +
+                      $"{best.BuyCity.CityName}→{best.SellCity.CityName} " +
+                      $"товар={best.GoodId} маржа={best.SellPrice - best.BuyPrice:F1} score={best.Score:F2}");
+
         return best;
     }
 
@@ -135,25 +140,17 @@ public class AiStrategy
         int amount     = Mathf.Min(affordable, opp.Stock);
 
         if (amount > 0)
-            intent.BuyOrders.Add(new TradeOrder
-                { GoodId = opp.GoodId, Amount = amount });
+            intent.BuyOrders.Add(new TradeOrder { GoodId = opp.GoodId, Amount = amount });
     }
 
-    private void AddSellOrders(TurnIntent intent, AITrader trader,
-        CitySnapshot snap)
+    private void AddSellOrders(TurnIntent intent, AITrader trader, CitySnapshot snap)
     {
         foreach (var kvp in trader.Inventory.GetAll())
         {
-            string goodId = kvp.Key;
-            int    held   = kvp.Value;
-
-            if (held <= 0) continue;
-
-            // Продаём только если sellPrice > 0
-            float sellPrice = _economy.GetSellPrice(snap.City, goodId);
+            if (kvp.Value <= 0) continue;
+            float sellPrice = _economy.GetSellPrice(snap.City, kvp.Key);
             if (sellPrice > 0)
-                intent.SellOrders.Add(new TradeOrder
-                    { GoodId = goodId, Amount = held });
+                intent.SellOrders.Add(new TradeOrder { GoodId = kvp.Key, Amount = kvp.Value });
         }
     }
 
@@ -172,17 +169,14 @@ public class AiStrategy
         while (queue.Count > 0)
         {
             var (current, dist) = queue.Dequeue();
-
             foreach (var path in current.Paths)
             {
                 if (path?.FinishCity == null) continue;
-                var neighbour = path.FinishCity;
-
-                if (neighbour == target)    return dist + 1;
-                if (visited.Contains(neighbour)) continue;
-
-                visited.Add(neighbour);
-                queue.Enqueue((neighbour, dist + 1));
+                var nb = path.FinishCity;
+                if (nb == target) return dist + 1;
+                if (visited.Contains(nb)) continue;
+                visited.Add(nb);
+                queue.Enqueue((nb, dist + 1));
             }
         }
 
@@ -195,25 +189,20 @@ public class AiStrategy
 
         var cameFrom = new Dictionary<City, (City prev, PathCellInitializer path)>();
         var queue    = new Queue<City>();
-
         cameFrom[from] = (null, null);
         queue.Enqueue(from);
 
         while (queue.Count > 0)
         {
             var current = queue.Dequeue();
-
             foreach (var path in current.Paths)
             {
                 if (path?.FinishCity == null) continue;
-                var neighbour = path.FinishCity;
-
-                if (cameFrom.ContainsKey(neighbour)) continue;
-
-                cameFrom[neighbour] = (current, path);
-                queue.Enqueue(neighbour);
-
-                if (neighbour == target)
+                var nb = path.FinishCity;
+                if (cameFrom.ContainsKey(nb)) continue;
+                cameFrom[nb] = (current, path);
+                queue.Enqueue(nb);
+                if (nb == target)
                     return ReconstructFirstStep(cameFrom, from, target);
             }
         }
@@ -239,7 +228,7 @@ public class AiStrategy
     }
 
     // ------------------------------------------------------------------
-    // Вспомогательный поиск снапшота
+    // Вспомогательное
     // ------------------------------------------------------------------
 
     private CitySnapshot GetCitySnapshot(GameSnapshot snapshot, City city)
@@ -249,10 +238,6 @@ public class AiStrategy
         return null;
     }
 }
-
-// ------------------------------------------------------------------
-// Данные арбитражной возможности
-// ------------------------------------------------------------------
 
 public class ArbitrageOpportunity
 {

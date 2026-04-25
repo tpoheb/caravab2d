@@ -136,4 +136,9 @@ public class PathController : MonoBehaviour
                index < pathCells.Length &&
                pathCells[index] != null;
     }
+    
+    public void SetTokenObject(GameObject token)
+    {
+        tokenObject = token;
+    }
 }

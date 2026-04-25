@@ -3,22 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// MonoBehaviour-менеджер ИИ-торговцев и TurnQueue.
-///
-/// Намеренно отделён от существующего GameManager —
-/// не ломает твою текущую архитектуру, просто добавляет слой сверху.
-///
-/// Размести в сцене:
-///   AITurnManager (пустой GameObject)
-///     ← этот компонент
-///     ← PlayerTraderAdapter
+/// Управляет ИИ-торговцами. Не имеет своего цикла —
+/// запускается из GameManager.RequestEndTurn() одновременно с ходом игрока.
 /// </summary>
 public class AITurnManager : MonoBehaviour
 {
     public static AITurnManager Instance { get; private set; }
-
-    [Header("Игрок")]
-    [SerializeField] private PlayerTraderAdapter playerAdapter;
 
     [Header("ИИ торговцы")]
     [SerializeField] private TraderProfile[] aiProfiles;
@@ -28,10 +18,14 @@ public class AITurnManager : MonoBehaviour
     [SerializeField] private WorldEconomy worldEconomy;
 
     [Header("Настройки")]
-    [SerializeField] private float delayBetweenTurns = 0.5f;
+    [Tooltip("Пауза между анимацией шага ИИ и следующим действием")]
+    [SerializeField] private float stepDelay = 0.3f;
 
-    private TurnQueue         _turnQueue;
-    private List<AITrader>    _aiTraders = new List<AITrader>();
+    private TurnQueue      _turnQueue;
+    private List<AITrader> _aiTraders = new List<AITrader>();
+    private bool           _isProcessing;
+
+    public float StepDelay => stepDelay;
 
     // ------------------------------------------------------------------
     // Unity
@@ -46,7 +40,6 @@ public class AITurnManager : MonoBehaviour
     {
         InitAiTraders();
         InitTurnQueue();
-        StartCoroutine(TurnLoop());
     }
 
     // ------------------------------------------------------------------
@@ -62,8 +55,7 @@ public class AITurnManager : MonoBehaviour
 
             if (profile.tokenPrefab == null)
             {
-                Debug.LogError($"[AITurnManager] У профиля {profile.displayName} " +
-                               $"не задан tokenPrefab.");
+                Debug.LogError($"[AITurnManager] У профиля '{profile.displayName}' не задан tokenPrefab.");
                 continue;
             }
 
@@ -73,45 +65,80 @@ public class AITurnManager : MonoBehaviour
 
             if (trader == null)
             {
-                Debug.LogError($"[AITurnManager] Префаб {profile.tokenPrefab.name} " +
-                               $"не содержит компонент AITrader.");
+                Debug.LogError($"[AITurnManager] Префаб '{profile.tokenPrefab.name}' не содержит AITrader.");
                 continue;
             }
 
             trader.Initialize(profile, startCity, worldEconomy);
             _aiTraders.Add(trader);
 
-            Debug.Log($"[AITurnManager] Создан ИИ: {profile.displayName} " +
-                      $"в городе {startCity?.CityName}");
+            Debug.Log($"[AITurnManager] Создан ИИ: {profile.displayName} в городе {startCity?.CityName ?? "NULL"}");
         }
     }
 
     private void InitTurnQueue()
     {
-        var allTraders = new List<ITrader> { playerAdapter };
-        allTraders.AddRange(_aiTraders);
-
-        _turnQueue = new TurnQueue(allTraders, worldEconomy);
+        var traders = new List<ITrader>(_aiTraders);
+        _turnQueue  = new TurnQueue(traders, worldEconomy);
 
         _turnQueue.OnTurnStarted  += t => Debug.Log($"[TurnQueue] Ход {t} начался");
         _turnQueue.OnTurnResolved += t => Debug.Log($"[TurnQueue] Ход {t} завершён");
     }
 
     // ------------------------------------------------------------------
-    // Игровой цикл
+    // Вызывается из GameManager.RequestEndTurn()
     // ------------------------------------------------------------------
 
-    private IEnumerator TurnLoop()
+    /// <summary>
+    /// Запускает один ход всех ИИ.
+    /// GameManager вызывает это сразу после того как обработал ход игрока.
+    /// </summary>
+    public void ProcessAITurn()
     {
-        while (true)
+        if (_isProcessing)
         {
-            yield return _turnQueue.ProcessTurnCoroutine(playerAdapter);
-            yield return new WaitForSeconds(delayBetweenTurns);
+            Debug.LogWarning("[AITurnManager] Ход уже обрабатывается — пропускаем.");
+            return;
         }
+
+        StartCoroutine(ProcessAITurnCoroutine());
+    }
+
+    private IEnumerator ProcessAITurnCoroutine()
+    {
+        _isProcessing = true;
+        yield return _turnQueue.ProcessTurnCoroutine();
+        _isProcessing = false;
     }
 
     // ------------------------------------------------------------------
-    // Публичный доступ для UI
+    // Параллельное выполнение корутин (для одновременного движения)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Запускает список корутин параллельно и ждёт пока все завершатся.
+    /// Используется TurnQueue для одновременного движения всех ИИ.
+    /// </summary>
+    public IEnumerator RunParallel(List<IEnumerator> coroutines)
+    {
+        int remaining = coroutines.Count;
+        if (remaining == 0) yield break;
+
+        foreach (var coroutine in coroutines)
+            StartCoroutine(WrapCoroutine(coroutine, () => remaining--));
+
+        while (remaining > 0)
+            yield return null;
+    }
+
+    private IEnumerator WrapCoroutine(IEnumerator coroutine, System.Action onComplete)
+    {
+        yield return coroutine;
+        onComplete();
+    }
+
+    // ------------------------------------------------------------------
+    // Доступ
     // ------------------------------------------------------------------
 
     public IReadOnlyList<AITrader> AiTraders => _aiTraders;

@@ -103,6 +103,8 @@ public class GameManager : MonoBehaviour
 
         SetState(GameState.Moving);
         ContinueMovement();
+        
+        AITurnManager.Instance?.ProcessAITurn();
     }
 
     // --------------------

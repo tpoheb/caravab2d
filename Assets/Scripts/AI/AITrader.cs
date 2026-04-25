@@ -40,8 +40,16 @@ public class AITrader : MonoBehaviour, ITrader
         _strategy       = new AiStrategy(profile, economy);
         _pathController = GetComponent<PathController>();
 
+        // Если PathController не добавлен на префаб — добавляем автоматически
         if (_pathController == null)
-            Debug.LogError($"[AITrader] {DisplayName}: PathController не найден на GameObject.");
+        {
+            _pathController = gameObject.AddComponent<PathController>();
+            Debug.Log($"[AITrader] {DisplayName}: PathController добавлен автоматически.");
+        }
+
+        // Передаём сам GameObject как визуальный токен
+        // PathController.tokenObject — это [SerializeField], поэтому используем публичный метод
+        _pathController.SetTokenObject(gameObject);
     }
 
     // ------------------------------------------------------------------
@@ -74,27 +82,33 @@ public class AITrader : MonoBehaviour, ITrader
     {
         if (intent.SelectedPath == null)
         {
-            // Нет пути — стоим
+            Debug.Log($"[AITrader] {DisplayName}: путь не выбран — стоим.");
             yield break;
         }
 
-        _pathController.SetPath(intent.SelectedPath);
+        Debug.Log($"[AITrader] {DisplayName}: начинаем движение по '{intent.SelectedPath.name}' " +
+                  $"из {CurrentCity?.CityName}. " +
+                  $"CurrentPath совпадает: {_pathController.CurrentPath == intent.SelectedPath}");
 
-        // Идём клетка за клеткой как PlayerToken.AdvanceToken()
-        while (true)
+        // Устанавливаем путь если это новый путь
+        if (_pathController.CurrentPath != intent.SelectedPath)
         {
-            bool arrived = _pathController.Step();
+            _pathController.SetPath(intent.SelectedPath);
+            Debug.Log($"[AITrader] {DisplayName}: SetPath вызван.");
+        }
 
-            if (arrived)
-            {
-                ArriveAtDestination(intent.SelectedPath);
-                yield break;
-            }
+        bool arrived = _pathController.Step();
 
+        Debug.Log($"[AITrader] {DisplayName}: Step() → arrived={arrived}");
+
+        if (arrived)
+        {
+            ArriveAtDestination(intent.SelectedPath);
+        }
+        else
+        {
             _pathController.MoveCurrent();
-
-            // Пауза между шагами — совпадает с ритмом игрока
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForSeconds(AITurnManager.Instance.StepDelay);
         }
     }
 
