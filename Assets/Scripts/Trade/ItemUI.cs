@@ -32,8 +32,8 @@ public class ItemUI : MonoBehaviour
         // --- Обновление визуальных данных ---
         
         //icon.sprite = cityItem.item.icon;
-        /*itemName.text = cityItem.item.itemName ?? "Unknown Item";
-        cityStock.text = cityItem.stock.ToString();
+        itemName.text = cityItem.item.itemName ?? "Unknown Item";
+        /*cityStock.text = cityItem.stock.ToString();
         cityBuyPrice.text = cityItem.buyPrice.ToString();
         citySellPrice.text = cityItem.sellPrice.ToString();
         playerStock.text = currentPlayerStock.ToString();*/

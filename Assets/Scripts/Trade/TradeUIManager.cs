@@ -138,6 +138,9 @@ public class TradeUIManager : MonoBehaviour
 
     private void CreateItemUIs(CityData city, PlayerInventory playerInventory)
     {
+        Debug.Log($"[TradeUI] Создаю UI для города {city.cityName}. " +
+                  $"Товаров: {city.items?.Count ?? 0}");
+        
         if (city.items == null || city.items.Count == 0)
         {
             Debug.LogWarning($"City {city.cityName} has no items to trade!");
@@ -146,6 +149,7 @@ public class TradeUIManager : MonoBehaviour
 
         foreach (var cityItem in city.items)
         {
+            Debug.Log($"[TradeUI] Товар: {cityItem?.item?.itemName ?? "NULL"}");
             if (ValidateCityItem(cityItem))
             {
                 CreateItemUI(cityItem, playerInventory);
