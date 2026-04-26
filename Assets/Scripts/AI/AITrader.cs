@@ -3,31 +3,37 @@ using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// ИИ-торговец. Зеркало PlayerToken — двигается пошагово через PathController,
-/// но вместо ввода игрока использует AiStrategy.
-///
-/// Подключается к сцене как MonoBehaviour на отдельном GameObject.
-/// GameManager.AI создаёт его через Instantiate(profile.tokenPrefab).
+/// ИИ-торговец. Зеркало PlayerToken:
+///   - В городе: выбирает путь, торгует
+///   - В пути: делает один шаг за ход
+///   - Прибыл: торгует, ждёт следующего хода для выбора пути
 /// </summary>
 public class AITrader : MonoBehaviour, ITrader
 {
     // --- ITrader ---
-    public string DisplayName { get; private set; }
-    public int    Initiative  { get; private set; }
-    public int    Gold        { get; private set; }
-    public City   CurrentCity { get; private set; }
-    public Inventory Inventory { get; } = new Inventory();
+    public string    DisplayName { get; private set; }
+    public int       Initiative  { get; private set; }
+    public int       Gold        { get; private set; }
+    public City      CurrentCity { get; private set; }
+    public Inventory Inventory   { get; } = new Inventory();
 
-    public event Action<ITrader, City>                  OnArrivedAtCity;
-    public event Action<ITrader, PathCellInitializer>   OnPathBlocked;
+    public event Action<ITrader, City>                OnArrivedAtCity;
+    public event Action<ITrader, PathCellInitializer> OnPathBlocked;
+
+    // --- Состояние ---
+    private enum TraderState { InCity, OnPath }
+    private TraderState _state = TraderState.InCity;
 
     // --- Внутренние ---
     private TraderProfile  _profile;
     private AiStrategy     _strategy;
-    private PathController _pathController; // берём с того же GameObject
+    private PathController _pathController;
+
+    // Путь выбранный в городе — сохраняем до момента движения
+    private PathCellInitializer _chosenPath;
 
     // ------------------------------------------------------------------
-    // Инициализация (вызывается из AITurnManager)
+    // Инициализация
     // ------------------------------------------------------------------
 
     public void Initialize(TraderProfile profile, City startCity, WorldEconomy economy)
@@ -37,36 +43,55 @@ public class AITrader : MonoBehaviour, ITrader
         Initiative      = profile.initiative;
         Gold            = profile.startGold;
         CurrentCity     = startCity;
+        _state          = TraderState.InCity;
         _strategy       = new AiStrategy(profile, economy);
-        _pathController = GetComponent<PathController>();
 
-        // Если PathController не добавлен на префаб — добавляем автоматически
+        _pathController = GetComponent<PathController>();
         if (_pathController == null)
         {
             _pathController = gameObject.AddComponent<PathController>();
             Debug.Log($"[AITrader] {DisplayName}: PathController добавлен автоматически.");
         }
-
-        // Передаём сам GameObject как визуальный токен
-        // PathController.tokenObject — это [SerializeField], поэтому используем публичный метод
         _pathController.SetTokenObject(gameObject);
     }
 
     // ------------------------------------------------------------------
-    // ITrader — планирование (вызывается из TurnQueue в фоне)
+    // ITrader — планирование
+    // Вызывается из Task.Run() в начале каждого хода
     // ------------------------------------------------------------------
 
     public TurnIntent PlanTurn(GameSnapshot snapshot)
     {
-        return _strategy.Evaluate(snapshot, this);
+        var intent = new TurnIntent { Trader = this };
+
+        if (_state == TraderState.InCity)
+        {
+            // В городе: выбираем путь через стратегию
+            var fullIntent   = _strategy.Evaluate(snapshot, this);
+            intent.SelectedPath = fullIntent.SelectedPath;
+            intent.BuyOrders    = fullIntent.BuyOrders;
+            intent.SellOrders   = fullIntent.SellOrders;
+
+            _chosenPath = intent.SelectedPath;
+        }
+        else
+        {
+            // На пути: просто продолжаем идти, торговли нет
+            intent.SelectedPath = _chosenPath;
+        }
+
+        return intent;
     }
 
     // ------------------------------------------------------------------
-    // ITrader — торговля (вызывается TurnQueue по инициативе)
+    // ITrader — торговля
+    // Вызывается TurnQueue только если ИИ в городе
     // ------------------------------------------------------------------
 
     public void ExecuteTrade(TurnIntent intent, WorldEconomy economy)
     {
+        if (_state != TraderState.InCity) return;
+
         foreach (var order in intent.SellOrders)
             economy.Sell(CurrentCity, order.GoodId, order.Amount, this);
 
@@ -75,31 +100,28 @@ public class AITrader : MonoBehaviour, ITrader
     }
 
     // ------------------------------------------------------------------
-    // ITrader — движение (корутина, yield return из TurnQueue)
+    // ITrader — движение (один шаг за ход)
     // ------------------------------------------------------------------
 
     public IEnumerator ExecuteMovement(TurnIntent intent)
     {
         if (intent.SelectedPath == null)
         {
-            Debug.Log($"[AITrader] {DisplayName}: путь не выбран — стоим.");
+            Debug.Log($"[AITrader] {DisplayName}: путь не выбран — стоим в {CurrentCity?.CityName}.");
             yield break;
         }
 
-        Debug.Log($"[AITrader] {DisplayName}: начинаем движение по '{intent.SelectedPath.name}' " +
-                  $"из {CurrentCity?.CityName}. " +
-                  $"CurrentPath совпадает: {_pathController.CurrentPath == intent.SelectedPath}");
-
-        // Устанавливаем путь если это новый путь
+        // Новый путь — устанавливаем
         if (_pathController.CurrentPath != intent.SelectedPath)
         {
             _pathController.SetPath(intent.SelectedPath);
-            Debug.Log($"[AITrader] {DisplayName}: SetPath вызван.");
+            _state = TraderState.OnPath;
+            Debug.Log($"[AITrader] {DisplayName}: выходит из {CurrentCity?.CityName} " +
+                      $"по пути '{intent.SelectedPath.name}'.");
         }
 
+        // Один шаг
         bool arrived = _pathController.Step();
-
-        Debug.Log($"[AITrader] {DisplayName}: Step() → arrived={arrived}");
 
         if (arrived)
         {
@@ -113,13 +135,15 @@ public class AITrader : MonoBehaviour, ITrader
     }
 
     // ------------------------------------------------------------------
-    // Вспомогательные
+    // Прибытие в город
     // ------------------------------------------------------------------
 
     private void ArriveAtDestination(PathCellInitializer path)
     {
         City finish = path.FinishCity;
         _pathController.ResetPath();
+        _chosenPath = null;
+        _state      = TraderState.InCity;
 
         if (finish != null)
         {
@@ -129,14 +153,21 @@ public class AITrader : MonoBehaviour, ITrader
         }
     }
 
-    /// <summary>Вызывается TurnQueue когда путь занят другим торговцем.</summary>
+    // ------------------------------------------------------------------
+    // Уведомления
+    // ------------------------------------------------------------------
+
     public void NotifyPathBlocked(PathCellInitializer path)
     {
-        Debug.Log($"[AITrader] {DisplayName}: путь {path?.name} занят.");
+        Debug.Log($"[AITrader] {DisplayName}: путь '{path?.name}' занят — стоим.");
+        _chosenPath = null;
         OnPathBlocked?.Invoke(this, path);
     }
 
-    // Вызывается WorldEconomy при исполнении сделок
-    public void AddGold(int amount)    => Gold += amount;
-    public void SpendGold(int amount)  => Gold =  Mathf.Max(0, Gold - amount);
+    // ------------------------------------------------------------------
+    // Экономика
+    // ------------------------------------------------------------------
+
+    public void AddGold(int amount)   => Gold += amount;
+    public void SpendGold(int amount) => Gold  = Mathf.Max(0, Gold - amount);
 }
