@@ -3,7 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Scriptable Object для хранения данных о картах битвы (врагах).
 /// </summary>
-[CreateAssetMenu(fileName = "NewBattleCard", menuName = "Game Data/Battle Card")]
+[CreateAssetMenu(fileName = "NewBattleCard", menuName = "Battle Card/Card")]
 public class BattleCardData : ScriptableObject
 {
     // --- Идентификация и Описание ---

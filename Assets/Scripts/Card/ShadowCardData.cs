@@ -2,7 +2,7 @@ using UnityEngine;
 
 public enum ShadowEffectType { Money, Attack, Capacity, Bargain }
 
-[CreateAssetMenu(fileName = "NewShadowCard", menuName = "Shadow System/Card")]
+[CreateAssetMenu(fileName = "NewShadowCard", menuName = "Event System/Card")]
 public class ShadowCardData : ScriptableObject
 {
     public string cardName;

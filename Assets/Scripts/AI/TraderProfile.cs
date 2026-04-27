@@ -7,7 +7,7 @@ using UnityEngine;
 /// </summary>
 [CreateAssetMenu(
     fileName = "TraderProfile",
-    menuName  = "1000Roads/TraderProfile")]
+    menuName  = "AITrader/TraderProfile")]
 public class TraderProfile : ScriptableObject
 {
     [Header("Идентификация")]
