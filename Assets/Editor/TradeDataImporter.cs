@@ -1,12 +1,10 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor
-{
+// ИЗМЕНЕНО: Имя пространства имен. "Editor" ломает Unity.
     public static class TradeDataImporter
     {
         // ─── Пути ────────────────────────────────────────────────────────────
@@ -15,11 +13,10 @@ namespace Editor
         private const string CitiesPath   = BaseDataPath + "/Cities";
 
         // ─── Формат CSV ──────────────────────────────────────────────────────
-        private const char   CsvSeparator      = ',';
-        private const int    MinColumnsBasic    = 6;   // City,Item,Weight,Stock,BuyPrice,SellPrice
-        private const int    MinColumnsExtended = 9;   // + MinBuy,MaxBuy,Volatility[,RegenRate]
+        private const char CsvSeparator       = ',';
+        private const int  MinColumnsBasic    = 6;
+        private const int  MinColumnsExtended = 9;
 
-        // Индексы колонок
         private const int ColCity        = 0;
         private const int ColItem        = 1;
         private const int ColWeight      = 2;
@@ -31,13 +28,13 @@ namespace Editor
         private const int ColVolatility  = 8;
         private const int ColRegenRate   = 9;
 
-        // ─── Дефолтные значения для расширенного формата ────────────────────
-        private const float DefaultPriceRangeMin  = 0.5f;   // минимум = base × 0.5
-        private const float DefaultPriceRangeMax  = 2.0f;   // максимум = base × 2.0
-        private const float DefaultVolatility     = 0.02f;
-        private const float DefaultRegenRate      = 0.10f;
-        private const int   DefaultWeight         = 1;
-        private const int   DefaultStock          = 0;
+        // ─── Дефолтные значения ──────────────────────────────────────────────
+        private const float DefaultPriceRangeMin = 0.5f;
+        private const float DefaultPriceRangeMax = 2.0f;
+        private const float DefaultVolatility    = 0.02f;
+        private const float DefaultRegenRate     = 0.10f;
+        private const int   DefaultWeight        = 1;
+        private const int   DefaultStock         = 0;
 
         // ─── Импорт ──────────────────────────────────────────────────────────
         [MenuItem("Trade/Import Trade Data")]
@@ -51,15 +48,6 @@ namespace Editor
                 Debug.Log("Импорт отменён: файл не выбран");
                 return;
             }
-            Debug.Log($"Выбран файл: {csvPath}");
-
-            EnsureDirectoryExists(BaseDataPath);
-            EnsureDirectoryExists(ItemsPath);
-            EnsureDirectoryExists(CitiesPath);
-
-            var allCities = LoadAllAssets<CityData>("Cities");
-            var allItems  = LoadAllAssets<Item>("Items");
-            Debug.Log($"Найдено: {allCities.Count} городов, {allItems.Count} товаров");
 
             string[] lines = File.ReadAllLines(csvPath);
             if (lines.Length < 2)
@@ -68,147 +56,187 @@ namespace Editor
                 return;
             }
 
-            int createdItems    = 0;
-            int createdCities   = 0;
-            int processedRows   = 0;
-            int skippedRows     = 0;
-            var updatedCitySet  = new HashSet<string>();
+            var cityNamesInCsv = new HashSet<string>();
+            var itemByName     = new Dictionary<string, Item>();
+            var cityByName     = new Dictionary<string, CityData>();
+            
+            int processedRows = 0;
+            int skippedRows   = 0;
 
-            for (int i = 1; i < lines.Length; i++)
+            // ИЗМЕНЕНО: StartAssetEditing теперь охватывает ВЕСЬ процесс изменения ассетов.
+            AssetDatabase.StartAssetEditing();
+            try
             {
-                string line = lines[i];
-                if (string.IsNullOrWhiteSpace(line)) continue;
+                // ── Подготовка папок
+                EnsureDirectoryExists(BaseDataPath);
+                EnsureDirectoryExists(ItemsPath);
+                EnsureDirectoryExists(CitiesPath);
 
-                string[] parts = line.Split(CsvSeparator);
-
-                if (parts.Length < MinColumnsBasic)
+                // ── Шаг 1: собираем названия городов из CSV
+                for (int i = 1; i < lines.Length; i++)
                 {
-                    Debug.LogWarning($"Строка {i + 1}: пропуск — нужно минимум {MinColumnsBasic} колонок, найдено {parts.Length}");
-                    skippedRows++;
-                    continue;
+                    string line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    
+                    string[] parts = line.Split(CsvSeparator);
+                    if (parts.Length < MinColumnsBasic) continue;
+                    
+                    string cityName = SanitizeName(parts[ColCity]);
+                    if (!string.IsNullOrEmpty(cityName))
+                        cityNamesInCsv.Add(cityName);
                 }
 
-                string cityName = parts[ColCity].Trim();
-                string itemName = parts[ColItem].Trim();
-
-                if (string.IsNullOrEmpty(cityName) || string.IsNullOrEmpty(itemName))
+                // ── Шаг 2: удаляем только те City assets, которые есть в CSV
+                foreach (string cityName in cityNamesInCsv)
                 {
-                    Debug.LogWarning($"Строка {i + 1}: пропуск — пустое название города или товара");
-                    skippedRows++;
-                    continue;
+                    string cityPath = $"{CitiesPath}/{cityName}.asset";
+                    if (AssetDatabase.LoadAssetAtPath<CityData>(cityPath) != null)
+                    {
+                        AssetDatabase.DeleteAsset(cityPath);
+                        Debug.Log($"Удалён старый город: {cityName}");
+                    }
                 }
 
-                float buyPrice  = TryParseFloat(parts[ColBuyPrice],  10f);
-                float sellPrice = TryParseFloat(parts[ColSellPrice],  8f);
-
-
-
-                // Город
-                var city = allCities.FirstOrDefault(c => c.cityName == cityName);
-                if (city == null)
+                // ── Шаг 3: создаём / обновляем Item assets
+                for (int i = 1; i < lines.Length; i++)
                 {
-                    city = ScriptableObject.CreateInstance<CityData>();
-                    city.cityName = cityName;
-                    city.items    = new List<CityData.CityItem>();
-                    AssetDatabase.CreateAsset(city, $"{CitiesPath}/{cityName}.asset");
-                    allCities.Add(city);
-                    createdCities++;
-                    Debug.Log($"Создан город: {cityName}");
+                    string line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+
+                    string[] parts = line.Split(CsvSeparator);
+                    if (parts.Length < MinColumnsBasic) continue;
+
+                    string itemName = SanitizeName(parts[ColItem]);
+                    if (string.IsNullOrEmpty(itemName) || itemByName.ContainsKey(itemName)) continue;
+
+                    string itemPath = $"{ItemsPath}/{itemName}.asset";
+                    var item = AssetDatabase.LoadAssetAtPath<Item>(itemPath);
+
+                    if (item == null)
+                    {
+                        item          = ScriptableObject.CreateInstance<Item>();
+                        item.itemName = itemName;
+                        item.weight   = TryParseInt(parts[ColWeight], DefaultWeight);
+                        AssetDatabase.CreateAsset(item, itemPath);
+                    }
+                    else
+                    {
+                        item.weight = TryParseInt(parts[ColWeight], DefaultWeight);
+                        EditorUtility.SetDirty(item);
+                    }
+
+                    itemByName[itemName] = item;
                 }
 
-                // Товар
-                var item = allItems.FirstOrDefault(it => it.itemName == itemName);
-                if (item == null)
+                // ── Шаг 4: создаём города и заполняем товарами
+                for (int i = 1; i < lines.Length; i++)
                 {
-                    item = ScriptableObject.CreateInstance<Item>();
-                    item.itemName = itemName;
-                    item.weight   = TryParseInt(parts[ColWeight], DefaultWeight);
-                    AssetDatabase.CreateAsset(item, $"{ItemsPath}/{itemName}.asset");
-                    allItems.Add(item);
-                    createdItems++;
-                    Debug.Log($"Создан товар: {itemName}");
-                }
+                    string line = lines[i];
+                    if (string.IsNullOrWhiteSpace(line)) continue;
 
-                // Запись в город
-                var cityItem = city.items.FirstOrDefault(ci => ci.item == item);
-                if (cityItem == null)
-                {
-                    cityItem = new CityData.CityItem { item = item };
+                    string[] parts = line.Split(CsvSeparator);
+
+                    if (parts.Length < MinColumnsBasic)
+                    {
+                        Debug.LogWarning($"Строка {i + 1}: пропуск — нужно {MinColumnsBasic} колонок, найдено {parts.Length}");
+                        skippedRows++;
+                        continue;
+                    }
+
+                    string cityName = SanitizeName(parts[ColCity]);
+                    string itemName = SanitizeName(parts[ColItem]);
+
+                    if (string.IsNullOrEmpty(cityName) || string.IsNullOrEmpty(itemName))
+                    {
+                        skippedRows++;
+                        continue;
+                    }
+
+                    if (!itemByName.TryGetValue(itemName, out Item item))
+                    {
+                        skippedRows++;
+                        continue;
+                    }
+
+                    if (!cityByName.TryGetValue(cityName, out CityData city))
+                    {
+                        city          = ScriptableObject.CreateInstance<CityData>();
+                        city.cityName = cityName;
+                        city.items    = new List<CityData.CityItem>();
+                        AssetDatabase.CreateAsset(city, $"{CitiesPath}/{cityName}.asset");
+                        cityByName[cityName] = city;
+                    }
+
+                    float buyPrice  = TryParseFloat(parts[ColBuyPrice], 10f);
+                    float sellPrice = TryParseFloat(parts[ColSellPrice], 8f);
+
+                    var cityItem = new CityData.CityItem { item = item };
+                    cityItem.stock            = TryParseInt(parts[ColStock], DefaultStock);
+                    cityItem.baseBuyPrice     = buyPrice;
+                    cityItem.currentBuyPrice  = buyPrice;
+                    cityItem.baseSellPrice    = sellPrice;
+                    cityItem.currentSellPrice = sellPrice;
+
+                    if (parts.Length >= MinColumnsExtended)
+                    {
+                        cityItem.minBuyPrice = TryParseFloat(parts[ColMinBuyPrice], buyPrice * DefaultPriceRangeMin);
+                        cityItem.maxBuyPrice = TryParseFloat(parts[ColMaxBuyPrice], buyPrice * DefaultPriceRangeMax);
+
+                        float spread          = buyPrice > 0 ? sellPrice / buyPrice : DefaultPriceRangeMin;
+                        cityItem.minSellPrice = cityItem.minBuyPrice * spread;
+                        cityItem.maxSellPrice = cityItem.maxBuyPrice * spread;
+
+                        cityItem.volatility = TryParseFloat(parts[ColVolatility], DefaultVolatility);
+                        cityItem.regenRate  = parts.Length > ColRegenRate
+                            ? TryParseFloat(parts[ColRegenRate], DefaultRegenRate)
+                            : DefaultRegenRate;
+                    }
+                    else
+                    {
+                        cityItem.minBuyPrice  = Mathf.Max(1f, buyPrice  * DefaultPriceRangeMin);
+                        cityItem.maxBuyPrice  = buyPrice  * DefaultPriceRangeMax;
+                        cityItem.minSellPrice = Mathf.Max(1f, sellPrice * DefaultPriceRangeMin);
+                        cityItem.maxSellPrice = sellPrice * DefaultPriceRangeMax;
+                        cityItem.volatility   = DefaultVolatility;
+                        cityItem.regenRate    = DefaultRegenRate;
+                    }
+
                     city.items.Add(cityItem);
+                    EditorUtility.SetDirty(city);
+                    processedRows++;
                 }
-
-                cityItem.stock = TryParseInt(parts[ColStock], DefaultStock);
-
-                // Цены покупки
-                cityItem.baseBuyPrice    = buyPrice;
-                cityItem.currentBuyPrice = buyPrice;
-
-                // Цены продажи
-                cityItem.baseSellPrice    = sellPrice;
-                cityItem.currentSellPrice = sellPrice;
-
-                // Расширенный формат
-                if (parts.Length >= MinColumnsExtended)
-                {
-                    cityItem.minBuyPrice = TryParseFloat(parts[ColMinBuyPrice], buyPrice  * DefaultPriceRangeMin);
-                    cityItem.maxBuyPrice = TryParseFloat(parts[ColMaxBuyPrice], buyPrice  * DefaultPriceRangeMax);
-
-                    float spreadRatio      = buyPrice > 0 ? sellPrice / buyPrice : DefaultPriceRangeMin;
-                    cityItem.minSellPrice  = cityItem.minBuyPrice * spreadRatio;
-                    cityItem.maxSellPrice  = cityItem.maxBuyPrice * spreadRatio;
-
-                    cityItem.volatility = TryParseFloat(parts[ColVolatility], DefaultVolatility);
-                    cityItem.regenRate  = parts.Length > ColRegenRate
-                        ? TryParseFloat(parts[ColRegenRate], DefaultRegenRate)
-                        : DefaultRegenRate;
-                }
-                else
-                {
-                    cityItem.minBuyPrice  = Mathf.Max(1f, buyPrice  * DefaultPriceRangeMin);
-                    cityItem.maxBuyPrice  = buyPrice  * DefaultPriceRangeMax;
-                    cityItem.minSellPrice = Mathf.Max(1f, sellPrice * DefaultPriceRangeMin);
-                    cityItem.maxSellPrice = sellPrice * DefaultPriceRangeMax;
-                    cityItem.volatility   = DefaultVolatility;
-                    cityItem.regenRate    = DefaultRegenRate;
-                }
-
-                EditorUtility.SetDirty(city);
-                updatedCitySet.Add(cityName);
-                processedRows++;
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
             }
 
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            AssetDatabase.Refresh(); // ИЗМЕНЕНО: Принудительно обновляем БД ассетов
 
             Debug.Log("=== РЕЗУЛЬТАТ ===");
-            Debug.Log($"Обработано строк:  {processedRows}");
-            Debug.Log($"Пропущено строк:   {skippedRows}");
-            Debug.Log($"Создано городов:   {createdCities}");
-            Debug.Log($"Создано товаров:   {createdItems}");
-            Debug.Log($"Обновлено городов: {updatedCitySet.Count}");
+            Debug.Log($"Обработано строк: {processedRows}");
+            Debug.Log($"Пропущено строк:  {skippedRows}");
+            Debug.Log($"Товаров:          {itemByName.Count}");
+            Debug.Log($"Городов:          {cityByName.Count}");
             Debug.Log("Импорт завершён!");
         }
 
         // ─── Вспомогательные методы ──────────────────────────────────────────
-        private static List<T> LoadAllAssets<T>(string folder) where T : Object
-        {
-            string[] guids = AssetDatabase.FindAssets(
-                $"t:{typeof(T).Name}",
-                new[] { $"{BaseDataPath}/{folder}" }
-            );
-            return guids
-                .Select(guid => AssetDatabase.LoadAssetAtPath<T>(AssetDatabase.GUIDToAssetPath(guid)))
-                .Where(asset => asset != null)
-                .ToList();
-        }
 
         private static void EnsureDirectoryExists(string path)
         {
             if (AssetDatabase.IsValidFolder(path)) return;
-            string parent = Path.GetDirectoryName(path);
+            string parent = Path.GetDirectoryName(path)?.Replace('\\', '/') ?? "";
             string folder = Path.GetFileName(path);
             AssetDatabase.CreateFolder(parent, folder);
-            Debug.Log($"Создана папка: {path}");
+        }
+
+        // ИЗМЕНЕНО: Удаление символов, запрещенных в именах файлов (:, *, ? и т.д.)
+        private static string SanitizeName(string value)
+        {
+            string clean = value.Trim().Trim('"').Trim('\'').Trim();
+            return string.Join("", clean.Split(Path.GetInvalidFileNameChars()));
         }
 
         private static int TryParseInt(string value, int defaultValue) =>
@@ -217,9 +245,11 @@ namespace Editor
         private static float TryParseFloat(string value, float defaultValue)
         {
             string normalized = value.Replace(',', '.').Trim();
-            return float.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out float result)
-                ? result
-                : defaultValue;
+            return float.TryParse(
+                normalized,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out float result
+            ) ? result : defaultValue;
         }
     }
-}
