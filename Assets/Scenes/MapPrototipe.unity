@@ -13719,7 +13719,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  finishCity: {fileID: 930105156}
+  finishCity: {fileID: 1088012663}
   initializeOnStart: 1
 --- !u!1001 &96190151
 PrefabInstance:
@@ -77679,7 +77679,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  finishCity: {fileID: 930105156}
+  finishCity: {fileID: 813887935}
   initializeOnStart: 1
 --- !u!1001 &502781848
 PrefabInstance:
@@ -101354,7 +101354,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PathCellInitializer
-  finishCity: {fileID: 930105156}
+  finishCity: {fileID: 731879884}
   initializeOnStart: 1
 --- !u!1001 &658616520
 PrefabInstance:
@@ -110610,6 +110610,10 @@ PrefabInstance:
       propertyPath: cityName
       value: "14\u041A\u0443\u043B\u0430\u043B"
       objectReference: {fileID: 0}
+    - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+      propertyPath: cityDataSO
+      value: 
+      objectReference: {fileID: 11400000, guid: 4f38f5e71c9f76f459d02dbdb1068138, type: 2}
     - target: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: inCityPaths.Array.size
       value: 3
@@ -122414,6 +122418,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 813641090}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &813887935 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+  m_PrefabInstance: {fileID: 725249076}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &814973693
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -142612,7 +142627,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  finishCity: {fileID: 78477281}
+  finishCity: {fileID: 1442100725}
   initializeOnStart: 1
 --- !u!1001 &964065313
 PrefabInstance:
@@ -161007,7 +161022,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  finishCity: {fileID: 930105156}
+  finishCity: {fileID: 2142251983}
   initializeOnStart: 1
 --- !u!1001 &1086288318
 PrefabInstance:
@@ -161577,6 +161592,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5520971714515997920, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
   m_PrefabInstance: {fileID: 1088012661}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1088012663 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+  m_PrefabInstance: {fileID: 1088012661}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1089346902
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -166312,7 +166338,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PathCellInitializer
-  finishCity: {fileID: 930105156}
+  finishCity: {fileID: 813887935}
   initializeOnStart: 1
 --- !u!4 &1116791942
 Transform:
@@ -213732,6 +213758,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 1441587292}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1442100725 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+  m_PrefabInstance: {fileID: 1257806120}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1442142899
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -228168,7 +228205,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PathCellInitializer
-  finishCity: {fileID: 967637869}
+  finishCity: {fileID: 400054865377390355}
   initializeOnStart: 1
 --- !u!1001 &1538392309
 PrefabInstance:
@@ -285283,7 +285320,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  finishCity: {fileID: 78477281}
+  finishCity: {fileID: 813887935}
   initializeOnStart: 1
 --- !u!4 &1951093587 stripped
 Transform:
@@ -292318,7 +292355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb01100892ec7ed4ab780b82f2f74f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PathCellInitializer
-  finishCity: {fileID: 967637869}
+  finishCity: {fileID: 1442100725}
   initializeOnStart: 1
 --- !u!1 &2001832234
 GameObject:
@@ -314335,6 +314372,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 2141339896}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2142251983 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8556862173484020781, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
+  m_PrefabInstance: {fileID: 1848278701}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e134052cea55bb847a01fee1a65342fd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &2143242181
 PrefabInstance:
   m_ObjectHideFlags: 0
