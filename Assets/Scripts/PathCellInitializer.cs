@@ -20,27 +20,20 @@ public class PathCellInitializer : MonoBehaviour
 
     public void InitializeCells()
     {
-        if (_isInitialized)
-        {
-            Debug.LogWarning($"PathCellInitializer: Путь '{name}' уже инициализирован");
-            return;
-        }
+        if (_isInitialized) return; // убрали предупреждение — это нормальная ситуация
 
         int cellIndex = 0;
 
         foreach (Transform child in transform)
         {
-            if (!child.CompareTag("Cell"))
-                continue;
+            if (!child.CompareTag("Cell")) continue;
 
             Cell cell = child.GetComponent<Cell>();
             if (cell == null)
-            {
                 cell = child.gameObject.AddComponent<Cell>();
-            }
 
             cell.cellNumber = cellIndex;
-            child.name = $"Cell_{cellIndex}";
+            child.name      = $"Cell_{cellIndex}";
             cellIndex++;
         }
 
