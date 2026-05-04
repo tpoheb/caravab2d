@@ -76187,33 +76187,13 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 491513055}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
 --- !u!4 &491513053 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 491513052}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &491513054 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
-  m_PrefabInstance: {fileID: 491513052}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &491513055
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 491513054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6add3a2da63b92b48b6ebdb6a57ab14f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HexUVFixer
 --- !u!1001 &492643818
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -121180,33 +121160,13 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 805166698}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
 --- !u!4 &805166696 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 805166695}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &805166697 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
-  m_PrefabInstance: {fileID: 805166695}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &805166698
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 805166697}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6add3a2da63b92b48b6ebdb6a57ab14f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HexUVFixer
 --- !u!1001 &805625402
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -128380,7 +128340,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4023432729788493999, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 923.2765
+      value: 1043.2765
       objectReference: {fileID: 0}
     - target: {fileID: 4023432729788493999, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -128388,7 +128348,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4023432729788493999, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 18.911026
+      value: 62.244354
       objectReference: {fileID: 0}
     - target: {fileID: 5520971714515997920, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_LocalScale.x
@@ -197484,25 +197444,61 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WorldEconomy
   allCities:
-  - {fileID: 11400000, guid: a4baa8ebea6518d4699b34833e79851f, type: 2}
-  - {fileID: 11400000, guid: 65735cdb476a24c4db89be03ea5ee645, type: 2}
-  - {fileID: 11400000, guid: df13fc2862d62914a9a9692a13615764, type: 2}
-  - {fileID: 11400000, guid: 1d41c1c13e3d949478c8d9563df5bc94, type: 2}
-  - {fileID: 11400000, guid: b76e18ccfd8f8fd458c649958604ef5e, type: 2}
-  - {fileID: 11400000, guid: c06c4587bf1cf9d4ebbbb2fb92559741, type: 2}
+  - {fileID: 11400000, guid: 0a5128079178b624e802387c9b275c69, type: 2}
+  - {fileID: 11400000, guid: d51e600596bef7542b72df2376beeae5, type: 2}
+  - {fileID: 11400000, guid: c058a3915844a71408917e5f49915347, type: 2}
+  - {fileID: 11400000, guid: 57ff6810051171543822f5df1ffcaafd, type: 2}
+  - {fileID: 11400000, guid: 284e8895a22056b489e1f743ff80b8f0, type: 2}
+  - {fileID: 11400000, guid: 1cbcfbc192ed7df499f0c91ba86c13f3, type: 2}
+  - {fileID: 11400000, guid: 6b941fc87fad1394583efb95e639f09b, type: 2}
+  - {fileID: 11400000, guid: 8193733d526aeed438b44a131643866b, type: 2}
+  - {fileID: 11400000, guid: 8e0b75e0365433c40b1f51049bd8449c, type: 2}
+  - {fileID: 11400000, guid: 85196772467c7ab499eebfdd5fb215a4, type: 2}
+  - {fileID: 11400000, guid: 8f379c31ec35e644598e083d2c2860e2, type: 2}
+  - {fileID: 11400000, guid: a5ab5f318abd39a41b7e64c124fc76ba, type: 2}
+  - {fileID: 11400000, guid: 2214ce207c5f13641898cc54b2402db3, type: 2}
+  - {fileID: 11400000, guid: 4f38f5e71c9f76f459d02dbdb1068138, type: 2}
+  - {fileID: 11400000, guid: 087a839db91b9174eb295cd0f27e301b, type: 2}
+  - {fileID: 11400000, guid: 1cb964c919fa76749925344318b637e2, type: 2}
+  - {fileID: 11400000, guid: d9adf446b28cc594697d53bd07c6da2d, type: 2}
+  - {fileID: 11400000, guid: 1c5438c97771a91428911e18d96925f5, type: 2}
   cityBindings:
   - city: {fileID: 400054865377390355}
-    cityData: {fileID: 11400000, guid: a4baa8ebea6518d4699b34833e79851f, type: 2}
+    cityData: {fileID: 11400000, guid: 0a5128079178b624e802387c9b275c69, type: 2}
   - city: {fileID: 1870378441}
-    cityData: {fileID: 11400000, guid: 65735cdb476a24c4db89be03ea5ee645, type: 2}
+    cityData: {fileID: 11400000, guid: d51e600596bef7542b72df2376beeae5, type: 2}
   - city: {fileID: 2027821406}
-    cityData: {fileID: 11400000, guid: df13fc2862d62914a9a9692a13615764, type: 2}
+    cityData: {fileID: 11400000, guid: d51e600596bef7542b72df2376beeae5, type: 2}
   - city: {fileID: 850717027}
-    cityData: {fileID: 11400000, guid: 1d41c1c13e3d949478c8d9563df5bc94, type: 2}
+    cityData: {fileID: 11400000, guid: 57ff6810051171543822f5df1ffcaafd, type: 2}
   - city: {fileID: 2065463019}
-    cityData: {fileID: 11400000, guid: b76e18ccfd8f8fd458c649958604ef5e, type: 2}
+    cityData: {fileID: 11400000, guid: 284e8895a22056b489e1f743ff80b8f0, type: 2}
   - city: {fileID: 862948273}
-    cityData: {fileID: 11400000, guid: c06c4587bf1cf9d4ebbbb2fb92559741, type: 2}
+    cityData: {fileID: 11400000, guid: 1cbcfbc192ed7df499f0c91ba86c13f3, type: 2}
+  - city: {fileID: 1145500933}
+    cityData: {fileID: 11400000, guid: 6b941fc87fad1394583efb95e639f09b, type: 2}
+  - city: {fileID: 1000462012}
+    cityData: {fileID: 11400000, guid: 8193733d526aeed438b44a131643866b, type: 2}
+  - city: {fileID: 1518642052}
+    cityData: {fileID: 11400000, guid: 8e0b75e0365433c40b1f51049bd8449c, type: 2}
+  - city: {fileID: 78477281}
+    cityData: {fileID: 11400000, guid: 85196772467c7ab499eebfdd5fb215a4, type: 2}
+  - city: {fileID: 930105156}
+    cityData: {fileID: 11400000, guid: 8f379c31ec35e644598e083d2c2860e2, type: 2}
+  - city: {fileID: 969910623}
+    cityData: {fileID: 11400000, guid: a5ab5f318abd39a41b7e64c124fc76ba, type: 2}
+  - city: {fileID: 967637869}
+    cityData: {fileID: 11400000, guid: 2214ce207c5f13641898cc54b2402db3, type: 2}
+  - city: {fileID: 813887935}
+    cityData: {fileID: 11400000, guid: 4f38f5e71c9f76f459d02dbdb1068138, type: 2}
+  - city: {fileID: 2142251983}
+    cityData: {fileID: 11400000, guid: 087a839db91b9174eb295cd0f27e301b, type: 2}
+  - city: {fileID: 731879884}
+    cityData: {fileID: 11400000, guid: 1cb964c919fa76749925344318b637e2, type: 2}
+  - city: {fileID: 1088012663}
+    cityData: {fileID: 11400000, guid: d9adf446b28cc594697d53bd07c6da2d, type: 2}
+  - city: {fileID: 1442100725}
+    cityData: {fileID: 11400000, guid: 1c5438c97771a91428911e18d96925f5, type: 2}
 --- !u!114 &1327742537
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -197532,7 +197528,7 @@ MonoBehaviour:
   aiProfiles:
   - {fileID: 11400000, guid: c932cd280c7d9f2448377f14c5370464, type: 2}
   aiStartCities:
-  - {fileID: 400054865377390355}
+  - {fileID: 862948273}
   worldEconomy: {fileID: 1327742536}
   stepDelay: 0.3
 --- !u!4 &1327742539
@@ -273654,15 +273650,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4023432729788493999, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1048.4739
+      value: 1015.14056
       objectReference: {fileID: 0}
     - target: {fileID: 4023432729788493999, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 579.20703
+      value: 609.20703
       objectReference: {fileID: 0}
     - target: {fileID: 4023432729788493999, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 59.21649
+      value: 75.883156
       objectReference: {fileID: 0}
     - target: {fileID: 5520971714515997920, guid: 8f854307ed4e59a449d3f0ffd07d607f, type: 3}
       propertyPath: m_LocalPosition.x

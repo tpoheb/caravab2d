@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "16\u0414\u0430\u0440\u044C\u044F-\u0410\u0431\u0430\u0434"
   m_EditorClassIdentifier: Assembly-CSharp::CityData
   cityName: "16\u0414\u0430\u0440\u044C\u044F-\u0410\u0431\u0430\u0434"
-  cityGold: 0
+  cityGold: 500
   items:
   - item: {fileID: 11400000, guid: 6f6eaf5a78f709a4c95bf4f8ca389830, type: 2}
     stock: 30
@@ -52,13 +52,13 @@ MonoBehaviour:
     volatility: 0.02
     regenRate: 0.1
   - item: {fileID: 11400000, guid: 0779dd589b90f76419855571f4db0632, type: 2}
-    stock: 30
+    stock: 24
     baseBuyPrice: 29
-    currentBuyPrice: 29
+    currentBuyPrice: 32.65871
     minBuyPrice: 14.5
     maxBuyPrice: 58
     baseSellPrice: 15
-    currentSellPrice: 15
+    currentSellPrice: 16.892437
     minSellPrice: 7.5
     maxSellPrice: 30
     volatility: 0.02
@@ -112,13 +112,13 @@ MonoBehaviour:
     volatility: 0.02
     regenRate: 0.1
   - item: {fileID: 11400000, guid: 60cc303fab0a0ac45acf446a831d12e3, type: 2}
-    stock: 30
+    stock: 28
     baseBuyPrice: 277
-    currentBuyPrice: 277
+    currentBuyPrice: 288.1908
     minBuyPrice: 138.5
     maxBuyPrice: 554
     baseSellPrice: 138
-    currentSellPrice: 138
+    currentSellPrice: 143.5752
     minSellPrice: 69
     maxSellPrice: 276
     volatility: 0.02

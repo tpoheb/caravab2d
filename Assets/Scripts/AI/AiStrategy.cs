@@ -67,6 +67,10 @@ public class AiStrategy
         Debug.Log($"[AiStrategy] {trader.DisplayName}: планирую из '{trader.CurrentCity?.CityName}'. " +
                   $"Городов: {snapshot.Cities.Count}, товаров: {snapshot.AllGoods.Count}, " +
                   $"порог: {_profile.minProfitThreshold}");
+        
+        int distTest = GetCityDistance(trader.CurrentCity, snapshot.Cities[0].City);
+        Debug.Log($"[AiStrategy] Дистанция до первого города в снимке " +
+                  $"'{snapshot.Cities[0].City.CityName}': {distTest}");
 
         foreach (var buySnap in snapshot.Cities)
         foreach (var sellSnap in snapshot.Cities)
