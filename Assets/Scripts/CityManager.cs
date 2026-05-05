@@ -18,6 +18,10 @@ public class CityManager : MonoBehaviour
 
     private void Awake()
     {
+        // ВАЖНО: Сначала клонируем данные городов, 
+        // чтобы к моменту старта игры у всех городов была RuntimeData
+        InitializeCities();
+        
         ValidateReferences();
     }
 
@@ -29,6 +33,25 @@ public class CityManager : MonoBehaviour
     private void OnDisable()
     {
         Unsubscribe();
+    }
+
+    // --------------------
+    // ИНИЦИАЛИЗАЦИЯ
+    // --------------------
+
+    private void InitializeCities()
+    {
+        if (allCities == null || allCities.Count == 0) return;
+
+        foreach (City city in allCities)
+        {
+            if (city != null)
+            {
+                city.InitRuntimeData();
+            }
+        }
+        
+        Debug.Log("CityManager: Все данные городов успешно скопированы для PlayMode (Runtime).");
     }
 
     // --------------------

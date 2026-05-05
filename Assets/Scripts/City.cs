@@ -1,54 +1,38 @@
 using UnityEngine;
-using System.Collections.Generic;
+using System.Collections.Generic; // Обязательно для использования List
 
 public class City : MonoBehaviour
 {
-    // --- ИСПРАВЛЕНИЕ: Прямой доступ к внутреннему полю cityName ---
-    // Теперь CityName возвращает поле, которое вы сериализовали (cityData больше не нужен для имени).
-    public string CityName => cityName; 
-    [SerializeField] private CityData cityDataSO; // Ссылка на ScriptableObject
-    public CityData CityData => cityDataSO; // Свойство для безопасного доступа
-    
+    [Header("Оригинальные данные (Ассет ScriptableObject)")]
+    [Tooltip("Перетащите сюда ассет CityData из окна Project")]
+    [SerializeField] private CityData sourceData;
 
-    [Header("Данные города")]
-    [SerializeField] private string cityName = "Unnamed City"; // Название города (заполняется в Инспекторе)
-    
-    [SerializeField] 
-    private List<PathCellInitializer> inCityPaths = new List<PathCellInitializer>(); // Список путей в городе
-    
-    // [УБРАТЬ] private CityData cityData; // УДАЛИТЬ, если не используется для других данных
+    [Header("Маршруты")]
+    [Tooltip("Список путей, исходящих из этого города")]
+    // Добавляем список путей, который ищет CityPanel
+    public List<PathCellInitializer> Paths = new List<PathCellInitializer>();
 
-    public List<PathCellInitializer> Paths => inCityPaths;
+    [Header("Данные для текущей сессии (Runtime)")]
+    [Tooltip("Эта переменная будет хранить копию данных во время игры")]
+    [HideInInspector] public CityData RuntimeData;
 
-    void Awake() // Используем Awake для инициализации, чтобы быть уверенными, что CityName доступен в Start у PlayerToken
+    // Свойство для получения имени
+    public string CityName => RuntimeData != null ? RuntimeData.cityName : (sourceData != null ? sourceData.cityName : "Unknown City");
+
+    /// <summary>
+    /// Создает независимую копию CityData для использования в PlayMode.
+    /// Вызывается из CityManager при старте игры.
+    /// </summary>
+    public void InitRuntimeData()
     {
-        InitializeCity(); 
-    }
-
-    // Инициализация города
-    private void InitializeCity()
-    {
-        // Проверка и инициализация (лучше, чем просто string.IsNullOrEmpty)
-        if (string.IsNullOrWhiteSpace(cityName))
+        if (sourceData != null)
         {
-            cityName = gameObject.name; // Использование имени объекта как резервного
-            Debug.LogWarning($"Имя города не задано. Используется имя объекта: {cityName}");
+            RuntimeData = Instantiate(sourceData);
+            RuntimeData.name = sourceData.name + "_RuntimeCopy"; 
         }
-
-        // Инициализируем все пути в городе
-        foreach (var path in inCityPaths)
+        else
         {
-            if (path != null)
-            {
-                // Предполагается, что InitializeCells() что-то делает с данными пути
-                path.InitializeCells();
-            }
-            else
-            {
-                Debug.LogWarning($"Обнаружен пустой (null) путь в городе {cityName}");
-            }
+            Debug.LogError($"[City] На объекте {gameObject.name} не назначен sourceData (CityData)!");
         }
-
-        Debug.Log($"Город {cityName} инициализирован. Всего путей: {inCityPaths.Count}");
     }
 }

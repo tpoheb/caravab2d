@@ -31,8 +31,9 @@ public class TeamSystem : MonoBehaviour
         if (playerStats == null)
             playerStats = GetComponent<PlayerStats>();
 
-        if (uiParent == null && FindFirstObjectByType<Canvas>() != null)
-            uiParent = FindFirstObjectByType<Canvas>().transform;
+        // ИСПРАВЛЕНИЕ: Заменили FindFirstObjectByType на FindAnyObjectByType
+        if (uiParent == null && FindAnyObjectByType<Canvas>() != null)
+            uiParent = FindAnyObjectByType<Canvas>().transform;
     }
 
     public void OpenHirePanel()
@@ -55,7 +56,7 @@ public class TeamSystem : MonoBehaviour
         }
 
         hirePanelUI = Instantiate(hirePanelPrefab, uiParent);
-        hirePanelUI.Initialize(this); // ������ �������� ������ TeamSystem
+        hirePanelUI.Initialize(this); 
         isUILoaded = true;
     }
 
@@ -116,7 +117,7 @@ public class TeamSystem : MonoBehaviour
 
     private void HandleSalaryShortage(int requiredAmount)
     {
-        // ������ ���������� ��� �������� �����
+        // Логика увольнения или штрафов здесь
         // ...
     }
 
@@ -135,6 +136,7 @@ public class TeamSystem : MonoBehaviour
             Destroy(hirePanelUI.gameObject);
         }
     }
+
     public int GetTotalAttack()
     {
         int totalAttack = 0;
@@ -145,13 +147,13 @@ public class TeamSystem : MonoBehaviour
         // 2. Добавляем атаку каждого члена команды
         foreach (var member in CurrentTeam)
         {
-            totalAttack += member.unitData.attackBonus; // Убедитесь, что в UnitData есть поле attackPower
+            totalAttack += member.unitData.attackBonus; 
         }
 
         return totalAttack;
     }
 
-// Методы для наград и штрафов
+    // Методы для наград и штрафов
     public void AddMoney(int amount) => playerInventory.AddMoney(amount);
-    public void RemoveMoney(int amount) => playerInventory.TrySpendMoney(amount); // Используем ваш метод траты
+    public void RemoveMoney(int amount) => playerInventory.TrySpendMoney(amount);
 }

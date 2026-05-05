@@ -16,7 +16,9 @@ public class TradeSystem : MonoBehaviour
     // --- НОВОЕ: Глобальная экономика ---
     [Header("Глобальная экономика")]
     [SerializeField] private PlayerToken playerToken; // Ссылка на фишку для отслеживания шагов
-    [SerializeField] private List<CityData> allCities = new List<CityData>(); // Список всех городов в игре
+    
+    // ИСПРАВЛЕНИЕ: Храним ссылки на объекты City на сцене, а не на ассеты CityData!
+    [SerializeField] private List<City> allCities = new List<City>(); 
 
     // --- Данные ---
     private City _currentCity; 
@@ -50,41 +52,44 @@ public class TradeSystem : MonoBehaviour
     // --- Главный вход (Вызывается через событие OnTradeRequest) ---
     private void OpenTrade(City city)
     {
-        if (city == null || city.CityData == null) 
+        // ИСПРАВЛЕНИЕ: Используем RuntimeData вместо CityData
+        if (city == null || city.RuntimeData == null) 
         {
             Debug.LogError("Попытка открыть торговлю с пустым городом или данными города!");
             return;
         }
 
         _currentCity = city;
-        tradeUIManager.OpenTradePanel(_currentCity.CityData, playerInventory); 
+        tradeUIManager.OpenTradePanel(_currentCity.RuntimeData, playerInventory); 
         Debug.Log($"Открытие торговли с городом: {_currentCity.CityName}");
     }
 
     // --- Методы, вызываемые UI-кнопками ---
     public void BuyItem(CityData.CityItem cityItem, int quantity)
     {
-        if (_currentCity?.CityData == null) return;
+        // ИСПРАВЛЕНИЕ: Используем RuntimeData
+        if (_currentCity?.RuntimeData == null) return;
         
         TradeTransactionHandler.ProcessBuyTransaction(cityItem, quantity, 
-            _currentCity.CityData, playerInventory, playerStats);
+            _currentCity.RuntimeData, playerInventory, playerStats);
 
         UpdateTradeUI();
     }
 
     public void SellItem(CityData.CityItem cityItem, int quantity)
     {
-        if (_currentCity?.CityData == null) return;
+        // ИСПРАВЛЕНИЕ: Используем RuntimeData
+        if (_currentCity?.RuntimeData == null) return;
 
         TradeTransactionHandler.ProcessSellTransaction(cityItem, quantity, 
-            _currentCity.CityData, playerInventory, playerStats);
+            _currentCity.RuntimeData, playerInventory, playerStats);
     
         UpdateTradeUI();
     }
 
     private void UpdateTradeUI()
     {
-        tradeUIManager.UpdateMoneyUI(playerInventory, _currentCity.CityData);
+        tradeUIManager.UpdateMoneyUI(playerInventory, _currentCity.RuntimeData);
         tradeUIManager.RefreshItemStocks(playerInventory);
     }
 
@@ -103,9 +108,10 @@ public class TradeSystem : MonoBehaviour
 
         foreach (var city in allCities)
         {
-            if (city == null || city.items == null) continue;
+            // ИСПРАВЛЕНИЕ: Проверяем наличие рантайм-копии и обращаемся к ней
+            if (city == null || city.RuntimeData == null || city.RuntimeData.items == null) continue;
 
-            foreach (var cityItem in city.items)
+            foreach (var cityItem in city.RuntimeData.items)
             {
                 cityItem.RegeneratePrice();
             }
@@ -120,7 +126,7 @@ public class TradeSystem : MonoBehaviour
         if (playerInventory == null) Debug.LogError($"{nameof(PlayerInventory)} не назначен!");
         if (playerStats == null) Debug.LogError($"{nameof(PlayerStats)} не назначен!");
         if (tradeUIManager == null) Debug.LogError($"{nameof(TradeUIManager)} не назначен!");
-        // Добавили проверку для новых полей
+        
         if (playerToken == null) Debug.LogWarning("TradeSystem: PlayerToken не назначен, цены не будут обновляться по ходам.");
         if (allCities.Count == 0) Debug.LogWarning("TradeSystem: Список городов пуст, глобальная экономика не будет работать.");
     }
@@ -130,5 +136,6 @@ public class TradeSystem : MonoBehaviour
         OnTradeRequest?.Invoke(city);
     }
     
-    public CityData CurrentCityData => _currentCity?.CityData;
+    // ИСПРАВЛЕНИЕ: Возвращаем RuntimeData
+    public CityData CurrentCityData => _currentCity?.RuntimeData;
 }

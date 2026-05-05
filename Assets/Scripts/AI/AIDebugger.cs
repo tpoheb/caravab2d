@@ -51,7 +51,7 @@ public class AIDebugger : MonoBehaviour
             }
 
             // --- 3. Проверяем WorldEconomy snapshot ---
-            var economy = FindObjectOfType<WorldEconomy>();
+            var economy = FindAnyObjectByType<WorldEconomy>();
             if (economy == null)
             {
                 Debug.LogError("[AIDebug] WorldEconomy не найден в сцене!");
