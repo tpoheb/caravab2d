@@ -40,26 +40,39 @@ public class BattleCardImporter : EditorWindow
         // Пропускаем первую строку (заголовки)
         for (int i = 1; i < lines.Length; i++)
         {
-            string line = lines[i];
-            // Разделяем строку, используя запятую (,) как разделитель
+            // 1. Убираем лишние пробелы по краям самой строки
+            string line = lines[i].Trim();
+        
+            // 2. Защита от пустых строк в конце файла
+            if (string.IsNullOrEmpty(line)) continue;
+
             string[] values = line.Split(','); 
 
             if (values.Length < 5) 
             {
-                Debug.LogWarning($"Пропущена строка {i}: Недостаточно данных.");
+                Debug.LogWarning($"[Строка {i + 1}] Пропущена: Недостаточно данных. Текст строки: '{line}'");
                 continue;
             }
 
-            // Создаем или находим существующий ассет по ID
-            int id = int.Parse(values[0]);
-            string enemyName = values[1];
-            
+            // 3. Безопасный парсинг ID
+            if (!int.TryParse(values[0].Trim(), out int id))
+            {
+                Debug.LogError($"[Строка {i + 1}] Ошибка парсинга ID! Значение: '{values[0]}'");
+                continue; // Пропускаем эту карту и идем дальше
+            }
+
+            string enemyName = values[1].Trim();
             BattleCardData card = FindOrCreateAsset(id, enemyName);
-            
-            // Заполнение данных
-            card.requiredAttack = int.Parse(values[2]);
-            card.rewardMoney = int.Parse(values[3]);
-            card.penaltyMoney = int.Parse(values[4]);
+        
+            // 4. Безопасный парсинг остальных характеристик
+            if (!int.TryParse(values[2].Trim(), out card.requiredAttack))
+                Debug.LogError($"[Строка {i + 1}] Ошибка requiredAttack: '{values[2]}'");
+
+            if (!int.TryParse(values[3].Trim(), out card.rewardMoney))
+                Debug.LogError($"[Строка {i + 1}] Ошибка rewardMoney: '{values[3]}'");
+
+            if (!int.TryParse(values[4].Trim(), out card.penaltyMoney))
+                Debug.LogError($"[Строка {i + 1}] Ошибка penaltyMoney: '{values[4]}'");
 
             // Сохранение изменений
             EditorUtility.SetDirty(card);

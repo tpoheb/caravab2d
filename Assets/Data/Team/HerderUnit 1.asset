@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6941c2c868f0a6749a3663ef8a3145f5, type: 3}
-  m_Name: WarriorUnit
+  m_Name: HerderUnit 1
   m_EditorClassIdentifier: 
-  unitName: warrior
+  unitName: "\u0411\u0430\u0440\u0430\u043A\u0430\u0442\u0430 \u0430\u043B\u044C-\u0414\u0436\u0430\u043C\u0430\u043B\u044C"
   icon: {fileID: 0}
-  attackBonus: 10
+  attackBonus: 0
   bargainBonus: 0
-  capacityBonus: 0
-  hireCost: 50
+  capacityBonus: 25
+  hireCost: 220
   salaryPerTurn: 0

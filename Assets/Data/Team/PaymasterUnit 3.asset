@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6941c2c868f0a6749a3663ef8a3145f5, type: 3}
-  m_Name: HerderUnit
+  m_Name: PaymasterUnit 3
   m_EditorClassIdentifier: 
-  unitName: herder
+  unitName: "\u041C\u0430\u0440\u044C\u044F\u043C \u0430\u043B\u044C-\u0425\u0438\u0441\u0430\u0431  "
   icon: {fileID: 0}
   attackBonus: 0
-  bargainBonus: 0
-  capacityBonus: 200
-  hireCost: 200
+  bargainBonus: 10
+  capacityBonus: 0
+  hireCost: 1000
   salaryPerTurn: 0

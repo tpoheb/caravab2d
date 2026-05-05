@@ -298291,8 +298291,17 @@ MonoBehaviour:
   uiParent: {fileID: 1836032679}
   availableUnits:
   - {fileID: 11400000, guid: 7b346975308c28844b752f188c19069c, type: 2}
+  - {fileID: 11400000, guid: 12d394f7715b8d54bb9362b7e8c1aa5b, type: 2}
+  - {fileID: 11400000, guid: e8de9d8b7ea01c3418297d56542e6006, type: 2}
+  - {fileID: 11400000, guid: f94df336ce5713644b15191e0b7f48d1, type: 2}
   - {fileID: 11400000, guid: f23e41b7087f2c64d8136ef78196b958, type: 2}
+  - {fileID: 11400000, guid: 647fa18f1e15b534e8fe458696b536c1, type: 2}
+  - {fileID: 11400000, guid: 89962d8ff17f6114ba08f14d582fd253, type: 2}
+  - {fileID: 11400000, guid: 0cbbfa92630b3654aa69eaa52c58185e, type: 2}
   - {fileID: 11400000, guid: 17dbe2efe8d50ac45b2e3a5501c2f0d3, type: 2}
+  - {fileID: 11400000, guid: 633fe5306eb2f514dbc139b98ad4bff4, type: 2}
+  - {fileID: 11400000, guid: 76678fddff353b54e9c0ef258de7feea, type: 2}
+  - {fileID: 11400000, guid: cf701ba2a3ecc45458c6dac45df575ab, type: 2}
   CurrentTeam: []
 --- !u!4 &2041521371
 Transform:
@@ -298341,12 +298350,24 @@ MonoBehaviour:
   tradeUIManager: {fileID: 1836032680}
   playerToken: {fileID: 973928746}
   allCities:
-  - {fileID: 11400000, guid: a4baa8ebea6518d4699b34833e79851f, type: 2}
-  - {fileID: 11400000, guid: 65735cdb476a24c4db89be03ea5ee645, type: 2}
-  - {fileID: 11400000, guid: df13fc2862d62914a9a9692a13615764, type: 2}
-  - {fileID: 11400000, guid: 1d41c1c13e3d949478c8d9563df5bc94, type: 2}
-  - {fileID: 11400000, guid: b76e18ccfd8f8fd458c649958604ef5e, type: 2}
-  - {fileID: 11400000, guid: c06c4587bf1cf9d4ebbbb2fb92559741, type: 2}
+  - {fileID: 400054865377390355}
+  - {fileID: 1870378441}
+  - {fileID: 2027821406}
+  - {fileID: 850717027}
+  - {fileID: 2065463019}
+  - {fileID: 862948273}
+  - {fileID: 1145500933}
+  - {fileID: 1000462012}
+  - {fileID: 1518642052}
+  - {fileID: 78477281}
+  - {fileID: 930105156}
+  - {fileID: 969910623}
+  - {fileID: 967637869}
+  - {fileID: 813887935}
+  - {fileID: 2142251983}
+  - {fileID: 731879884}
+  - {fileID: 1088012663}
+  - {fileID: 1442100725}
 --- !u!114 &2041521374
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -298388,13 +298409,16 @@ MonoBehaviour:
   uiManager: {fileID: 1836032681}
   effectManager: {fileID: 2041521378}
   allBattleCards:
-  - {fileID: 11400000, guid: e033656835eed614382096a36be7c66c, type: 2}
-  - {fileID: 11400000, guid: 638df7f93d3e0e648b35a1ec2a5e2581, type: 2}
-  - {fileID: 11400000, guid: 5aadb84b97c42254abc3f8573c73ec82, type: 2}
-  - {fileID: 11400000, guid: 506528bbd045c6f41ab764a98dd8a0df, type: 2}
-  - {fileID: 11400000, guid: 053704f590a92fd4780d19ef788f0585, type: 2}
-  - {fileID: 11400000, guid: 8710b7a40532f644f9a0c1749d623aff, type: 2}
-  - {fileID: 11400000, guid: d1de86461dea9fd4eb420a9385343624, type: 2}
+  - {fileID: 11400000, guid: d2cc9d9eac493c049b5d1373c1fe0da5, type: 2}
+  - {fileID: 11400000, guid: 925b1b7fae5e02740b8c7bb12b96f2e8, type: 2}
+  - {fileID: 11400000, guid: 9845604f35d056a42932819c2b253a33, type: 2}
+  - {fileID: 11400000, guid: e2831065e305a5849a378fe6e2c96487, type: 2}
+  - {fileID: 11400000, guid: 1793a5027b3db6e42b034a462613d7ba, type: 2}
+  - {fileID: 11400000, guid: 3b4c82b815e0e6f4d9f30ef0fbf71c7f, type: 2}
+  - {fileID: 11400000, guid: 5212e73dcdae71e44a84596adfc5d80a, type: 2}
+  - {fileID: 11400000, guid: 1458c9ca92f9b1244af08a8efd06fe79, type: 2}
+  - {fileID: 11400000, guid: ab92b673b54db024288b92337c0671c1, type: 2}
+  - {fileID: 11400000, guid: 0812c45b1c4cd8442a2c959493eaf01c, type: 2}
 --- !u!114 &2041521376
 MonoBehaviour:
   m_ObjectHideFlags: 0
