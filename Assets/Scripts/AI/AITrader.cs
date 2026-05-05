@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -16,6 +17,10 @@ public class AITrader : MonoBehaviour, ITrader
     public int       Gold        { get; private set; }
     public City      CurrentCity { get; private set; }
     public Inventory Inventory   { get; } = new Inventory();
+
+    // Средние цены покупки — для принятия решения о продаже
+    private readonly Dictionary<string, float> _avgPurchasePrices
+        = new Dictionary<string, float>();
 
     public event Action<ITrader, City>                OnArrivedAtCity;
     public event Action<ITrader, PathCellInitializer> OnPathBlocked;
@@ -170,4 +175,21 @@ public class AITrader : MonoBehaviour, ITrader
 
     public void AddGold(int amount)   => Gold += amount;
     public void SpendGold(int amount) => Gold  = Mathf.Max(0, Gold - amount);
+
+    /// <summary>Средняя цена покупки товара — для решения о продаже.</summary>
+    public float GetAveragePurchasePrice(string goodId) =>
+        _avgPurchasePrices.TryGetValue(goodId, out var p) ? p : 0f;
+
+    /// <summary>Обновить среднюю цену после покупки batch товаров.</summary>
+    public void RecordPurchase(string goodId, int amount, float totalCost)
+    {
+        int   held       = Inventory.GetAmount(goodId);
+        float currentAvg = GetAveragePurchasePrice(goodId);
+        float prevTotal  = currentAvg * held;
+        int   newTotal   = held + amount;
+
+        _avgPurchasePrices[goodId] = newTotal > 0
+            ? (prevTotal + totalCost) / newTotal
+            : 0f;
+    }
 }

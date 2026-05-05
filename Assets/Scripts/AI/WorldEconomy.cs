@@ -93,9 +93,12 @@ public class WorldEconomy : MonoBehaviour
                 cityItem.currentSellPrice * (1f + cityItem.volatility));
         }
 
-        // Добавляем в инвентарь ИИ
+        // Добавляем в инвентарь ИИ и записываем среднюю цену
         if (trader is AITrader aiTrader)
+        {
             aiTrader.Inventory.Add(itemName, amount);
+            aiTrader.RecordPurchase(itemName, amount, totalCost);
+        }
 
         Debug.Log($"[WorldEconomy] {trader.DisplayName} купил {amount}x {itemName} " +
                   $"в {city.CityName} за {totalCost}g");
