@@ -88,24 +88,28 @@ public class GameManager : MonoBehaviour
             Debug.LogWarning($"GameManager: RequestEndTurn проигнорирован, состояние {State}");
             return;
         }
-
+ 
         // Финализируем бой если он был в этом ходу
         if (_pendingBattle)
         {
             battleManager.FinalizeBattle();
             _pendingBattle = false;
         }
-
+ 
+        // ← НОВАЯ СТРОКА: скрываем анимированную карту события
+        cardManager.HideEventCard();
+ 
         var ui = battleManager.GetUIManager();
         ui.ShowEndTurnButton(false);
-        ui.ShowDiceButton(true);  // Восстанавливаем кубик для следующей клетки
+        ui.ShowDiceButton(true);
         ui.ClearEventText();
-
+ 
         SetState(GameState.Moving);
         ContinueMovement();
-        
+ 
         AITurnManager.Instance?.ProcessAITurn();
     }
+
 
     // --------------------
     // ГОРОД / ВЫБОР ПУТИ
