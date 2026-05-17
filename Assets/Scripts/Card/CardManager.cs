@@ -6,19 +6,21 @@ public class CardManager : MonoBehaviour
 {
     [Header("Системы")]
     [SerializeField] private GameManager gameManager;
-    [SerializeField] private BattleUIManager uiManager;
+    [SerializeField] private BattleManager battleManager;
     [SerializeField] private ShadowEffectManager effectManager;
 
-    [Header("Карты данных")]
+    [Header("Единая колода (Shadow + Battle вперемешку)")]
     [SerializeField] private List<ShadowCardData> allShadowCards;
     [SerializeField] private List<BattleCardData> allBattleCards;
 
-    [Header("Анимация карт событий")]
-    [SerializeField] private EventCardDeckUI shadowDeckUI;  // колода для ShadowCard
-    [SerializeField] private EventCardDeckUI battleDeckUI;  // колода для BattleCard (опционально)
+    [Header("UI колоды")]
+    [SerializeField] private EventCardDeckUI deckUI;
 
     // --- Одиночка ---
     public static CardManager Instance { get; private set; }
+
+    // Внутренняя перемешанная колода: хранит ShadowCardData или BattleCardData
+    private List<object> _shuffledDeck = new List<object>();
 
     private void Awake()
     {
@@ -26,149 +28,144 @@ public class CardManager : MonoBehaviour
         Instance = this;
     }
 
+    private void Start()
+    {
+        BuildAndShuffleDeck();
+    }
+
     // ─────────────────────────────────────────────────────────────────────
-    // Shadow Cards
+    // Сборка колоды
     // ─────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Вызывается из GameManager при DiceEventType.ShadowInfluence.
-    /// Показывает анимированную карту, применяет эффект ПОСЛЕ флипа.
-    /// </summary>
+    private void BuildAndShuffleDeck()
+    {
+        _shuffledDeck.Clear();
+
+        foreach (var c in allShadowCards) _shuffledDeck.Add(c);
+        foreach (var c in allBattleCards) _shuffledDeck.Add(c);
+
+        // Fisher-Yates shuffle
+        for (int i = _shuffledDeck.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (_shuffledDeck[i], _shuffledDeck[j]) = (_shuffledDeck[j], _shuffledDeck[i]);
+        }
+
+        Debug.Log($"[CardManager] Колода собрана: {_shuffledDeck.Count} карт.");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Вытянуть карту — вызывается из GameManager по кнопке
+    // ─────────────────────────────────────────────────────────────────────
+
     public void DrawCard()
     {
-        if (allShadowCards.Count == 0) return;
-
-        ShadowCardData selectedCard = allShadowCards[Random.Range(0, allShadowCards.Count)];
-
-        // Если колода UI назначена — показываем с анимацией
-        if (shadowDeckUI != null)
+        if (_shuffledDeck.Count == 0)
         {
-            // Кладём карту в колоду и тянем с анимацией
-            EventCardData eventData = ShadowCardToEventCard(selectedCard);
-            shadowDeckUI.AddCard(eventData);
+            Debug.Log("[CardManager] Колода кончилась — пересобираем.");
+            BuildAndShuffleDeck();
+        }
 
-            StartCoroutine(DrawWithAnimation(shadowDeckUI, () =>
+        object topCard = _shuffledDeck[0];
+        _shuffledDeck.RemoveAt(0);
+
+        if (topCard is ShadowCardData shadow)
+            DrawShadowCard(shadow);
+        else if (topCard is BattleCardData battle)
+            DrawBattleCard(battle);
+    }
+
+    public int RemainingCards => _shuffledDeck.Count;
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Shadow Card
+    // ─────────────────────────────────────────────────────────────────────
+
+    private void DrawShadowCard(ShadowCardData card)
+    {
+        if (deckUI != null)
+        {
+            deckUI.AddCard(ShadowCardToEventCard(card));
+            StartCoroutine(DrawWithAnimation(() =>
             {
-                // Эффект применяется только после завершения флипа
-                effectManager.ApplyCard(selectedCard);
-                uiManager.DisplayShadowCard(selectedCard);
-                OnEventCardShown();
+                effectManager.ApplyCard(card);
+                gameManager.OnShadowCardRevealed();
             }));
         }
         else
         {
-            // Fallback: старое поведение без анимации
-            effectManager.ApplyCard(selectedCard);
-            uiManager.DisplayShadowCard(selectedCard);
+            // Fallback без анимации
+            effectManager.ApplyCard(card);
+            gameManager.OnShadowCardRevealed();
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Battle Cards
+    // Battle Card
     // ─────────────────────────────────────────────────────────────────────
 
-    public BattleCardData GetRandomBattleCard()
+    private void DrawBattleCard(BattleCardData card)
     {
-        if (allBattleCards.Count == 0) return null;
-        return allBattleCards[Random.Range(0, allBattleCards.Count)];
-    }
-
-    /// <summary>
-    /// Опционально: показать карту битвы с анимацией.
-    /// Вызывать из GameManager вместо прямого battleManager.PrepareBattle(),
-    /// если хочешь анимацию и для BattleCard.
-    /// </summary>
-    public void ShowBattleCardAnimated(BattleCardData card, System.Action onShown)
-    {
-        if (battleDeckUI == null || card == null)
+        if (deckUI != null)
         {
-            onShown?.Invoke();
-            return;
+            deckUI.AddCard(BattleCardToEventCard(card));
+            StartCoroutine(DrawWithAnimation(() =>
+            {
+                // Карта открыта — запускаем подготовку боя и автобросок кубика
+                battleManager.PrepareBattle(card);
+                gameManager.OnBattleCardRevealed();
+            }));
         }
-
-        EventCardData eventData = BattleCardToEventCard(card);
-        battleDeckUI.AddCard(eventData);
-
-        StartCoroutine(DrawWithAnimation(battleDeckUI, onShown));
+        else
+        {
+            battleManager.PrepareBattle(card);
+            gameManager.OnBattleCardRevealed();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Coroutine: ждём окончания флипа
+    // Coroutine: ждём конца флипа, затем вызываем логику
     // ─────────────────────────────────────────────────────────────────────
 
-    private IEnumerator DrawWithAnimation(EventCardDeckUI deckUI, System.Action onRevealed)
+    private IEnumerator DrawWithAnimation(System.Action onRevealed)
     {
         bool flipDone = false;
-
-        // Тянем карту — внутри DeckUI запустит ShowCard() с анимацией
-        EventCardDisplay display = deckUI.DrawAndShowTopCard(onRevealedCallback: () =>
-        {
-            flipDone = true;
-        });
-
-        // Ждём конца флипа
+        deckUI.DrawAndShowTopCard(onRevealedCallback: () => flipDone = true);
         yield return new WaitUntil(() => flipDone);
-
-        // Вызываем логику (применение эффекта, показ текста и т.д.)
         onRevealed?.Invoke();
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Конвертеры: игровые данные → EventCardData для DeckUI
+    // Скрыть карту — вызывается из GameManager.RequestEndTurn
     // ─────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Создаёт временный EventCardData из ShadowCardData на лету.
-    /// Не создаёт asset на диске — только в памяти.
-    /// </summary>
+    public void HideEventCard()
+    {
+        deckUI?.HideCurrentCard();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Конвертеры данных → EventCardData (только для анимации)
+    // ─────────────────────────────────────────────────────────────────────
+
     private EventCardData ShadowCardToEventCard(ShadowCardData shadow)
     {
-        var data = ScriptableObject.CreateInstance<EventCardData>();
-        data.cardTitle       = shadow.cardName;
-        data.description     = shadow.description;
-        data.cardType        = EventCardType.Shadow;
-        // Спрайт: назначь в инспекторе через shadowDeckUI.DefaultBackSprite
-        // или добавь поле Sprite в ShadowCardData позже
+        var data         = ScriptableObject.CreateInstance<EventCardData>();
+        data.cardTitle   = shadow.cardName;
+        data.description = shadow.description;
+        data.cardType    = EventCardType.Shadow;
         return data;
     }
 
     private EventCardData BattleCardToEventCard(BattleCardData battle)
     {
-        var data = ScriptableObject.CreateInstance<EventCardData>();
+        var data         = ScriptableObject.CreateInstance<EventCardData>();
         data.cardTitle   = battle.enemyName;
-        data.description = $"Требуемая атака: {battle.requiredAttack}\n" +
-                           $"Победа: +{battle.rewardMoney} фелсов\n" +
-                           $"Поражение: {battle.penaltyMoney} фелсов";
+        data.description = $"Требуемая атака: {battle.requiredAttack}\n"
+                         + $"Победа: +{battle.rewardMoney} фелсов\n"
+                         + $"Поражение: {battle.penaltyMoney} фелсов";
         data.cardType    = EventCardType.Battle;
         data.difficulty  = battle.requiredAttack;
         return data;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // После показа карты
-    // ─────────────────────────────────────────────────────────────────────
-
-    private void OnEventCardShown()
-    {
-        // EndTurnButton уже показывается в DisplayShadowCard через uiManager.
-        // Карта остаётся видимой — скрывается при RequestEndTurn (см. ниже).
-        Debug.Log("CardManager: карта показана, ожидаем EndTurn.");
-    }
-
-    /// <summary>
-    /// Вызывать из GameManager.RequestEndTurn() перед переходом к движению.
-    /// Скрывает анимированную карту.
-    /// </summary>
-    public void HideEventCard()
-    {
-        shadowDeckUI?.HideCurrentCard();
-        battleDeckUI?.HideCurrentCard();
-    }
-
-    // Обратная совместимость
-    private void ApplyCardEffectAndComplete()
-    {
-        Debug.Log("CardManager: Эффект карты применен. Фаза события завершена.");
-        gameManager.CompleteEventPhase();
     }
 }

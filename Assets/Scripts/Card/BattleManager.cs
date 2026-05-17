@@ -13,19 +13,17 @@ public class BattleManager : MonoBehaviour
     private BattleCardData _currentCard;
     private int _currentEnemyAttack;
     private int _lastDiceRoll;
-
-    // Флаг: награда/штраф ещё не применялись в этом бою
     private bool _battleResolved = false;
 
     public BattleUIManager GetUIManager() => uiManager;
 
-    // --------------------
-    // ПОДГОТОВКА БОЯ
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // Подготовка боя
+    // ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Вызывается из GameManager при старте боя.
-    /// Сбрасывает флаг, показывает врага. Кубик летит автоматически следом.
+    /// Вызывается из CardManager ПОСЛЕ флипа карты — карта уже видна игроку.
+    /// Только инициализирует данные боя; UI карты уже показан анимацией.
     /// </summary>
     public void PrepareBattle(BattleCardData card)
     {
@@ -41,17 +39,13 @@ public class BattleManager : MonoBehaviour
         _battleResolved     = false;
 
         Debug.Log($"BattleManager: бой с {card.enemyName}, требуемая атака: {_currentEnemyAttack}");
-        uiManager.DisplayChallenge(card);
+        // DisplayChallenge убран — карта уже показана через EventCardDisplay
     }
 
-    // --------------------
-    // БРОСОК КУБИКА
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // Бросок кубика
+    // ─────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Вызывается при каждом броске (первичном или перебросе через карту).
-    /// Только обновляет UI — награда/штраф НЕ применяются здесь.
-    /// </summary>
     public void ExecuteBattle(int diceValue)
     {
         if (_currentCard == null) return;
@@ -64,16 +58,8 @@ public class BattleManager : MonoBehaviour
 
         uiManager.DisplayDiceRoll(diceValue, playerBase);
         uiManager.ShowPreliminaryResult(wouldWin);
-
-        // Показываем предварительный результат.
-        // Игрок решает: сыграть карту переброса или нажать "Завершить ход".
-        // Деньги НЕ меняются до FinalizeBattle().
     }
 
-    /// <summary>
-    /// Переброс через карту из руки.
-    /// Пересчитывает UI, но не применяет награду/штраф повторно.
-    /// </summary>
     public void RequestNewRoll()
     {
         int newDice = UnityEngine.Random.Range(1, 7);
@@ -81,14 +67,10 @@ public class BattleManager : MonoBehaviour
         ExecuteBattle(newDice);
     }
 
-    // --------------------
-    // ФИНАЛИЗАЦИЯ (один раз за бой)
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // Финализация (один раз за бой)
+    // ─────────────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Вызывается из GameManager.RequestEndTurn() — ровно один раз за бой.
-    /// Применяет награду или штраф по последнему значению кубика.
-    /// </summary>
     public void FinalizeBattle()
     {
         if (_currentCard == null)
@@ -114,9 +96,9 @@ public class BattleManager : MonoBehaviour
         else           Lose();
     }
 
-    // --------------------
-    // ИСХОДЫ
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // Исходы
+    // ─────────────────────────────────────────────────────────────────────
 
     private void Win()
     {

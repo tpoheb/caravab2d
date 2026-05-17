@@ -12,15 +12,18 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CardManager cardManager;
     [SerializeField] private HandManager handManager;
     [SerializeField] private PlayerStats playerStats;
+    [SerializeField] private ShadowEffectManager shadowEffectManager;
+
+    [Header("Кнопка вытянуть карту")]
+    [SerializeField] private Button drawCardButton;
 
     public GameState State { get; private set; } = GameState.Idle;
 
-    // Флаг: текущий ход содержал бой, который ещё не финализирован
     private bool _pendingBattle = false;
 
-    // --------------------
-    // ЖИЗНЕННЫЙ ЦИКЛ
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // Жизненный цикл
+    // ─────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -34,41 +37,44 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        battleManager.GetUIManager().ShowEndTurnButton(false);
+        GetUIManager().ShowEndTurnButton(false);
         playerStats.Initialize();
         StartTurn();
     }
 
-    // --------------------
-    // ПОДПИСКИ
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // Подписки
+    // ─────────────────────────────────────────────────────────────────────
 
     private void Subscribe()
     {
-        if (diceSystem != null)    diceSystem.OnDiceRolled    += OnDiceRolled;
-        if (playerToken != null)   playerToken.OnArrivedAtCity += OnArrivedAtCity;
+        if (diceSystem   != null) diceSystem.OnDiceRolled     += OnDiceRolled;
+        if (playerToken  != null) playerToken.OnArrivedAtCity += OnArrivedAtCity;
+        if (drawCardButton != null) drawCardButton.onClick.AddListener(OnDrawCardButtonPressed);
     }
 
     private void Unsubscribe()
     {
-        if (diceSystem != null)    diceSystem.OnDiceRolled    -= OnDiceRolled;
-        if (playerToken != null)   playerToken.OnArrivedAtCity -= OnArrivedAtCity;
+        if (diceSystem   != null) diceSystem.OnDiceRolled     -= OnDiceRolled;
+        if (playerToken  != null) playerToken.OnArrivedAtCity -= OnArrivedAtCity;
+        if (drawCardButton != null) drawCardButton.onClick.RemoveListener(OnDrawCardButtonPressed);
     }
 
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
     // FSM
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
 
     private void SetState(GameState newState)
     {
         Debug.Log($"FSM: {State} -> {newState}");
         State = newState;
         HandManager.Instance?.RefreshUI();
+        UpdateDrawCardButton();
     }
 
-    // --------------------
-    // ХОД ИГРОКА
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // Ход
+    // ─────────────────────────────────────────────────────────────────────
 
     private void StartTurn()
     {
@@ -77,49 +83,90 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Единственная обязательная кнопка за ход.
-    /// Если был бой — финализирует его (деньги меняются здесь, один раз).
-    /// Затем переходит к следующей клетке.
+    /// Нажатие кнопки "Вытянуть карту".
+    /// Доступно только в состоянии DrawingCard.
+    /// </summary>
+    private void OnDrawCardButtonPressed()
+    {
+        if (State != GameState.DrawingCard)
+        {
+            Debug.LogWarning($"GameManager: DrawCard проигнорирован, состояние {State}");
+            return;
+        }
+
+        SetState(GameState.ResolvingEvent);   // блокируем повторное нажатие
+        cardManager.DrawCard();
+    }
+
+    /// <summary>
+    /// Вызывается из CardManager после открытия карты тени.
+    /// </summary>
+    public void OnShadowCardRevealed()
+    {
+        GetUIManager().ShowEndTurnButton(true);
+        GetUIManager().ShowDiceButton(false);
+    }
+
+    /// <summary>
+    /// Вызывается из CardManager после открытия карты битвы.
+    /// BattleManager.PrepareBattle уже вызван к этому моменту.
+    /// Запускаем автобросок кубика.
+    /// </summary>
+    public void OnBattleCardRevealed()
+    {
+        _pendingBattle = true;
+        SetState(GameState.InBattle);
+        diceSystem.RollDice();
+    }
+
+    /// <summary>
+    /// Завершение хода — единственная обязательная кнопка.
     /// </summary>
     public void RequestEndTurn()
     {
-        if (State != GameState.ResolvingEvent)
+        if (State != GameState.ResolvingEvent && State != GameState.InBattle)
         {
             Debug.LogWarning($"GameManager: RequestEndTurn проигнорирован, состояние {State}");
             return;
         }
- 
-        // Финализируем бой если он был в этом ходу
+
         if (_pendingBattle)
         {
             battleManager.FinalizeBattle();
             _pendingBattle = false;
         }
- 
-        // ← НОВАЯ СТРОКА: скрываем анимированную карту события
+
+        shadowEffectManager?.ProcessTurn();
         cardManager.HideEventCard();
- 
-        var ui = battleManager.GetUIManager();
+
+        var ui = GetUIManager();
         ui.ShowEndTurnButton(false);
         ui.ShowDiceButton(true);
-        ui.ClearEventText();
- 
+
         SetState(GameState.Moving);
         ContinueMovement();
- 
+
         AITurnManager.Instance?.ProcessAITurn();
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // Кубик (только для битвы)
+    // ─────────────────────────────────────────────────────────────────────
 
-    // --------------------
-    // ГОРОД / ВЫБОР ПУТИ
-    // --------------------
-
-    private void OnArrivedAtCity(City city)
+    public void OnDiceRolled(int value, DiceEventType type)
     {
-        Debug.Log($"GameManager: прибыли в {city.CityName}");
-        SetState(GameState.InCity);
+        if (State == GameState.InBattle || State == GameState.ResolvingEvent)
+        {
+            battleManager.ExecuteBattle(value);
+            SetState(GameState.ResolvingEvent);
+            GetUIManager().ShowEndTurnButton(true);
+            GetUIManager().ShowDiceButton(false);
+        }
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Движение
+    // ─────────────────────────────────────────────────────────────────────
 
     public void OnPathSelected(PathCellInitializer path)
     {
@@ -135,10 +182,6 @@ public class GameManager : MonoBehaviour
         ContinueMovement();
     }
 
-    // --------------------
-    // ДВИЖЕНИЕ
-    // --------------------
-
     public void ContinueMovement()
     {
         if (State != GameState.Moving)
@@ -150,102 +193,50 @@ public class GameManager : MonoBehaviour
         bool reachedCity = playerToken.AdvanceToken();
 
         if (reachedCity)
-        {
             SetState(GameState.InCity);
-        }
         else
-        {
-            // Встали на клетку — автобросок
-            SetState(GameState.RollingDice);
-            diceSystem.RollDice();
-        }
+            SetState(GameState.DrawingCard);    // игрок должен вытянуть карту
     }
 
-    // --------------------
-    // КУБИК
-    // --------------------
-
-    public void OnDiceRolled(int value, DiceEventType type)
+    private void OnArrivedAtCity(City city)
     {
-        // Бросок в бою (первичный или переброс картой)
-        if (State == GameState.InBattle || State == GameState.ResolvingEvent)
-        {
-            battleManager.ExecuteBattle(value);
-            // После любого броска в бою переходим в ResolvingEvent —
-            // именно это состояние разрешает RequestEndTurn
-            OnEventResolved();
-            return;
-        }
-
-        ResolveDiceEvent(type, value);
+        Debug.Log($"GameManager: прибыли в {city.CityName}");
+        SetState(GameState.InCity);
     }
 
-    // --------------------
-    // СОБЫТИЯ
-    // --------------------
+    // ─────────────────────────────────────────────────────────────────────
+    // UI кнопки вытянуть карту
+    // ─────────────────────────────────────────────────────────────────────
 
-    private void ResolveDiceEvent(DiceEventType type, int diceValue)
+    private void UpdateDrawCardButton()
     {
-        battleManager.GetUIManager().DisplayEventInfo(type, diceValue);
-
-        switch (type)
-        {
-            case DiceEventType.Battle:
-                StartBattlePhase();
-                break;
-
-            case DiceEventType.ShadowInfluence:
-                cardManager.DrawCard();
-                OnEventResolved();
-                break;
-
-            case DiceEventType.PeacefulPass:
-                OnEventResolved();
-                break;
-        }
+        if (drawCardButton != null)
+            drawCardButton.gameObject.SetActive(State == GameState.DrawingCard);
     }
 
-    private void StartBattlePhase()
-    {
-        _pendingBattle = true;
-        SetState(GameState.InBattle);
+    // ─────────────────────────────────────────────────────────────────────
+    // Обратная совместимость
+    // ─────────────────────────────────────────────────────────────────────
 
-        BattleCardData card = cardManager.GetRandomBattleCard();
-        battleManager.PrepareBattle(card);
-
-        // Автобросок сразу после подготовки
-        diceSystem.RollDice();
-    }
-
-    private void OnEventResolved()
-    {
-        SetState(GameState.ResolvingEvent);
-        var ui = battleManager.GetUIManager();
-        ui.ShowEndTurnButton(true);
-        ui.ShowDiceButton(false); // Кубик недоступен пока ход не завершён
-    }
-
-    // Оставлен для обратной совместимости с CardManager
     public void CompleteEventPhase()
     {
-        if (State != GameState.ResolvingEvent)
-        {
-            Debug.LogWarning($"GameManager: CompleteEventPhase в состоянии {State}");
-            return;
-        }
+        if (State != GameState.ResolvingEvent) return;
         SetState(GameState.Moving);
         ContinueMovement();
     }
 
-    // --------------------
-    // ВАЛИДАЦИЯ
-    // --------------------
+    private BattleUIManager GetUIManager() => battleManager.GetUIManager();
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Валидация
+    // ─────────────────────────────────────────────────────────────────────
 
     private void ValidateReferences()
     {
-        if (playerToken == null)   Debug.LogError("GameManager: PlayerToken не назначен");
-        if (diceSystem == null)    Debug.LogError("GameManager: DiceSystem не назначен");
-        if (battleManager == null) Debug.LogError("GameManager: BattleManager не назначен");
-        if (handManager == null)   Debug.LogError("GameManager: HandManager не назначен");
+        if (playerToken    == null) Debug.LogError("GameManager: PlayerToken не назначен");
+        if (diceSystem     == null) Debug.LogError("GameManager: DiceSystem не назначен");
+        if (battleManager  == null) Debug.LogError("GameManager: BattleManager не назначен");
+        if (cardManager    == null) Debug.LogError("GameManager: CardManager не назначен");
+        if (drawCardButton == null) Debug.LogWarning("GameManager: DrawCardButton не назначен");
     }
 }
