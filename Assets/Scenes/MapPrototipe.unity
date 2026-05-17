@@ -15548,7 +15548,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 108987381}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2389f38d58b833444a1606c605f6c7e0, type: 3}
   m_Name: 
@@ -15558,7 +15558,6 @@ MonoBehaviour:
   currentTeamContainer: {fileID: 1756025008}
   moneyText: {fileID: 1557905086}
   unitButtonPrefab: {fileID: 1722918209209454389, guid: fe18adbeaea2ec649ba65af2cf9a6463, type: 3}
-  teamSystem: {fileID: 0}
 --- !u!1001 &109351823
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -46501,7 +46500,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &323572840
 RectTransform:
   m_ObjectHideFlags: 0
@@ -46545,6 +46544,7 @@ MonoBehaviour:
   buyGoodsButton: {fileID: 1177616007}
   cityNameText: {fileID: 1899534770}
   teamSystem: {fileID: 2041521370}
+  hirePanelUI: {fileID: 108987383}
 --- !u!1001 &323581410
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -46797,6 +46797,97 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 327954881}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &327997213
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 327997214}
+  - component: {fileID: 327997216}
+  - component: {fileID: 327997215}
+  - component: {fileID: 327997217}
+  m_Layer: 0
+  m_Name: CardSpawnRoot (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &327997214
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 327997213}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 818765335}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -8.188124, y: 8.625955}
+  m_SizeDelta: {x: 201.86, y: 299.87}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &327997215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 327997213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 7fdf16727f03dc34c9b09b69c0d77896, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &327997216
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 327997213}
+  m_CullTransparentMesh: 1
+--- !u!114 &327997217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 327997213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfabb0440166ab443bba8876756fdfa9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Shadow
+  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.85882354}
+  m_EffectDistance: {x: 7.9, y: -5.89}
+  m_UseGraphicAlpha: 1
 --- !u!1001 &328303119
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -56974,6 +57065,7 @@ MonoBehaviour:
   buyGoodsButton: {fileID: 1143738138}
   cityNameText: {fileID: 0}
   teamSystem: {fileID: 0}
+  hirePanelUI: {fileID: 0}
 --- !u!224 &395871430
 RectTransform:
   m_ObjectHideFlags: 0
@@ -121786,6 +121878,7 @@ MonoBehaviour:
   buyGoodsButton: {fileID: 259371182}
   cityNameText: {fileID: 0}
   teamSystem: {fileID: 0}
+  hirePanelUI: {fileID: 0}
 --- !u!224 &812119497
 RectTransform:
   m_ObjectHideFlags: 0
@@ -122638,12 +122731,14 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 617046559}
+  - {fileID: 327997214}
+  - {fileID: 1424782721}
   - {fileID: 1050100754}
   m_Father: {fileID: 1831193369}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 493.26163, y: 58.730766}
+  m_AnchoredPosition: {x: 583.0697, y: 36.032036}
   m_SizeDelta: {x: 201.86, y: 299.87}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &818765336
@@ -122660,13 +122755,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EventCardDeckUI
   cardDisplayPrefab: {fileID: 8934765041636770116, guid: 01b6865d1bd0a6a4c8fda7e330516047, type: 3}
   cardSpawnRoot: {fileID: 1050100754}
-  deckVisual: {fileID: 6829395013511279960, guid: 01b6865d1bd0a6a4c8fda7e330516047, type: 3}
+  deckVisual: {fileID: 0}
   deckCountText: {fileID: 1800471880}
-  defaultBackSprite: {fileID: 21300000, guid: 9a6560e5bacb40847bb1b879ede354fb, type: 3}
-  shuffleOnStart: 0
-  testCards:
-  - {fileID: 11400000, guid: 76ac03bccc892c94c8df825c05f0ce99, type: 2}
-  - {fileID: 11400000, guid: 0f9d10d10995daf4a9572329014f8892, type: 2}
+  defaultBackSprite: {fileID: 21300000, guid: 7fdf16727f03dc34c9b09b69c0d77896, type: 3}
+  shuffleOnStart: 1
+  testCards: []
 --- !u!1001 &818879557
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -137378,10 +137471,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 261138921}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -418, y: 185.5526}
-  m_SizeDelta: {x: 836, y: 0}
+  m_AnchorMin: {x: 0.054284383, y: 0.08038931}
+  m_AnchorMax: {x: 0.929, y: 0.9757481}
+  m_AnchoredPosition: {x: -254, y: 8.9999695}
+  m_SizeDelta: {x: 514, y: -332.2723}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &922625533
 MonoBehaviour:
@@ -137400,7 +137493,7 @@ MonoBehaviour:
     m_Right: 0
     m_Top: 0
     m_Bottom: 0
-  m_ChildAlignment: 0
+  m_ChildAlignment: 1
   m_Spacing: 0
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
@@ -155460,6 +155553,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1050100754}
+  - component: {fileID: 1050100756}
+  - component: {fileID: 1050100755}
   m_Layer: 0
   m_Name: CardSpawnRoot
   m_TagString: Untagged
@@ -155483,9 +155578,47 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -0.00061798096}
+  m_AnchoredPosition: {x: -24.672417, y: 27.63271}
   m_SizeDelta: {x: 201.86, y: 299.87}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1050100755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1050100753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 7fdf16727f03dc34c9b09b69c0d77896, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1050100756
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1050100753}
+  m_CullTransparentMesh: 1
 --- !u!4 &1050212594 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3903557657475554374, guid: 22418a4d1fc1f3a4a881346c6bd613d0, type: 3}
@@ -170612,7 +170745,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1146987486
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172989,7 +173122,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1736168850}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.50000006
+  m_Size: 0.9757483
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -175040,7 +175173,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1177616008}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1177616008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -211449,6 +211594,81 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 1424592247}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1424782720
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1424782721}
+  - component: {fileID: 1424782723}
+  - component: {fileID: 1424782722}
+  m_Layer: 0
+  m_Name: CardSpawnRoot (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1424782721
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424782720}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 818765335}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -15.739548, y: 17.270187}
+  m_SizeDelta: {x: 201.86, y: 299.87}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1424782722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424782720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 21300000, guid: 7fdf16727f03dc34c9b09b69c0d77896, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &1424782723
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1424782720}
+  m_CullTransparentMesh: 1
 --- !u!1001 &1424845044
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -244421,7 +244641,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u0411\u0440\u043E\u0441\u0438\u0442\u044C \u043A\u0443\u0431\u0438\u043A"
+  m_text: "\u0414\u0435\u0439\u0441\u0442\u0432\u0438\u0435"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 82a87514a01e96d49bbcb9db7def99c9, type: 2}
   m_sharedMaterial: {fileID: -5165170686860256496, guid: 82a87514a01e96d49bbcb9db7def99c9, type: 2}
@@ -251042,7 +251262,7 @@ GameObject:
   - component: {fileID: 1706062436}
   - component: {fileID: 1706062435}
   m_Layer: 5
-  m_Name: Text (TMP) (1)
+  m_Name: CityNameText (TMP) (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -255542,7 +255762,7 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 2085039705}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.49999994}
+  m_AnchorMin: {x: 0, y: 0.0242517}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
@@ -268089,8 +268309,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 576.4987, y: 0}
-  m_SizeDelta: {x: 726.6317, y: 1092.4}
+  m_AnchoredPosition: {x: 551.1288, y: 0}
+  m_SizeDelta: {x: 802.8539, y: 1092.4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1831193370
 MonoBehaviour:
@@ -268112,7 +268332,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 43a7d98bd4222b64e933596512dc09ad, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 68b41658db59cf94b858a10975c92b5e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -268528,7 +268748,6 @@ GameObject:
   - component: {fileID: 1836032676}
   - component: {fileID: 1836032680}
   - component: {fileID: 1836032681}
-  - component: {fileID: 1836032682}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -268658,27 +268877,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0f58993915616746b034643fccf5546, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BattleUIManager
+  rewardText: {fileID: 303566063}
+  effectText: {fileID: 1342693611}
+  resultText: {fileID: 1146987486}
   battlePanel: {fileID: 1831193368}
   endTurnButton: {fileID: 1817803071}
   diceButton: {fileID: 348006770}
---- !u!114 &1836032682
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1836032675}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2389f38d58b833444a1606c605f6c7e0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cityNameText: {fileID: 1706062435}
-  availableUnitsContainer: {fileID: 922625532}
-  currentTeamContainer: {fileID: 1756025008}
-  moneyText: {fileID: 1557905086}
-  unitButtonPrefab: {fileID: 1722918209209454389, guid: fe18adbeaea2ec649ba65af2cf9a6463, type: 3}
-  teamSystem: {fileID: 2041521370}
 --- !u!1001 &1836587063
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -277124,6 +277328,7 @@ MonoBehaviour:
   buyGoodsButton: {fileID: 929989230}
   cityNameText: {fileID: 0}
   teamSystem: {fileID: 0}
+  hirePanelUI: {fileID: 0}
 --- !u!224 &1894652291
 RectTransform:
   m_ObjectHideFlags: 0
@@ -283349,7 +283554,6 @@ GameObject:
   - component: {fileID: 1937716573}
   - component: {fileID: 1937716576}
   - component: {fileID: 1937716575}
-  - component: {fileID: 1937716574}
   m_Layer: 5
   m_Name: HirePanel
   m_TagString: Untagged
@@ -283380,24 +283584,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1937716574
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1937716572}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2389f38d58b833444a1606c605f6c7e0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  cityNameText: {fileID: 0}
-  availableUnitsContainer: {fileID: 1151970371}
-  currentTeamContainer: {fileID: 1506299748}
-  moneyText: {fileID: 1150121261}
-  unitButtonPrefab: {fileID: 1722918209209454389, guid: fe18adbeaea2ec649ba65af2cf9a6463, type: 3}
-  teamSystem: {fileID: 0}
 --- !u!114 &1937716575
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -288349,9 +288535,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 2041521370}
-        m_TargetAssemblyTypeName: TeamSystem, Assembly-CSharp
-        m_MethodName: CloseHirePanel
+      - m_Target: {fileID: 108987383}
+        m_TargetAssemblyTypeName: HirePanelUI, Assembly-CSharp
+        m_MethodName: ClosePanel
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -298600,8 +298786,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerInventory: {fileID: 2041521372}
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
-  uiParent: {fileID: 108987382}
-  hirePanelUI: {fileID: 108987383}
   availableUnits:
   - {fileID: 11400000, guid: 7b346975308c28844b752f188c19069c, type: 2}
   - {fileID: 11400000, guid: 12d394f7715b8d54bb9362b7e8c1aa5b, type: 2}
@@ -298615,7 +298799,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 633fe5306eb2f514dbc139b98ad4bff4, type: 2}
   - {fileID: 11400000, guid: 76678fddff353b54e9c0ef258de7feea, type: 2}
   - {fileID: 11400000, guid: cf701ba2a3ecc45458c6dac45df575ab, type: 2}
-  CurrentTeam: []
 --- !u!4 &2041521371
 Transform:
   m_ObjectHideFlags: 0
@@ -298699,6 +298882,8 @@ MonoBehaviour:
   cardManager: {fileID: 2041521375}
   handManager: {fileID: 2041521377}
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
+  shadowEffectManager: {fileID: 2041521378}
+  drawCardButton: {fileID: 348006770}
 --- !u!114 &2041521375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -298712,7 +298897,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardManager
   gameManager: {fileID: 2041521374}
-  uiManager: {fileID: 1836032681}
+  battleManager: {fileID: 2041521376}
   effectManager: {fileID: 2041521378}
   allShadowCards:
   - {fileID: 11400000, guid: a705059cedca37441b90902a46c0fdc8, type: 2}
@@ -298732,8 +298917,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1458c9ca92f9b1244af08a8efd06fe79, type: 2}
   - {fileID: 11400000, guid: ab92b673b54db024288b92337c0671c1, type: 2}
   - {fileID: 11400000, guid: 0812c45b1c4cd8442a2c959493eaf01c, type: 2}
-  shadowDeckUI: {fileID: 818765336}
-  battleDeckUI: {fileID: 818765336}
+  deckUI: {fileID: 818765336}
 --- !u!114 &2041521376
 MonoBehaviour:
   m_ObjectHideFlags: 0

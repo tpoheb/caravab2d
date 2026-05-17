@@ -130,17 +130,35 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Блокируем повторное нажатие
+        GetUIManager().ShowEndTurnButton(false);
+
         if (_pendingBattle)
         {
             battleManager.FinalizeBattle();
             _pendingBattle = false;
+            // Даём игроку увидеть результат 1.5 сек, потом очищаем и продолжаем
+            StartCoroutine(EndTurnAfterDelay(1.5f));
+            return;
         }
 
         shadowEffectManager?.ProcessTurn();
+        FinishEndTurn();
+    }
+
+    private System.Collections.IEnumerator EndTurnAfterDelay(float delay)
+    {
+        yield return new UnityEngine.WaitForSeconds(delay);
+        shadowEffectManager?.ProcessTurn();
+        FinishEndTurn();
+    }
+
+    private void FinishEndTurn()
+    {
         cardManager.HideEventCard();
 
         var ui = GetUIManager();
-        ui.ShowEndTurnButton(false);
+        ui.ClearEventText();
         ui.ShowDiceButton(true);
 
         SetState(GameState.Moving);

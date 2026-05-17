@@ -56,8 +56,7 @@ public class BattleManager : MonoBehaviour
         int playerTotal = playerBase + diceValue;
         bool wouldWin   = playerTotal >= _currentEnemyAttack;
 
-        uiManager.DisplayDiceRoll(diceValue, playerBase);
-        uiManager.ShowPreliminaryResult(wouldWin);
+        uiManager.DisplayDiceRoll(diceValue, playerBase, _currentEnemyAttack);
     }
 
     public void RequestNewRoll()

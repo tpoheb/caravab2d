@@ -284,7 +284,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5656736977983225466}
   - component: {fileID: 4463247417859178146}
-  - component: {fileID: 6829395013511279960}
   - component: {fileID: 8934765041636770116}
   m_Layer: 0
   m_Name: EventCard
@@ -321,36 +320,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4162051563220188608}
   m_CullTransparentMesh: 1
---- !u!114 &6829395013511279960
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4162051563220188608}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.31318974, g: 0.41216427, b: 0.9622642, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
 --- !u!114 &8934765041636770116
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -363,13 +332,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 486c6064a5423624eb0e33d351dcc228, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EventCardDisplay
-  cardBackImage: {fileID: 6829395013511279960}
+  cardBackImage: {fileID: 0}
   cardFaceRoot: {fileID: 7200412308825352904}
   cardFaceImage: {fileID: 540242674050985656}
   titleText: {fileID: 6115825796134503937}
   descriptionText: {fileID: 8879454591462236736}
   typeIcon: {fileID: 540242674050985656}
-  flipDuration: 0.5
+  flipDuration: 0.35
   flipCurve:
     serializedVersion: 2
     m_Curve:
@@ -394,7 +363,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  appearDuration: 0.25
+  appearDuration: 0.001
 --- !u!1 &7200412308825352904
 GameObject:
   m_ObjectHideFlags: 0

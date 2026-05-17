@@ -1,16 +1,26 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
-/// Управляет общими UI-элементами боевой панели.
-/// Текстовое отображение карт событий и битв перенесено в EventCardDeckUI / EventCardDisplay.
+/// Управляет EventPanel на Canvas.
+///
+/// Привязка полей из иерархии:
+///   RewardText — атака игрока и врага (заполняется сразу после броска)
+///   EffectText — предварительный результат (хватает / не хватает)
+///   ResultText — итог боя (победа / поражение + награда/штраф)
+///
+/// Все поля заполняются в DisplayDiceRoll → сбрасываются в ClearEventText.
 /// </summary>
 public class BattleUIManager : MonoBehaviour
 {
-    [Header("Панель")]
-    [SerializeField] private GameObject battlePanel;
+    [Header("EventPanel — текстовые поля")]
+    [SerializeField] private TMP_Text rewardText;
+    [SerializeField] private TMP_Text effectText;
+    [SerializeField] private TMP_Text resultText;
 
-    [Header("Кнопки")]
+    [Header("Панель и кнопки")]
+    [SerializeField] private GameObject battlePanel;
     [SerializeField] private Button endTurnButton;
     [SerializeField] private Button diceButton;
 
@@ -27,6 +37,9 @@ public class BattleUIManager : MonoBehaviour
     {
         if (battlePanel   == null) Debug.LogError($"{nameof(battlePanel)} не назначен!");
         if (endTurnButton == null) Debug.LogError($"{nameof(endTurnButton)} не назначен!");
+        if (rewardText    == null) Debug.LogWarning($"{nameof(rewardText)} не назначен!");
+        if (effectText    == null) Debug.LogWarning($"{nameof(effectText)} не назначен!");
+        if (resultText    == null) Debug.LogWarning($"{nameof(resultText)} не назначен!");
         if (diceButton    == null) Debug.LogWarning($"{nameof(diceButton)} не назначен!");
     }
 
@@ -36,34 +49,63 @@ public class BattleUIManager : MonoBehaviour
 
     public void SetIdleState()
     {
+        ClearAll();
         ShowEndTurnButton(false);
         ShowDiceButton(true);
     }
 
     // ──────────────────────────────────────────────────────────────────────
-    // Кубик / результаты броска
+    // Бросок кубика — заполняем все три поля сразу
     // ──────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Вызывается из BattleManager после броска.
-    /// Если нужно показать результат — передай его в EventCardDisplay через CardManager.
-    /// Оставлен как точка расширения.
+    /// Вызывается из BattleManager.ExecuteBattle сразу после броска.
+    /// Заполняет rewardText и effectText немедленно.
+    /// resultText заполнится в DisplayBattleResult (FinalizeBattle).
     /// </summary>
-    public void DisplayDiceRoll(int diceResult, int baseAttack)
+    public void DisplayDiceRoll(int diceResult, int baseAttack, int enemyAttack)
     {
-        // Результат броска теперь отображается на лицевой стороне карты события.
-        // При необходимости добавь отдельный TMP_Text для diceResult здесь.
-        Debug.Log($"[BattleUIManager] Бросок: базовая атака {baseAttack}, кубик +{diceResult}");
+        int totalAttack = baseAttack + diceResult;
+        bool wouldWin   = totalAttack >= enemyAttack;
+
+        if (rewardText != null)
+            rewardText.text = $"Ваша атака: <b>{baseAttack}</b> + <color=yellow>{diceResult}</color> = <b>{totalAttack}</b>\n"
+                            + $"Атака врага: <b>{enemyAttack}</b>";
+
+        if (effectText != null)
+            effectText.text = wouldWin
+                ? "<color=green>Сил достаточно!</color>"
+                : "<color=red>Сил не хватает!</color>";
     }
 
-    /// <summary>Итог битвы — победа или поражение.</summary>
+    // ──────────────────────────────────────────────────────────────────────
+    // Итог боя — вызывается из BattleManager.FinalizeBattle
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Показывает итог боя в resultText.
+    /// rewardText и effectText уже заполнены с броска — не трогаем.
+    /// </summary>
     public void DisplayBattleResult(bool victory, BattleCardData card, int playerFinalAttack)
     {
-        Debug.Log($"[BattleUIManager] Результат: {(victory ? "ПОБЕДА" : "ПОРАЖЕНИЕ")}, " +
-                  $"атака {playerFinalAttack} / требуется {card.requiredAttack}");
-        // Визуальный результат показывается на карте события.
-        // Здесь можно добавить отдельный оверлей (звезда победы, крест поражения и т.п.)
+        if (resultText != null)
+            resultText.text = victory
+                ? $"<color=green><b>ПОБЕДА!</b></color> +{card.rewardMoney} фелсов"
+                : $"<color=red><b>ПОРАЖЕНИЕ!</b></color> {card.penaltyMoney} фелсов";
     }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Устаревший перегруз без enemyAttack — для совместимости с BattleManager
+    // ──────────────────────────────────────────────────────────────────────
+
+    [System.Obsolete("Используй DisplayDiceRoll(diceResult, baseAttack, enemyAttack).")]
+    public void DisplayDiceRoll(int diceResult, int baseAttack)
+    {
+        DisplayDiceRoll(diceResult, baseAttack, 0);
+    }
+
+    [System.Obsolete("Предварительный результат теперь внутри DisplayDiceRoll.")]
+    public void ShowPreliminaryResult(bool wouldWin) { }
 
     // ──────────────────────────────────────────────────────────────────────
     // Кнопки
@@ -83,35 +125,38 @@ public class BattleUIManager : MonoBehaviour
             diceButton.gameObject.SetActive(isVisible);
     }
 
-    /// <summary>Сброс UI в начале нового хода.</summary>
-    public void ClearEventText()
+    // ──────────────────────────────────────────────────────────────────────
+    // Очистка — вызывается из GameManager.RequestEndTurn
+    // ──────────────────────────────────────────────────────────────────────
+
+    public void ClearEventText() => ClearAll();
+
+    private void ClearAll()
     {
-        // Текст события живёт на карте — карта скрывается через CardManager.HideEventCard().
-        // Метод оставлен для совместимости с вызовами из GameManager.
+        if (rewardText != null) rewardText.text = "";
+        if (effectText != null) effectText.text = "";
+        if (resultText != null) resultText.text = "";
     }
 
     // ──────────────────────────────────────────────────────────────────────
     // Заглушки обратной совместимости
     // ──────────────────────────────────────────────────────────────────────
 
-    [System.Obsolete("Текст события теперь на карте. Заглушка для совместимости.")]
+    [System.Obsolete("Текст события теперь на карте.")]
     public void DisplayEventInfo(DiceEventType type, int diceValue) { }
 
-    [System.Obsolete("Текст тени теперь на карте. Заглушка для совместимости.")]
+    [System.Obsolete("Текст тени теперь на карте.")]
     public void DisplayShadowCard(ShadowCardData card) { }
 
-    [System.Obsolete("Текст битвы теперь на карте. Заглушка для совместимости.")]
+    [System.Obsolete("Текст битвы теперь на карте.")]
     public void DisplayChallenge(BattleCardData card) { }
 
-    [System.Obsolete("Используй ShowDiceButton(). Заглушка для совместимости.")]
+    [System.Obsolete("Используй ShowDiceButton().")]
     public void ShowBattleRollButton(bool isVisible) { }
 
-    [System.Obsolete("Кнопка финализации удалена. Заглушка для совместимости.")]
+    [System.Obsolete("Кнопка финализации удалена.")]
     public void EnableFinishBattleButton(bool isActive) { }
 
-    [System.Obsolete("Результат показывается на карте. Заглушка для совместимости.")]
-    public void ShowPreliminaryResult(bool wouldWin) { }
-
-    [System.Obsolete("cardPanel перенесён в EventCardDeckUI. Заглушка для совместимости.")]
+    [System.Obsolete("cardPanel перенесён в EventCardDeckUI.")]
     public void ShowCardPanel(bool isVisible) { }
 }
