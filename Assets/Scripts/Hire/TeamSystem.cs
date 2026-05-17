@@ -7,101 +7,63 @@ public class TeamSystem : MonoBehaviour
     [SerializeField] private PlayerInventory playerInventory;
     [SerializeField] private PlayerStats playerStats;
 
-    [Header("UI Configuration")]
-    [SerializeField] private HirePanelUI hirePanelPrefab;
-    [SerializeField] private Transform uiParent;
-
     [Header("Unit Data")]
     [SerializeField] private List<UnitData> availableUnits = new List<UnitData>();
 
-    public List<TeamMember> CurrentTeam = new List<TeamMember>();
-    private HirePanelUI hirePanelUI;
-    private bool isUILoaded = false;
+    public List<TeamMember> CurrentTeam { get; private set; } = new List<TeamMember>();
+    public List<UnitData> AvailableUnits => availableUnits;
+    public int CurrentMoney => playerInventory.Money;
 
     private void Awake()
-    {
-        ValidateReferences();
-    }
-
-    private void ValidateReferences()
     {
         if (playerInventory == null)
             playerInventory = GetComponent<PlayerInventory>();
 
         if (playerStats == null)
             playerStats = GetComponent<PlayerStats>();
-
-        // ИСПРАВЛЕНИЕ: Заменили FindFirstObjectByType на FindAnyObjectByType
-        if (uiParent == null && FindAnyObjectByType<Canvas>() != null)
-            uiParent = FindAnyObjectByType<Canvas>().transform;
-    }
-
-    public void OpenHirePanel()
-    {
-        if (!isUILoaded)
-        {
-            InitializeUI();
-        }
-
-        hirePanelUI.UpdateUI(availableUnits, CurrentTeam, playerInventory.Money);
-        hirePanelUI.ShowPanel();
-    }
-
-    private void InitializeUI()
-    {
-        if (hirePanelPrefab == null)
-        {
-            Debug.LogError("HirePanel prefab is not assigned!", this);
-            return;
-        }
-
-        hirePanelUI = Instantiate(hirePanelPrefab, uiParent);
-        hirePanelUI.Initialize(this); 
-        isUILoaded = true;
     }
 
     public bool TryHireUnit(UnitData unitData)
     {
+        if (IsSpecialtyTaken(unitData.specialty))
+        {
+            Debug.Log($"[TeamSystem] В команде уже есть {unitData.specialty}!");
+            return false;
+        }
+
         if (!playerInventory.TrySpendMoney(unitData.hireCost))
         {
-            Debug.Log("Not enough money!");
+            Debug.Log("[TeamSystem] Недостаточно денег!");
             return false;
         }
 
         var newMember = new TeamMember(unitData);
         CurrentTeam.Add(newMember);
         newMember.ApplyBonuses(playerStats);
-
-        UpdateUI();
         return true;
+    }
+
+    public bool IsSpecialtyTaken(UnitSpecialty specialty)
+    {
+        foreach (var member in CurrentTeam)
+            if (member.unitData.specialty == specialty)
+                return true;
+        return false;
     }
 
     public void FireUnit(TeamMember member)
     {
         member.RemoveBonuses(playerStats);
         CurrentTeam.Remove(member);
-        UpdateUI();
-    }
-
-    private void UpdateUI()
-    {
-        if (isUILoaded)
-        {
-            hirePanelUI.UpdateUI(availableUnits, CurrentTeam, playerInventory.Money);
-        }
     }
 
     public void PaySalaries()
     {
-        int totalSalary = CalculateTotalSalary();
-        if (playerInventory.TrySpendMoney(totalSalary))
+        int total = CalculateTotalSalary();
+        if (!playerInventory.TrySpendMoney(total))
         {
-            Debug.Log($"Salaries paid: {totalSalary}");
-        }
-        else
-        {
-            Debug.LogWarning($"Not enough money to pay salaries: {totalSalary}");
-            HandleSalaryShortage(totalSalary);
+            Debug.LogWarning($"[TeamSystem] Не хватает денег на зарплаты: {total}");
+            HandleSalaryShortage(total);
         }
     }
 
@@ -109,51 +71,23 @@ public class TeamSystem : MonoBehaviour
     {
         int total = 0;
         foreach (var member in CurrentTeam)
-        {
             total += member.unitData.salaryPerTurn;
-        }
         return total;
     }
 
     private void HandleSalaryShortage(int requiredAmount)
     {
-        // Логика увольнения или штрафов здесь
-        // ...
-    }
-
-    public void CloseHirePanel()
-    {
-        if (isUILoaded)
-        {
-            hirePanelUI.ClosePanel();
-        }
-    }
-
-    private void OnDestroy()
-    {
-        if (hirePanelUI != null)
-        {
-            Destroy(hirePanelUI.gameObject);
-        }
+        // Логика штрафов или увольнений
     }
 
     public int GetTotalAttack()
     {
-        int totalAttack = 0;
-    
-        // 1. Добавляем атаку самого игрока из PlayerStats
-        if (playerStats != null) totalAttack += playerStats.Attack;
-
-        // 2. Добавляем атаку каждого члена команды
+        int total = playerStats != null ? playerStats.Attack : 0;
         foreach (var member in CurrentTeam)
-        {
-            totalAttack += member.unitData.attackBonus; 
-        }
-
-        return totalAttack;
+            total += member.unitData.attackBonus;
+        return total;
     }
 
-    // Методы для наград и штрафов
     public void AddMoney(int amount) => playerInventory.AddMoney(amount);
     public void RemoveMoney(int amount) => playerInventory.TrySpendMoney(amount);
 }

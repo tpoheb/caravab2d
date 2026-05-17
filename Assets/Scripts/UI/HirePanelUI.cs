@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class HirePanelUI : MonoBehaviour
 {
     [Header("UI Elements")]
+    [SerializeField] private TextMeshProUGUI cityNameText;
     [SerializeField] private Transform availableUnitsContainer;
     [SerializeField] private Transform currentTeamContainer;
     [SerializeField] private TextMeshProUGUI moneyText;
@@ -13,31 +14,54 @@ public class HirePanelUI : MonoBehaviour
 
     private TeamSystem teamSystem;
 
-    public void Initialize(TeamSystem system)
+    public void OpenPanel(City city, TeamSystem system)
     {
         teamSystem = system;
 
-       
-        if (moneyText == null)
-            moneyText = GetComponentInChildren<TextMeshProUGUI>();
+        if (teamSystem == null)
+        {
+            Debug.LogError("[HirePanelUI] TeamSystem не передан!", this);
+            return;
+        }
+
+        UpdateCityName(city);
+        RefreshContent();
+        gameObject.SetActive(true);
     }
 
-    public void UpdateUI(List<UnitData> availableUnits, List<TeamMember> currentTeam, int currentMoney)
+    private void UpdateCityName(City city)
     {
-        moneyText.text = $" {currentMoney}";
+        if (cityNameText != null)
+            cityNameText.text = city?.CityName ?? "Неизвестный город";
+    }
+
+    // Вызывается после найма/увольнения для обновления списков
+    public void RefreshContent()
+    {
+        if (teamSystem == null) return;
+
+        moneyText.text = $"{teamSystem.CurrentMoney}";
 
         ClearContainer(availableUnitsContainer);
         ClearContainer(currentTeamContainer);
 
-        foreach (var unit in availableUnits)
-        {
-            CreateUnitButton(unit, availableUnitsContainer, () => teamSystem.TryHireUnit(unit));
-        }
+        foreach (var unit in teamSystem.AvailableUnits)
+            CreateUnitButton(unit, availableUnitsContainer, () => OnHireClicked(unit));
 
-        foreach (var member in currentTeam)
-        {
-            CreateUnitButton(member.unitData, currentTeamContainer, () => teamSystem.FireUnit(member));
-        }
+        foreach (var member in teamSystem.CurrentTeam)
+            CreateUnitButton(member.unitData, currentTeamContainer, () => OnFireClicked(member));
+    }
+
+    private void OnHireClicked(UnitData unit)
+    {
+        teamSystem.TryHireUnit(unit);
+        RefreshContent();
+    }
+
+    private void OnFireClicked(TeamMember member)
+    {
+        teamSystem.FireUnit(member);
+        RefreshContent();
     }
 
     private void CreateUnitButton(UnitData data, Transform parent, UnityEngine.Events.UnityAction action)
@@ -46,24 +70,18 @@ public class HirePanelUI : MonoBehaviour
         var text = button.GetComponentInChildren<TextMeshProUGUI>();
         text.text = $"{data.unitName}\nЦена: {data.hireCost}";
 
-        button.GetComponent<Button>().onClick.AddListener(action);
+        bool specialtyTaken = teamSystem.IsSpecialtyTaken(data.specialty);
+        button.GetComponent<Button>().interactable = !specialtyTaken;
+    
+        if (!specialtyTaken)
+            button.GetComponent<Button>().onClick.AddListener(action);
     }
 
     private void ClearContainer(Transform container)
     {
         foreach (Transform child in container)
-        {
             Destroy(child.gameObject);
-        }
     }
 
-    public void ShowPanel()
-    {
-        gameObject.SetActive(true);
-    }
-
-    public void ClosePanel()
-    {
-        gameObject.SetActive(false);
-    }
+    public void ClosePanel() => gameObject.SetActive(false);
 }

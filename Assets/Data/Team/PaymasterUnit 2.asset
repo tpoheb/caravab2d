@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: "\u0421\u043B\u0435\u043F\u043E\u0439 \u0418\u0431\u043B\u0438\u0441  "
   icon: {fileID: 0}
+  specialty: 1
   attackBonus: 0
   bargainBonus: 8
   capacityBonus: 0

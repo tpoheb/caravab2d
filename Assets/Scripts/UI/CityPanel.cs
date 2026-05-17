@@ -6,7 +6,6 @@ using System;
 
 public class CityPanel : MonoBehaviour
 {
-    // --- СОБЫТИЯ ---
     public static event Action<PathCellInitializer> OnPathSelectedEvent;
 
     [Header("UI Настройки")]
@@ -15,6 +14,10 @@ public class CityPanel : MonoBehaviour
     [SerializeField] private Button hireTeamButton;
     [SerializeField] private Button buyGoodsButton;
     [SerializeField] private TMP_Text cityNameText;
+
+    [Header("Системы")]
+    [SerializeField] private TeamSystem teamSystem;
+    [SerializeField] private HirePanelUI hirePanelUI;
 
     private City _currentCity;
     private readonly List<Button> _pathButtons = new List<Button>();
@@ -28,7 +31,7 @@ public class CityPanel : MonoBehaviour
 
         _currentCity = city;
         BuildPathButtons();
-        SetupActionButtons(); 
+        SetupActionButtons();
         UpdateCityNameUI(city.CityName);
 
         gameObject.SetActive(true);
@@ -37,7 +40,8 @@ public class CityPanel : MonoBehaviour
 
     private void UpdateCityNameUI(string cityName)
     {
-        if (cityNameText != null) cityNameText.text = cityName ?? "Неизвестный город";
+        if (cityNameText != null)
+            cityNameText.text = cityName ?? "Неизвестный город";
     }
 
     private void BuildPathButtons()
@@ -52,14 +56,13 @@ public class CityPanel : MonoBehaviour
 
             GameObject buttonObj = Instantiate(pathButtonPrefab, pathButtonsContainer);
             Button pathButton = buttonObj.GetComponent<Button>();
-            
-            // Установка текста
-            TMP_Text buttonText = pathButton.GetComponentInChildren<TMP_Text>();
-            if (buttonText != null) buttonText.text = $"Путь к {path.FinishCity.CityName}";
 
-            // --- ВАЖНО: Локальная переменная для замыкания ---
+            TMP_Text buttonText = pathButton.GetComponentInChildren<TMP_Text>();
+            if (buttonText != null)
+                buttonText.text = $"Путь к {path.FinishCity.CityName}";
+
             PathCellInitializer capturedPath = path;
-            pathButton.onClick.AddListener(() => OnPathButtonClicked(capturedPath)); 
+            pathButton.onClick.AddListener(() => OnPathButtonClicked(capturedPath));
 
             _pathButtons.Add(pathButton);
         }
@@ -69,21 +72,12 @@ public class CityPanel : MonoBehaviour
     {
         if (path == null) return;
 
-        Debug.Log($"[CityPanel] Кнопка нажата. Путь: {path.name}. Передаем в GameManager.");
-
-        // 1. Оповещаем GameManager напрямую (самый надежный способ для FSM)
         if (GameManager.Instance != null)
-        {
             GameManager.Instance.OnPathSelected(path);
-        }
         else
-        {
             Debug.LogError("[CityPanel] GameManager.Instance не найден!");
-        }
 
-        // 2. Дополнительно вызываем событие для других систем (например, PlayerToken)
         OnPathSelectedEvent?.Invoke(path);
-
         ClosePanel();
     }
 
@@ -96,12 +90,22 @@ public class CityPanel : MonoBehaviour
         buyGoodsButton.onClick.AddListener(OnBuyGoodsClicked);
     }
 
-    private void OnHireTeamClicked() => Debug.Log($"Наем команды в {_currentCity?.CityName}");
+    private void OnHireTeamClicked()
+    {
+        if (teamSystem == null || hirePanelUI == null)
+        {
+            Debug.LogError("[CityPanel] TeamSystem или HirePanelUI не назначены в Inspector!", this);
+            return;
+        }
+
+        hirePanelUI.OpenPanel(_currentCity, teamSystem);
+        
+    }
 
     private void OnBuyGoodsClicked()
     {
-        if (_currentCity == null) return; 
-        TradeSystem.RequestTrade(_currentCity); 
+        if (_currentCity == null) return;
+        TradeSystem.RequestTrade(_currentCity);
         ClosePanel();
     }
 
@@ -122,7 +126,9 @@ public class CityPanel : MonoBehaviour
 
     private void ValidateReferences()
     {
-        if (cityNameText == null) Debug.LogWarning("CityPanel: CityNameText не назначен!");
-        if (pathButtonPrefab == null) Debug.LogError("CityPanel: pathButtonPrefab не назначен!");
+        if (cityNameText == null) Debug.LogWarning("[CityPanel] CityNameText не назначен!");
+        if (pathButtonPrefab == null) Debug.LogError("[CityPanel] pathButtonPrefab не назначен!");
+        if (teamSystem == null) Debug.LogError("[CityPanel] TeamSystem не назначен!");
+        if (hirePanelUI == null) Debug.LogError("[CityPanel] HirePanelUI не назначен!");
     }
 }
