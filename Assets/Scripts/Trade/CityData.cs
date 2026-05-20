@@ -18,7 +18,8 @@ public class CityData : ScriptableObject
         public float baseBuyPrice;      
         public float currentBuyPrice;   
         public float minBuyPrice;       
-        public float maxBuyPrice;       
+        public float maxBuyPrice;  
+        public DemandLevel demand = DemandLevel.Normal;
 
         [Header("Dynamic Sell Pricing (Город покупает у игрока)")]
         public float baseSellPrice;

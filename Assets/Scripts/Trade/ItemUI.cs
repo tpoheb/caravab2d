@@ -14,6 +14,8 @@ public class ItemUI : MonoBehaviour
     [SerializeField] private TMP_Text playerAveragePriceText;
     [SerializeField] private Button buyButton;
     [SerializeField] private Button sellButton;
+    [SerializeField] private GameObject arrowUp;   // зелёная стрелка ↑ (Image/Sprite)
+    [SerializeField] private GameObject arrowDown; // красная стрелка ↓
 
     // Свойство для доступа к данным (делаем его сериализованным, если нужно для отладки)
     public CityData.CityItem CityItem { get; private set; }
@@ -71,6 +73,10 @@ public class ItemUI : MonoBehaviour
             // Если товара нет (цена 0), пишем прочерк.
             playerAveragePriceText.text = averagePrice > 0 ? averagePrice.ToString("F1") : "-";
         }
+        // ─── Спрос ────────────────────────────────────────────────────────────
+        if (arrowUp != null)   arrowUp.SetActive(CityItem.demand == DemandLevel.High);
+        if (arrowDown != null) arrowDown.SetActive(CityItem.demand == DemandLevel.Low);
+        // ────
     }
     /// <summary>
     /// Обновляет количество этого предмета у игрока.

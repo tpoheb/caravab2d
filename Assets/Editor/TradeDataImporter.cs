@@ -16,7 +16,7 @@ namespace Editor
         // ─── Формат CSV ──────────────────────────────────────────────────────
         private const char CsvSeparator       = ',';
         private const int  MinColumnsBasic    = 6;
-        private const int  MinColumnsExtended = 9;
+        private const int  MinColumnsExtended = 10;
 
         private const int ColCity        = 0;
         private const int ColItem        = 1;
@@ -28,6 +28,7 @@ namespace Editor
         private const int ColMaxBuyPrice = 7;
         private const int ColVolatility  = 8;
         private const int ColRegenRate   = 9;
+        private const int ColDemand = 10;
 
         // ─── Дефолтные значения ──────────────────────────────────────────────
         private const float DefaultPriceRangeMin = 0.5f;
@@ -173,6 +174,17 @@ namespace Editor
                         cityItem.regenRate    = parts.Length > ColRegenRate
                             ? TryParseFloat(parts[ColRegenRate], DefaultRegenRate)
                             : DefaultRegenRate;
+                        
+                        if (parts.Length > ColDemand)
+                        {
+                            string demandStr = parts[ColDemand].Trim().ToLowerInvariant();
+                            cityItem.demand = demandStr switch
+                            {
+                                "high" or "1"  or "высокий" => DemandLevel.High,
+                                "low"  or "-1" or "низкий"  => DemandLevel.Low,
+                                _                            => DemandLevel.Normal
+                            };
+                        }
                     }
                     else
                     {
