@@ -13,16 +13,26 @@ public class GameManager : MonoBehaviour
     [SerializeField] private HandManager handManager;
     [SerializeField] private PlayerStats playerStats;
     [SerializeField] private ShadowEffectManager shadowEffectManager;
+    [SerializeField] private PlayerInventory playerInventory;
 
     [Header("Кнопка вытянуть карту")]
     [SerializeField] private Button drawCardButton;
+
+    [Header("UI выбора кубика (Старая Карта)")]
+    [Tooltip("Панель с кнопками 1–6 для выбора значения кубика пути")]
+    [SerializeField] private GameObject diceChoicePanel;
+
+    [Header("UI выбора товара (Мистический Узел)")]
+    [Tooltip("Панель выбора товара для удвоения")]
+    [SerializeField] private GameObject doubleGoodsPanelPrefab;
+    [SerializeField] private Transform uiRoot;
 
     public GameState State { get; private set; } = GameState.Idle;
 
     private bool _pendingBattle = false;
 
     // ─────────────────────────────────────────────────────────────────────
-    // Жизненный цикл
+    // Lifecycle
     // ─────────────────────────────────────────────────────────────────────
 
     private void Awake()
@@ -48,15 +58,15 @@ public class GameManager : MonoBehaviour
 
     private void Subscribe()
     {
-        if (diceSystem   != null) diceSystem.OnDiceRolled     += OnDiceRolled;
-        if (playerToken  != null) playerToken.OnArrivedAtCity += OnArrivedAtCity;
+        if (diceSystem    != null) diceSystem.OnDiceRolled     += OnDiceRolled;
+        if (playerToken   != null) playerToken.OnArrivedAtCity += OnArrivedAtCity;
         if (drawCardButton != null) drawCardButton.onClick.AddListener(OnDrawCardButtonPressed);
     }
 
     private void Unsubscribe()
     {
-        if (diceSystem   != null) diceSystem.OnDiceRolled     -= OnDiceRolled;
-        if (playerToken  != null) playerToken.OnArrivedAtCity -= OnArrivedAtCity;
+        if (diceSystem    != null) diceSystem.OnDiceRolled     -= OnDiceRolled;
+        if (playerToken   != null) playerToken.OnArrivedAtCity -= OnArrivedAtCity;
         if (drawCardButton != null) drawCardButton.onClick.RemoveListener(OnDrawCardButtonPressed);
     }
 
@@ -82,36 +92,24 @@ public class GameManager : MonoBehaviour
         SetState(GameState.InCity);
     }
 
-    /// <summary>
-    /// Нажатие кнопки "Вытянуть карту".
-    /// Доступно только в состоянии DrawingCard.
-    /// </summary>
     private void OnDrawCardButtonPressed()
     {
         if (State != GameState.DrawingCard)
         {
-            Debug.LogWarning($"GameManager: DrawCard проигнорирован, состояние {State}");
+            Debug.LogWarning($"[GameManager] DrawCard проигнорирован, состояние {State}");
             return;
         }
 
-        SetState(GameState.ResolvingEvent);   // блокируем повторное нажатие
+        SetState(GameState.ResolvingEvent);
         cardManager.DrawCard();
     }
 
-    /// <summary>
-    /// Вызывается из CardManager после открытия карты тени.
-    /// </summary>
     public void OnShadowCardRevealed()
     {
         GetUIManager().ShowEndTurnButton(true);
         GetUIManager().ShowDiceButton(false);
     }
 
-    /// <summary>
-    /// Вызывается из CardManager после открытия карты битвы.
-    /// BattleManager.PrepareBattle уже вызван к этому моменту.
-    /// Запускаем автобросок кубика.
-    /// </summary>
     public void OnBattleCardRevealed()
     {
         _pendingBattle = true;
@@ -120,24 +118,44 @@ public class GameManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Завершение хода — единственная обязательная кнопка.
+    /// Вызывается BattleManager когда бой завершён принудительно (Дымовая завеса).
+    /// Переводим в ResolvingEvent — игрок нажимает "Завершить ход" как обычно.
     /// </summary>
+    public void OnBattleForceEnded()
+    {
+        _pendingBattle = false;
+        SetState(GameState.ResolvingEvent);
+        GetUIManager().ShowEndTurnButton(true);
+        GetUIManager().ShowDiceButton(false);
+        Debug.Log("[GameManager] Бой пропущен через EscapeBattle.");
+    }
+
+    /// <summary>
+    /// Вызывается CardManager когда карта была отменена Странным Амулетом.
+    /// Переходим сразу к завершению хода.
+    /// </summary>
+    public void OnCardCancelled()
+    {
+        SetState(GameState.ResolvingEvent);
+        GetUIManager().ShowEndTurnButton(true);
+        GetUIManager().ShowDiceButton(false);
+        Debug.Log("[GameManager] Карта отменена амулетом.");
+    }
+
     public void RequestEndTurn()
     {
         if (State != GameState.ResolvingEvent && State != GameState.InBattle)
         {
-            Debug.LogWarning($"GameManager: RequestEndTurn проигнорирован, состояние {State}");
+            Debug.LogWarning($"[GameManager] RequestEndTurn проигнорирован, состояние {State}");
             return;
         }
 
-        // Блокируем повторное нажатие
         GetUIManager().ShowEndTurnButton(false);
 
         if (_pendingBattle)
         {
             battleManager.FinalizeBattle();
             _pendingBattle = false;
-            // Даём игроку увидеть результат 1.5 сек, потом очищаем и продолжаем
             StartCoroutine(EndTurnAfterDelay(1.5f));
             return;
         }
@@ -148,7 +166,7 @@ public class GameManager : MonoBehaviour
 
     private System.Collections.IEnumerator EndTurnAfterDelay(float delay)
     {
-        yield return new UnityEngine.WaitForSeconds(delay);
+        yield return new WaitForSeconds(delay);
         shadowEffectManager?.ProcessTurn();
         FinishEndTurn();
     }
@@ -168,7 +186,7 @@ public class GameManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Кубик (только для битвы)
+    // Кубик
     // ─────────────────────────────────────────────────────────────────────
 
     public void OnDiceRolled(int value, DiceEventType type)
@@ -183,6 +201,89 @@ public class GameManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────────────
+    // Карты руки — UI промпты
+    // ─────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Показывает панель выбора числа кубика (1–6).
+    /// Кнопки в панели должны вызывать OnDiceChoiceSelected(int value).
+    /// Активируется картой "Старая Карта".
+    /// </summary>
+    public void PromptDiceChoice()
+    {
+        if (diceChoicePanel == null)
+        {
+            Debug.LogWarning("[GameManager] diceChoicePanel не назначен в инспекторе. " +
+                             "Автоматически выбираем максимум (6).");
+            ApplyDiceChoice(6);
+            return;
+        }
+
+        diceChoicePanel.SetActive(true);
+        // Кнопки в diceChoicePanel настраиваются в инспекторе:
+        // каждая кнопка вызывает GameManager.Instance.OnDiceChoiceSelected(N)
+    }
+
+    /// <summary>
+    /// Вызывается кнопкой в diceChoicePanel.
+    /// </summary>
+    public void OnDiceChoiceSelected(int value)
+    {
+        value = Mathf.Clamp(value, 1, 6);
+        diceChoicePanel?.SetActive(false);
+        ApplyDiceChoice(value);
+    }
+
+    private void ApplyDiceChoice(int value)
+    {
+        Debug.Log($"[GameManager] ChooseDice: выбрано {value}.");
+        // Передаём в BattleManager напрямую (кубик пути — отдельная логика)
+        battleManager.ExecuteBattle(value);
+        SetState(GameState.ResolvingEvent);
+        GetUIManager().ShowEndTurnButton(true);
+        GetUIManager().ShowDiceButton(false);
+    }
+
+    /// <summary>
+    /// Показывает UI выбора товара для удвоения (Мистический Узел).
+    /// После выбора игрок вызывает OnDoubleGoodsSelected(Item item).
+    /// </summary>
+    public void PromptDoubleGoods()
+    {
+        if (playerInventory == null || playerInventory.Items.Count == 0)
+        {
+            Debug.LogWarning("[GameManager] PromptDoubleGoods: инвентарь пуст, удваивать нечего.");
+            return;
+        }
+
+        if (doubleGoodsPanelPrefab == null)
+        {
+            // Заглушка: удваиваем первый попавшийся товар
+            Debug.LogWarning("[GameManager] doubleGoodsPanelPrefab не назначен. " +
+                             "Удваиваем первый товар в инвентаре.");
+            playerInventory.DoubleGoods(playerInventory.Items[0].item);
+            return;
+        }
+
+        // TODO: заменить на полноценный UI выбора товара (GoodsSelectorUI)
+        // Пока удваиваем случайный товар из инвентаря
+        var items = playerInventory.Items;
+        var chosen = items[Random.Range(0, items.Count)].item;
+        playerInventory.DoubleGoods(chosen);
+        Debug.Log($"[GameManager] DoubleGoods: удвоен {chosen.name} (UI выбора не назначен).");
+    }
+
+    /// <summary>
+    /// Коллбэк для будущего UI выбора товара.
+    /// Вызвать из GoodsSelectorUI когда он будет готов.
+    /// </summary>
+    public void OnDoubleGoodsSelected(Item item)
+    {
+        playerInventory.DoubleGoods(item);
+        Debug.Log($"[GameManager] DoubleGoods: выбран товар {item.name}.");
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
     // Движение
     // ─────────────────────────────────────────────────────────────────────
 
@@ -190,10 +291,10 @@ public class GameManager : MonoBehaviour
     {
         if (State != GameState.InCity)
         {
-            Debug.LogWarning($"GameManager: путь проигнорирован, состояние {State}");
+            Debug.LogWarning($"[GameManager] Путь проигнорирован, состояние {State}");
             return;
         }
-        if (path == null) { Debug.LogError("GameManager: путь null!"); return; }
+        if (path == null) { Debug.LogError("[GameManager] Путь null!"); return; }
 
         playerToken.StartPath(path);
         SetState(GameState.Moving);
@@ -204,7 +305,7 @@ public class GameManager : MonoBehaviour
     {
         if (State != GameState.Moving)
         {
-            Debug.LogWarning($"GameManager: ContinueMovement прерван, состояние {State}");
+            Debug.LogWarning($"[GameManager] ContinueMovement прерван, состояние {State}");
             return;
         }
 
@@ -213,23 +314,13 @@ public class GameManager : MonoBehaviour
         if (reachedCity)
             SetState(GameState.InCity);
         else
-            SetState(GameState.DrawingCard);    // игрок должен вытянуть карту
+            SetState(GameState.DrawingCard);
     }
 
     private void OnArrivedAtCity(City city)
     {
-        Debug.Log($"GameManager: прибыли в {city.CityName}");
+        Debug.Log($"[GameManager] Прибыли в {city.CityName}.");
         SetState(GameState.InCity);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // UI кнопки вытянуть карту
-    // ─────────────────────────────────────────────────────────────────────
-
-    private void UpdateDrawCardButton()
-    {
-        if (drawCardButton != null)
-            drawCardButton.gameObject.SetActive(State == GameState.DrawingCard);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -243,18 +334,25 @@ public class GameManager : MonoBehaviour
         ContinueMovement();
     }
 
-    private BattleUIManager GetUIManager() => battleManager.GetUIManager();
+    // ─────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Валидация
-    // ─────────────────────────────────────────────────────────────────────
+    private void UpdateDrawCardButton()
+    {
+        if (drawCardButton != null)
+            drawCardButton.gameObject.SetActive(State == GameState.DrawingCard);
+    }
+
+    private BattleUIManager GetUIManager() => battleManager.GetUIManager();
 
     private void ValidateReferences()
     {
-        if (playerToken    == null) Debug.LogError("GameManager: PlayerToken не назначен");
-        if (diceSystem     == null) Debug.LogError("GameManager: DiceSystem не назначен");
-        if (battleManager  == null) Debug.LogError("GameManager: BattleManager не назначен");
-        if (cardManager    == null) Debug.LogError("GameManager: CardManager не назначен");
-        if (drawCardButton == null) Debug.LogWarning("GameManager: DrawCardButton не назначен");
+        if (playerToken    == null) Debug.LogError("[GameManager] PlayerToken не назначен");
+        if (diceSystem     == null) Debug.LogError("[GameManager] DiceSystem не назначен");
+        if (battleManager  == null) Debug.LogError("[GameManager] BattleManager не назначен");
+        if (cardManager    == null) Debug.LogError("[GameManager] CardManager не назначен");
+        if (drawCardButton == null) Debug.LogWarning("[GameManager] DrawCardButton не назначен");
+        if (playerInventory == null) Debug.LogWarning("[GameManager] PlayerInventory не назначен (нужен для DoubleGoods)");
     }
 }

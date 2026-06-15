@@ -7,7 +7,7 @@ public class InventoryItem
 {
     public Item item;
     public int quantity;
-    public float averagePurchasePrice; // НОВОЕ ПОЛЕ: Средняя цена покупки
+    public float averagePurchasePrice;
 }
 
 public class PlayerInventory : MonoBehaviour
@@ -15,6 +15,10 @@ public class PlayerInventory : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private int startMoney = 1000;
     [SerializeField] private PlayerStats playerStats;
+
+    [Header("Контрабанда")]
+    [Tooltip("Список Item-ассетов, которые считаются контрабандой (Осколки Прошлого и т.п.)")]
+    [SerializeField] private List<Item> contrabandItems = new List<Item>();
 
     [Header("Debug")]
     [SerializeField] private List<InventoryItem> items = new List<InventoryItem>();
@@ -38,6 +42,7 @@ public class PlayerInventory : MonoBehaviour
     }
 
     #region Inventory Operations
+
     public bool AddItem(Item item, int quantity, int totalTransactionCost = 0)
     {
         if (!CanCarryItem(item, quantity))
@@ -49,19 +54,18 @@ public class PlayerInventory : MonoBehaviour
         var existing = items.Find(i => i.item == item);
         if (existing != null)
         {
-            // Считаем новую среднюю цену
             float currentTotalValue = existing.quantity * existing.averagePurchasePrice;
             existing.quantity += quantity;
             existing.averagePurchasePrice = (currentTotalValue + totalTransactionCost) / existing.quantity;
         }
         else
         {
-            // Если товара не было, средняя цена = стоимость / количество
             float initialAvgPrice = quantity > 0 ? (float)totalTransactionCost / quantity : 0;
-            items.Add(new InventoryItem { 
-                item = item, 
-                quantity = quantity, 
-                averagePurchasePrice = initialAvgPrice 
+            items.Add(new InventoryItem
+            {
+                item = item,
+                quantity = quantity,
+                averagePurchasePrice = initialAvgPrice
             });
         }
 
@@ -69,7 +73,6 @@ public class PlayerInventory : MonoBehaviour
         return true;
     }
 
-    // НОВЫЙ МЕТОД: Для получения средней цены UI менеджером
     public float GetItemAveragePrice(Item item)
     {
         var existing = items.Find(i => i.item == item);
@@ -83,7 +86,6 @@ public class PlayerInventory : MonoBehaviour
             return false;
 
         existing.quantity -= quantity;
-
         if (existing.quantity <= 0)
             items.Remove(existing);
 
@@ -99,9 +101,11 @@ public class PlayerInventory : MonoBehaviour
 
     public bool HasItem(Item item, int minQuantity = 1) =>
         GetItemStock(item) >= minQuantity;
+
     #endregion
 
     #region Money Operations
+
     public bool TrySpendMoney(int amount)
     {
         if (Money < amount)
@@ -117,9 +121,11 @@ public class PlayerInventory : MonoBehaviour
         Money += amount;
         OnMoneyChanged?.Invoke();
     }
+
     #endregion
 
     #region Capacity Calculations
+
     public bool CanCarryItem(Item item, int quantity) =>
         item != null && CanCarryMore(item.weight * quantity);
 
@@ -136,9 +142,117 @@ public class PlayerInventory : MonoBehaviour
 
     public int GetRemainingCapacity() =>
         playerStats.Capacity - GetCurrentWeight();
+
+    #endregion
+
+    #region Event Card Methods
+
+    /// <summary>
+    /// Добавляет N единиц случайного существующего товара из инвентаря.
+    /// Если инвентарь пуст — берёт первый Item из Resources/Items/.
+    /// Вызывается эффектами AddGoods (Благословенный Оазис, Дар Незнакомца).
+    /// </summary>
+    public void AddRandomGoods(int amount)
+    {
+        Item target = null;
+
+        if (items.Count > 0)
+        {
+            // Предпочитаем товар, которого уже есть больше всего (логично для каравана)
+            target = items.OrderByDescending(i => i.quantity).First().item;
+        }
+        else
+        {
+            // Инвентарь пуст — загружаем первый попавшийся Item из ресурсов
+            var all = Resources.LoadAll<Item>("Items");
+            if (all.Length > 0)
+                target = all[Random.Range(0, all.Length)];
+        }
+
+        if (target == null)
+        {
+            Debug.LogWarning("[PlayerInventory] AddRandomGoods: нет доступных товаров.");
+            return;
+        }
+
+        // Добавляем без учёта средней цены (бесплатный товар — цена 0)
+        AddItem(target, amount, totalTransactionCost: 0);
+        Debug.Log($"[PlayerInventory] AddRandomGoods: +{amount} {target.name}.");
+    }
+
+    /// <summary>
+    /// Удаляет N единиц случайных товаров из инвентаря.
+    /// Выбирает случайные слоты до исчерпания лимита.
+    /// Вызывается эффектом RemoveGoods (Обвал на Тропе).
+    /// </summary>
+    public void RemoveRandomGoods(int amount)
+    {
+        int remaining = amount;
+
+        // Перемешиваем, чтобы удаление было честно случайным
+        var shuffled = items.OrderBy(_ => Random.value).ToList();
+
+        foreach (var slot in shuffled)
+        {
+            if (remaining <= 0) break;
+
+            int toRemove = Mathf.Min(slot.quantity, remaining);
+            RemoveItem(slot.item, toRemove);
+            remaining -= toRemove;
+
+            Debug.Log($"[PlayerInventory] RemoveRandomGoods: -{toRemove} {slot.item.name}.");
+        }
+
+        if (remaining > 0)
+            Debug.Log($"[PlayerInventory] RemoveRandomGoods: не хватило товаров, удалено всё.");
+    }
+
+    /// <summary>
+    /// Конфискует всю контрабанду (список contrabandItems в инспекторе).
+    /// Возвращает true, если хоть что-то было изъято.
+    /// Вызывается эффектом Confiscation (Тень Инквизитора).
+    /// </summary>
+    public bool ConfiscateContraband()
+    {
+        bool found = false;
+
+        foreach (var contrabandItem in contrabandItems)
+        {
+            int stock = GetItemStock(contrabandItem);
+            if (stock <= 0) continue;
+
+            RemoveItem(contrabandItem, stock);
+            found = true;
+            Debug.Log($"[PlayerInventory] ConfiscateContraband: изъято {stock} {contrabandItem.name}.");
+        }
+
+        return found;
+    }
+
+    /// <summary>
+    /// Удваивает количество конкретного товара в инвентаре.
+    /// Вызывается эффектом DoubleGoods (Мистический Узел) после выбора игрока.
+    /// </summary>
+    public void DoubleGoods(Item item)
+    {
+        if (item == null) return;
+
+        var slot = items.Find(i => i.item == item);
+        if (slot == null || slot.quantity <= 0)
+        {
+            Debug.LogWarning($"[PlayerInventory] DoubleGoods: товара {item.name} нет в инвентаре.");
+            return;
+        }
+
+        int addAmount = slot.quantity; // удваиваем = добавляем столько же
+        AddItem(item, addAmount, totalTransactionCost: 0);
+        Debug.Log($"[PlayerInventory] DoubleGoods: {item.name} удвоен ({addAmount} → {slot.quantity}).");
+    }
+
     #endregion
 
     #region Persistence
+
     public void SaveInventory()
     {
         PlayerPrefs.SetInt("PlayerMoney", Money);
@@ -167,5 +281,6 @@ public class PlayerInventory : MonoBehaviour
                 items.Add(new InventoryItem { item = item, quantity = quantity });
         }
     }
+
     #endregion
 }

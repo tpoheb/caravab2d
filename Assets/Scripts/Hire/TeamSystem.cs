@@ -18,7 +18,6 @@ public class TeamSystem : MonoBehaviour
     {
         if (playerInventory == null)
             playerInventory = GetComponent<PlayerInventory>();
-
         if (playerStats == null)
             playerStats = GetComponent<PlayerStats>();
     }
@@ -30,7 +29,6 @@ public class TeamSystem : MonoBehaviour
             Debug.Log($"[TeamSystem] В команде уже есть {unitData.specialty}!");
             return false;
         }
-
         if (!playerInventory.TrySpendMoney(unitData.hireCost))
         {
             Debug.Log("[TeamSystem] Недостаточно денег!");
@@ -55,6 +53,24 @@ public class TeamSystem : MonoBehaviour
     {
         member.RemoveBonuses(playerStats);
         CurrentTeam.Remove(member);
+    }
+
+    /// <summary>
+    /// Увольняет случайного члена команды без выплаты.
+    /// Вызывается ShadowEffectManager для эффекта "Зов Мглы".
+    /// Возвращает false если команда пуста.
+    /// </summary>
+    public bool FireRandomCrewMember()
+    {
+        if (CurrentTeam.Count == 0)
+            return false;
+
+        int index = Random.Range(0, CurrentTeam.Count);
+        TeamMember victim = CurrentTeam[index];
+
+        Debug.Log($"[TeamSystem] Зов Мглы: уходит {victim.unitData.unitName}.");
+        FireUnit(victim);
+        return true;
     }
 
     public void PaySalaries()

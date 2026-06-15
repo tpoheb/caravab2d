@@ -2,16 +2,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// Управляет EventPanel на Canvas.
-///
-/// Привязка полей из иерархии:
-///   RewardText — атака игрока и врага (заполняется сразу после броска)
-///   EffectText — предварительный результат (хватает / не хватает)
-///   ResultText — итог боя (победа / поражение + награда/штраф)
-///
-/// Все поля заполняются в DisplayDiceRoll → сбрасываются в ClearEventText.
-/// </summary>
 public class BattleUIManager : MonoBehaviour
 {
     [Header("EventPanel — текстовые поля")]
@@ -23,8 +13,6 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private GameObject battlePanel;
     [SerializeField] private Button endTurnButton;
     [SerializeField] private Button diceButton;
-
-    // ──────────────────────────────────────────────────────────────────────
 
     private void Start()
     {
@@ -43,10 +31,6 @@ public class BattleUIManager : MonoBehaviour
         if (diceButton    == null) Debug.LogWarning($"{nameof(diceButton)} не назначен!");
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Состояния
-    // ──────────────────────────────────────────────────────────────────────
-
     public void SetIdleState()
     {
         ClearAll();
@@ -54,15 +38,6 @@ public class BattleUIManager : MonoBehaviour
         ShowDiceButton(true);
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Бросок кубика — заполняем все три поля сразу
-    // ──────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Вызывается из BattleManager.ExecuteBattle сразу после броска.
-    /// Заполняет rewardText и effectText немедленно.
-    /// resultText заполнится в DisplayBattleResult (FinalizeBattle).
-    /// </summary>
     public void DisplayDiceRoll(int diceResult, int baseAttack, int enemyAttack)
     {
         int totalAttack = baseAttack + diceResult;
@@ -78,14 +53,6 @@ public class BattleUIManager : MonoBehaviour
                 : "<color=red>Сил не хватает!</color>";
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Итог боя — вызывается из BattleManager.FinalizeBattle
-    // ──────────────────────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Показывает итог боя в resultText.
-    /// rewardText и effectText уже заполнены с броска — не трогаем.
-    /// </summary>
     public void DisplayBattleResult(bool victory, BattleCardData card, int playerFinalAttack)
     {
         if (resultText != null)
@@ -94,22 +61,21 @@ public class BattleUIManager : MonoBehaviour
                 : $"<color=red><b>ПОРАЖЕНИЕ!</b></color> {card.penaltyMoney} фелсов";
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Устаревший перегруз без enemyAttack — для совместимости с BattleManager
-    // ──────────────────────────────────────────────────────────────────────
-
-    [System.Obsolete("Используй DisplayDiceRoll(diceResult, baseAttack, enemyAttack).")]
-    public void DisplayDiceRoll(int diceResult, int baseAttack)
+    /// <summary>
+    /// Показывает сообщение о побеге (Дымовая Завеса).
+    /// Вызывается BattleManager.PrepareBattle и ForceEndBattle.
+    /// </summary>
+    public void DisplayEscapeMessage(string enemyName)
     {
-        DisplayDiceRoll(diceResult, baseAttack, 0);
+        if (rewardText != null)
+            rewardText.text = $"Встреча с <b>{enemyName}</b>";
+
+        if (effectText != null)
+            effectText.text = "<color=yellow>Дымовая завеса!</color>";
+
+        if (resultText != null)
+            resultText.text = "Вы скрылись без потерь.";
     }
-
-    [System.Obsolete("Предварительный результат теперь внутри DisplayDiceRoll.")]
-    public void ShowPreliminaryResult(bool wouldWin) { }
-
-    // ──────────────────────────────────────────────────────────────────────
-    // Кнопки
-    // ──────────────────────────────────────────────────────────────────────
 
     public Button EndTurnButton => endTurnButton;
 
@@ -125,10 +91,6 @@ public class BattleUIManager : MonoBehaviour
             diceButton.gameObject.SetActive(isVisible);
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Очистка — вызывается из GameManager.RequestEndTurn
-    // ──────────────────────────────────────────────────────────────────────
-
     public void ClearEventText() => ClearAll();
 
     private void ClearAll()
@@ -138,9 +100,11 @@ public class BattleUIManager : MonoBehaviour
         if (resultText != null) resultText.text = "";
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Заглушки обратной совместимости
-    // ──────────────────────────────────────────────────────────────────────
+    [System.Obsolete("Используй DisplayDiceRoll(diceResult, baseAttack, enemyAttack).")]
+    public void DisplayDiceRoll(int diceResult, int baseAttack) => DisplayDiceRoll(diceResult, baseAttack, 0);
+
+    [System.Obsolete("Предварительный результат теперь внутри DisplayDiceRoll.")]
+    public void ShowPreliminaryResult(bool wouldWin) { }
 
     [System.Obsolete("Текст события теперь на карте.")]
     public void DisplayEventInfo(DiceEventType type, int diceValue) { }

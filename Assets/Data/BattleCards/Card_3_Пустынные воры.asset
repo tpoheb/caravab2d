@@ -16,4 +16,4 @@ MonoBehaviour:
   enemyName: "\u041F\u0443\u0441\u0442\u044B\u043D\u043D\u044B\u0435 \u0432\u043E\u0440\u044B"
   requiredAttack: 7
   rewardMoney: 50
-  penaltyMoney: 0
+  penaltyMoney: -35
