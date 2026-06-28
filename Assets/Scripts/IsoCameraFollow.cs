@@ -2,18 +2,29 @@ using UnityEngine;
 
 public class IsoCameraFollow : MonoBehaviour
 {
-    public Transform target;          // Фишка игрока
-    public float smoothSpeed = 5f;    // Скорость плавности
-    public Vector3 offset;            // Смещение камеры (изометрическое)
+    [Header("Target")]
+    public Transform target; // перетащи сюда фишку игрока
 
-    private void LateUpdate()
+    [Header("Follow Settings")]
+    public float smoothSpeed = 5f;        // плавность следования
+    public Vector3 offset = new Vector3(0f, 15f, -10f); // отступ от фишки
+
+    [Header("Tabletop Angle")]
+    public float pitch = 55f;  // наклон вниз
+    public float yaw = 20f;    // поворот для объёма
+
+    void Start()
+    {
+        transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
+    }
+
+    void LateUpdate()
     {
         if (target == null) return;
 
-        // Желаемая позиция камеры
         Vector3 desiredPosition = target.position + offset;
 
-        // Плавное движение
+        // плавное смещение
         transform.position = Vector3.Lerp(
             transform.position,
             desiredPosition,

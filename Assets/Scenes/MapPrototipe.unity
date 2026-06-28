@@ -108012,6 +108012,55 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 5c2ea5c45eac04e48a00f772ea4cb0a5, type: 3}
   m_PrefabInstance: {fileID: 710909541}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &710922641
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 710922643}
+  - component: {fileID: 710922642}
+  m_Layer: 0
+  m_Name: Global Volume
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &710922642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 710922641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
+  m_IsGlobal: 1
+  priority: 0
+  blendDistance: 0
+  weight: 1
+  sharedProfile: {fileID: 11400000, guid: 3348e92cab60ec247aef3212d928a371, type: 2}
+--- !u!4 &710922643
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 710922641}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1204.2031, y: -487.82468, z: 1589.9812}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &711220280
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -129415,9 +129464,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dac5fbb17a35e5d449932e60a804a6ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cardPrefab: {fileID: 7013766983158800921, guid: f40150fcbcf271d4a858e3f8ce69272f, type: 3}
-  handContainer: {fileID: 2135638682}
-  cardSpacing: 10
 --- !u!114 &858163783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -218295,6 +218341,8 @@ GameObject:
   - component: {fileID: 1468831705}
   - component: {fileID: 1468831704}
   - component: {fileID: 1468831703}
+  - component: {fileID: 1468831710}
+  - component: {fileID: 1468831709}
   - component: {fileID: 1468831706}
   - component: {fileID: 1468831708}
   m_Layer: 0
@@ -218343,10 +218391,10 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: -500
+  near clip plane: 0.01
   far clip plane: 1000
-  field of view: 60
-  orthographic: 1
+  field of view: 28
+  orthographic: 0
   orthographic size: 90
   m_Depth: -1
   m_CullingMask:
@@ -218371,13 +218419,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1468831702}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.46174863, y: 0, z: 0, w: 0.8870109}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1440.4546, y: -17.373686, z: 657.2333}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 55, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1468831706
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -218391,7 +218439,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_RenderShadows: 1
-  m_RequiresDepthTextureOption: 2
+  m_RequiresDepthTextureOption: 1
   m_RequiresOpaqueTextureOption: 2
   m_CameraType: 0
   m_Cameras: []
@@ -218401,7 +218449,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -218436,7 +218484,41 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IsoCameraFollow
   target: {fileID: 1373296202}
   smoothSpeed: 5
-  offset: {x: 8.3, y: -22.2, z: 32}
+  offset: {x: 0, y: 0, z: 0}
+  pitch: 55
+  yaw: 20
+--- !u!114 &1468831709
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468831702}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54b58453fe9974f4ba0e3edb82104e7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TabletopDOF
+  globalVolume: {fileID: 710922642}
+  focusTarget: {fileID: 1373296202}
+  aperture: 5.6
+  focalLength: 50
+--- !u!114 &1468831710
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468831702}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7785757b674202488eb3b2302f3dcaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TabletopCameraController
+  pitch: 55
+  yaw: 20
+  fov: 28
+  distance: 25
 --- !u!1001 &1469113778
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -299104,6 +299186,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   startMoney: 1000
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
+  contrabandItems: []
   items: []
 --- !u!114 &2041521373
 MonoBehaviour:
@@ -299159,7 +299242,11 @@ MonoBehaviour:
   handManager: {fileID: 2041521377}
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
   shadowEffectManager: {fileID: 2041521378}
+  playerInventory: {fileID: 0}
   drawCardButton: {fileID: 348006770}
+  diceChoicePanel: {fileID: 0}
+  doubleGoodsPanelPrefab: {fileID: 0}
+  uiRoot: {fileID: 0}
 --- !u!114 &2041521375
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -299221,6 +299308,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HandManager
   battleManager: {fileID: 2041521376}
+  playerInventory: {fileID: 0}
   maxHandSize: 4
   currentHand:
   - {fileID: 11400000, guid: dc9a07f317096c64b96265ccde607ad1, type: 2}
@@ -299245,6 +299333,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ShadowEffectManager
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
   playerInventory: {fileID: 2041521372}
+  teamSystem: {fileID: 0}
 --- !u!1001 &2041646538
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -316730,3 +316819,4 @@ SceneRoots:
   - {fileID: 1327742539}
   - {fileID: 1836032679}
   - {fileID: 96806599}
+  - {fileID: 710922643}

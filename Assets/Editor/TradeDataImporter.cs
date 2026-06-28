@@ -163,28 +163,29 @@ namespace Editor
 
                     if (parts.Length >= MinColumnsExtended)
                     {
-                        cityItem.minBuyPrice  = TryParseFloat(parts[ColMinBuyPrice], buyPrice * DefaultPriceRangeMin);
-                        cityItem.maxBuyPrice  = TryParseFloat(parts[ColMaxBuyPrice], buyPrice * DefaultPriceRangeMax);
+                        cityItem.minBuyPrice = TryParseFloat(parts[ColMinBuyPrice], buyPrice * DefaultPriceRangeMin);
+                        cityItem.maxBuyPrice = TryParseFloat(parts[ColMaxBuyPrice], buyPrice * DefaultPriceRangeMax);
 
-                        float spread          = buyPrice > 0 ? sellPrice / buyPrice : DefaultPriceRangeMin;
+                        float spread = buyPrice > 0 ? sellPrice / buyPrice : DefaultPriceRangeMin;
                         cityItem.minSellPrice = cityItem.minBuyPrice * spread;
                         cityItem.maxSellPrice = cityItem.maxBuyPrice * spread;
 
-                        cityItem.volatility   = TryParseFloat(parts[ColVolatility], DefaultVolatility);
-                        cityItem.regenRate    = parts.Length > ColRegenRate
+                        cityItem.volatility = TryParseFloat(parts[ColVolatility], DefaultVolatility);
+                        cityItem.regenRate = parts.Length > ColRegenRate
                             ? TryParseFloat(parts[ColRegenRate], DefaultRegenRate)
                             : DefaultRegenRate;
-                        
+
                         if (parts.Length > ColDemand)
                         {
                             string demandStr = parts[ColDemand].Trim().ToLowerInvariant();
                             cityItem.demand = demandStr switch
                             {
-                                "high" or "1"  or "высокий" => DemandLevel.High,
-                                "low"  or "-1" or "низкий"  => DemandLevel.Low,
-                                _                            => DemandLevel.Normal
+                                "high" or "1" or "высокий" => DemandLevel.High,
+                                "low" or "-1" or "низкий" => DemandLevel.Low,
+                                _ => DemandLevel.Normal
                             };
                         }
+                        
                     }
                     else
                     {
