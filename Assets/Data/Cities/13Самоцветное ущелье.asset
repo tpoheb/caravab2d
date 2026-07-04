@@ -1,0 +1,252 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f33d9a5e20c08144993d84e2e4915d00, type: 3}
+  m_Name: "13\u0421\u0430\u043C\u043E\u0446\u0432\u0435\u0442\u043D\u043E\u0435 \u0443\u0449\u0435\u043B\u044C\u0435"
+  m_EditorClassIdentifier: Assembly-CSharp::CityData
+  cityName: "13\u0421\u0430\u043C\u043E\u0446\u0432\u0435\u0442\u043D\u043E\u0435
+    \u0443\u0449\u0435\u043B\u044C\u0435"
+  cityGold: 0
+  items:
+  - item: {fileID: 11400000, guid: db3e249a689981c4f95f398834ff3d6a, type: 2}
+    stock: 30
+    baseBuyPrice: 636
+    currentBuyPrice: 636
+    minBuyPrice: 318
+    maxBuyPrice: 1272
+    demand: 0
+    baseSellPrice: 488
+    currentSellPrice: 488
+    minSellPrice: 244
+    maxSellPrice: 976
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: dd531a93e55d820479cf7979ec9f53fc, type: 2}
+    stock: 30
+    baseBuyPrice: 42
+    currentBuyPrice: 42
+    minBuyPrice: 21
+    maxBuyPrice: 84
+    demand: 0
+    baseSellPrice: 32
+    currentSellPrice: 32
+    minSellPrice: 16
+    maxSellPrice: 64
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: d6853bdba1669124296932708083bf1e, type: 2}
+    stock: 30
+    baseBuyPrice: 55
+    currentBuyPrice: 55
+    minBuyPrice: 27.5
+    maxBuyPrice: 110
+    demand: 0
+    baseSellPrice: 42
+    currentSellPrice: 42
+    minSellPrice: 21
+    maxSellPrice: 84
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 1931d6660aa64f84bac7142171639792, type: 2}
+    stock: 30
+    baseBuyPrice: 67
+    currentBuyPrice: 67
+    minBuyPrice: 33.5
+    maxBuyPrice: 134
+    demand: 0
+    baseSellPrice: 51
+    currentSellPrice: 51
+    minSellPrice: 25.5
+    maxSellPrice: 102
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 90086247a0cfabe4081ba223233c39d3, type: 2}
+    stock: 30
+    baseBuyPrice: 166
+    currentBuyPrice: 166
+    minBuyPrice: 83
+    maxBuyPrice: 332
+    demand: 0
+    baseSellPrice: 127
+    currentSellPrice: 127
+    minSellPrice: 63.5
+    maxSellPrice: 254
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: d178ee3bbbe2b0e42bf1197f707f289d, type: 2}
+    stock: 30
+    baseBuyPrice: 267
+    currentBuyPrice: 267
+    minBuyPrice: 133.5
+    maxBuyPrice: 534
+    demand: 0
+    baseSellPrice: 205
+    currentSellPrice: 205
+    minSellPrice: 102.5
+    maxSellPrice: 410
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 20bb360bf800d1b489128d37fef73876, type: 2}
+    stock: 30
+    baseBuyPrice: 49
+    currentBuyPrice: 49
+    minBuyPrice: 24.5
+    maxBuyPrice: 98
+    demand: 0
+    baseSellPrice: 37
+    currentSellPrice: 37
+    minSellPrice: 18.5
+    maxSellPrice: 74
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 846fffbb4c39d5c44bb5380f37452adf, type: 2}
+    stock: 30
+    baseBuyPrice: 78
+    currentBuyPrice: 78
+    minBuyPrice: 39
+    maxBuyPrice: 156
+    demand: 0
+    baseSellPrice: 60
+    currentSellPrice: 60
+    minSellPrice: 30
+    maxSellPrice: 120
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: b39db0abd0e3ccf4bbd5ce1793f7827b, type: 2}
+    stock: 30
+    baseBuyPrice: 130
+    currentBuyPrice: 130
+    minBuyPrice: 65
+    maxBuyPrice: 260
+    demand: 0
+    baseSellPrice: 100
+    currentSellPrice: 100
+    minSellPrice: 50
+    maxSellPrice: 200
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 33a04de5991198743b3553e0c29b39ef, type: 2}
+    stock: 30
+    baseBuyPrice: 86
+    currentBuyPrice: 86
+    minBuyPrice: 43
+    maxBuyPrice: 172
+    demand: 0
+    baseSellPrice: 66
+    currentSellPrice: 66
+    minSellPrice: 33
+    maxSellPrice: 132
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 30c8018709c7ef44a95d556cc8d3fd92, type: 2}
+    stock: 30
+    baseBuyPrice: 48
+    currentBuyPrice: 48
+    minBuyPrice: 24
+    maxBuyPrice: 96
+    demand: 0
+    baseSellPrice: 33
+    currentSellPrice: 33
+    minSellPrice: 16.5
+    maxSellPrice: 66
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 92cb046a1a4972940af7dafe8c912325, type: 2}
+    stock: 30
+    baseBuyPrice: 33
+    currentBuyPrice: 33
+    minBuyPrice: 16.5
+    maxBuyPrice: 66
+    demand: 0
+    baseSellPrice: 25
+    currentSellPrice: 25
+    minSellPrice: 12.5
+    maxSellPrice: 50
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 77cc21d6d0e0cd24cb2ccd8fefb42c88, type: 2}
+    stock: 30
+    baseBuyPrice: 107
+    currentBuyPrice: 107
+    minBuyPrice: 53.5
+    maxBuyPrice: 214
+    demand: 0
+    baseSellPrice: 82
+    currentSellPrice: 82
+    minSellPrice: 41
+    maxSellPrice: 164
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: db016999521301845860b4e6b5a5b820, type: 2}
+    stock: 30
+    baseBuyPrice: 82
+    currentBuyPrice: 82
+    minBuyPrice: 41
+    maxBuyPrice: 164
+    demand: 0
+    baseSellPrice: 63
+    currentSellPrice: 63
+    minSellPrice: 31.5
+    maxSellPrice: 126
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: a75e38b1ab9bbb046b7c46cad362b6dc, type: 2}
+    stock: 30
+    baseBuyPrice: 323
+    currentBuyPrice: 323
+    minBuyPrice: 161.5
+    maxBuyPrice: 646
+    demand: 0
+    baseSellPrice: 248
+    currentSellPrice: 248
+    minSellPrice: 124
+    maxSellPrice: 496
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: cbf53c1ab87477d46944a2924e09a702, type: 2}
+    stock: 30
+    baseBuyPrice: 59
+    currentBuyPrice: 59
+    minBuyPrice: 29.5
+    maxBuyPrice: 118
+    demand: 0
+    baseSellPrice: 45
+    currentSellPrice: 45
+    minSellPrice: 22.5
+    maxSellPrice: 90
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: 549763f73fc7e534d9335af72cb73665, type: 2}
+    stock: 30
+    baseBuyPrice: 103
+    currentBuyPrice: 103
+    minBuyPrice: 51.5
+    maxBuyPrice: 206
+    demand: 0
+    baseSellPrice: 79
+    currentSellPrice: 79
+    minSellPrice: 39.5
+    maxSellPrice: 158
+    volatility: 0.02
+    regenRate: 0.1
+  - item: {fileID: 11400000, guid: c2126f87f09b2fb48a6d2c2acf6fd510, type: 2}
+    stock: 30
+    baseBuyPrice: 124
+    currentBuyPrice: 124
+    minBuyPrice: 62
+    maxBuyPrice: 248
+    demand: 0
+    baseSellPrice: 95
+    currentSellPrice: 95
+    minSellPrice: 47.5
+    maxSellPrice: 190
+    volatility: 0.02
+    regenRate: 0.1
