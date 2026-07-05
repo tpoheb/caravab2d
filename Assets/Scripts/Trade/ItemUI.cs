@@ -5,7 +5,7 @@ using TMPro;
 public class ItemUI : MonoBehaviour
 {
     [Header("UI Elements")]
-    //public Image icon;
+    [SerializeField] private Image icon; // Добавлено поле для иконки
     [SerializeField] private TMP_Text itemName;
     [SerializeField] private TMP_Text cityStock;
     [SerializeField] private TMP_Text cityBuyPrice;
@@ -33,12 +33,16 @@ public class ItemUI : MonoBehaviour
         
         // --- Обновление визуальных данных ---
         
-        //icon.sprite = cityItem.item.icon;
+        // Отображение иконки
+        if (icon != null)
+        {
+            icon.sprite = cityItem.item.icon;
+            // Включаем компонент Image только если иконка существует, 
+            // чтобы на экране не было пустого белого квадрата
+            icon.enabled = (cityItem.item.icon != null);
+        }
+
         itemName.text = cityItem.item.itemName ?? "Unknown Item";
-        /*cityStock.text = cityItem.stock.ToString();
-        cityBuyPrice.text = cityItem.buyPrice.ToString();
-        citySellPrice.text = cityItem.sellPrice.ToString();
-        playerStock.text = currentPlayerStock.ToString();*/
 
         // --- Привязка кнопок к TradeSystem ---
         
@@ -56,6 +60,7 @@ public class ItemUI : MonoBehaviour
         // NOTE: Если вы хотите, чтобы кнопки отключались при нулевом запасе, 
         // эту логику нужно добавить здесь или в UpdatePlayerStock/TradeSystem.
     }
+
     public void RefreshData(int currentPlayerStock, float averagePrice)
     {
         // Обновляем запасы
@@ -69,15 +74,17 @@ public class ItemUI : MonoBehaviour
         // Обновляем текст средней цены (если он привязан в инспекторе)
         if (playerAveragePriceText != null)
         {
-            // Форматируем до 2 знаков после запятой ("F1"). 
+            // Форматируем до 2 знаков после запятой ("F1" - это 1 знак, "F2" - 2 знака). 
             // Если товара нет (цена 0), пишем прочерк.
             playerAveragePriceText.text = averagePrice > 0 ? averagePrice.ToString("F1") : "-";
         }
+        
         // ─── Спрос ────────────────────────────────────────────────────────────
         if (arrowUp != null)   arrowUp.SetActive(CityItem.demand == DemandLevel.High);
         if (arrowDown != null) arrowDown.SetActive(CityItem.demand == DemandLevel.Low);
         // ────
     }
+
     /// <summary>
     /// Обновляет количество этого предмета у игрока.
     /// </summary>
