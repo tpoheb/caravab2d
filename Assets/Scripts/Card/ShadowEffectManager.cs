@@ -3,81 +3,109 @@ using UnityEngine;
 
 /// <summary>
 /// Применяет и откатывает эффекты карт Тени.
-/// Вызывать ProcessTurn() из GameManager каждый EndTurn.
+/// ProcessTurn() вызывается из GameManager каждый EndTurn.
+/// OnEnterCity() и ConsumeBonusTrade() — из CityManager.
 /// </summary>
 public class ShadowEffectManager : MonoBehaviour
 {
     [Header("Зависимости")]
-    [SerializeField] private PlayerStats playerStats;
-    [SerializeField] private PlayerInventory playerInventory;
-    [SerializeField] private TeamSystem teamSystem; // нужен для FireCrewMember
+    [SerializeField] private PlayerStats      playerStats;
+    [SerializeField] private PlayerInventory  playerInventory;
+    [SerializeField] private TeamSystem       teamSystem;
 
-    private List<ActiveEffect> _activeEffects = new List<ActiveEffect>();
+    // ── Стек временных эффектов ──────────────────────────────────────────
+    private readonly List<ActiveEffect> _activeEffects = new List<ActiveEffect>();
 
-    // Флаги отложенных эффектов (применяются при входе в город)
-    private bool  _wagePenaltyActive = false;
-    private float _bonusTradePercent = 0f;
+    // ── Отложенные флаги (применяются при входе в город) ────────────────
+    private bool  _wagePenaltyActive  = false;
+    private float _bonusTradePercent  = 0f;
 
     // ─────────────────────────────────────────────────────────────────────
-    // Public API
+    // Публичный API
     // ─────────────────────────────────────────────────────────────────────
 
+    /// <summary>Применить эффект карты Тени.</summary>
     public void ApplyCard(ShadowCardData card)
     {
+        if (card == null) return;
+
         switch (card.effectType)
         {
             case ShadowEffectType.Money:
                 ApplyMoney(card.value);
-                return;
+                break;
 
             case ShadowEffectType.AddGoods:
                 playerInventory?.AddRandomGoods(card.value);
-                return;
+                Debug.Log($"[ShadowEffectManager] AddGoods: +{card.value} товаров.");
+                break;
 
             case ShadowEffectType.RemoveGoods:
                 playerInventory?.RemoveRandomGoods(Mathf.Abs(card.value));
-                return;
+                Debug.Log($"[ShadowEffectManager] RemoveGoods: -{Mathf.Abs(card.value)} товаров.");
+                break;
 
             case ShadowEffectType.FireCrewMember:
                 ApplyFireCrewMember();
-                return;
+                break;
 
             case ShadowEffectType.WagePenalty:
                 _wagePenaltyActive = true;
                 Debug.Log("[ShadowEffectManager] WagePenalty: двойное жалованье в следующем городе.");
-                return;
+                break;
 
             case ShadowEffectType.Confiscation:
                 ApplyConfiscation(card.penaltyValue);
-                return;
+                break;
 
             case ShadowEffectType.BonusTrade:
                 _bonusTradePercent += card.value;
                 Debug.Log($"[ShadowEffectManager] BonusTrade: +{card.value}% к выгоде в следующем городе.");
-                return;
+                break;
 
-            // Временные эффекты — идут в стек
+            // Временные эффекты идут в стек
             case ShadowEffectType.Attack:
             case ShadowEffectType.Capacity:
             case ShadowEffectType.Bargain:
             case ShadowEffectType.TeamStats:
                 ApplyTemporary(card);
-                return;
+                break;
+
+            default:
+                Debug.LogWarning($"[ShadowEffectManager] Неизвестный тип эффекта: {card.effectType}");
+                break;
         }
     }
 
     /// <summary>
-    /// Вызывается из GameManager при завершении каждого хода.
+    /// Применить карту Тени через обёртку ShadowCardData, созданную на лету
+    /// (используется HandManager для CapacityBoost и аналогичных карт руки).
+    /// </summary>
+    public void ApplyTransientCard(ShadowEffectType type, int value, int duration = 1)
+    {
+        var card = ScriptableObject.CreateInstance<ShadowCardData>();
+        card.cardName   = $"[Transient] {type}";
+        card.effectType = type;
+        card.value      = value;
+        card.isTemporary = duration > 0;
+        card.duration   = duration;
+        card.hideFlags  = HideFlags.DontSave;
+
+        ApplyCard(card);
+    }
+
+    /// <summary>
+    /// Тик в конце каждого хода — уменьшает счётчики и откатывает истёкшие эффекты.
     /// </summary>
     public void ProcessTurn()
     {
         for (int i = _activeEffects.Count - 1; i >= 0; i--)
         {
-            _activeEffects[i].remainingTurns--;
-            if (_activeEffects[i].remainingTurns <= 0)
+            _activeEffects[i].RemainingTurns--;
+            if (_activeEffects[i].RemainingTurns <= 0)
             {
-                RevertEffect(_activeEffects[i].data);
-                Debug.Log($"[ShadowEffectManager] Эффект '{_activeEffects[i].data.cardName}' истёк.");
+                RevertEffect(_activeEffects[i].Data);
+                Debug.Log($"[ShadowEffectManager] Эффект '{_activeEffects[i].Data.cardName}' истёк.");
                 _activeEffects.RemoveAt(i);
             }
         }
@@ -89,21 +117,16 @@ public class ShadowEffectManager : MonoBehaviour
     /// </summary>
     public float OnEnterCity()
     {
-        float wageMultiplier = 1f;
+        if (!_wagePenaltyActive) return 1f;
 
-        if (_wagePenaltyActive)
-        {
-            wageMultiplier = 2f;
-            _wagePenaltyActive = false;
-            Debug.Log("[ShadowEffectManager] WagePenalty применён: двойное жалованье.");
-        }
-
-        return wageMultiplier;
+        _wagePenaltyActive = false;
+        Debug.Log("[ShadowEffectManager] WagePenalty применён: двойное жалованье.");
+        return 2f;
     }
 
     /// <summary>
     /// Вызывается из CityManager при расчёте торговой прибыли.
-    /// Возвращает процентный бонус и сбрасывает его.
+    /// Возвращает накопленный % бонус и сбрасывает его.
     /// </summary>
     public float ConsumeBonusTrade()
     {
@@ -120,10 +143,10 @@ public class ShadowEffectManager : MonoBehaviour
 
     private void ApplyMoney(int amount)
     {
-        if (amount >= 0)
-            playerInventory.AddMoney(amount);
-        else
-            playerInventory.TrySpendMoney(Mathf.Abs(amount));
+        if (playerInventory == null) return;
+
+        if (amount >= 0) playerInventory.AddMoney(amount);
+        else             playerInventory.TrySpendMoney(Mathf.Abs(amount));
 
         Debug.Log($"[ShadowEffectManager] Money: {amount:+0;-0} динаров.");
     }
@@ -132,7 +155,7 @@ public class ShadowEffectManager : MonoBehaviour
     {
         if (teamSystem == null)
         {
-            Debug.LogWarning("[ShadowEffectManager] TeamSystem не назначен — FireCrewMember не выполнен.");
+            Debug.LogWarning("[ShadowEffectManager] TeamSystem не назначен — FireCrewMember пропущен.");
             return;
         }
 
@@ -146,8 +169,7 @@ public class ShadowEffectManager : MonoBehaviour
     {
         if (playerInventory == null) return;
 
-        bool hadContraband = playerInventory.ConfiscateContraband();
-        if (hadContraband)
+        if (playerInventory.ConfiscateContraband())
         {
             ApplyMoney(-penalty);
             Debug.Log($"[ShadowEffectManager] Confiscation: контрабанда изъята, штраф {penalty} дин.");
@@ -160,47 +182,43 @@ public class ShadowEffectManager : MonoBehaviour
 
     private void ApplyTemporary(ShadowCardData card)
     {
-        var effect = new ActiveEffect { data = card, remainingTurns = card.duration };
-        _activeEffects.Add(effect);
-        ApplyStatsDelta(card.effectType, card.value);
+        _activeEffects.Add(new ActiveEffect(card));
+        ModifyStats(card.effectType, card.value);
         Debug.Log($"[ShadowEffectManager] '{card.cardName}' применён на {card.duration} ходов.");
     }
 
-    private void ApplyStatsDelta(ShadowEffectType type, int value)
+    private void ModifyStats(ShadowEffectType type, int value)
     {
         if (playerStats == null) return;
 
         switch (type)
         {
-            case ShadowEffectType.Attack:
-                playerStats.ModifyAttack(value);
-                break;
-            case ShadowEffectType.Capacity:
-                playerStats.ModifyCapacity(value);
-                break;
-            case ShadowEffectType.Bargain:
-                playerStats.ModifyBargain(value);
-                break;
-            case ShadowEffectType.TeamStats:
-                playerStats.ApplyTeamStatsMultiplier(value);
-                break;
+            case ShadowEffectType.Attack:    playerStats.ModifyAttack(value);                  break;
+            case ShadowEffectType.Capacity:  playerStats.ModifyCapacity(value);                break;
+            case ShadowEffectType.Bargain:   playerStats.ModifyBargain(value);                 break;
+            case ShadowEffectType.TeamStats: playerStats.ApplyTeamStatsMultiplier(value);      break;
         }
     }
 
     private void RevertEffect(ShadowCardData card)
     {
         if (card.effectType == ShadowEffectType.TeamStats)
-            playerStats.RevertTeamStatsMultiplier(card.value);
+            playerStats?.RevertTeamStatsMultiplier(card.value);
         else
-            ApplyStatsDelta(card.effectType, -card.value);
+            ModifyStats(card.effectType, -card.value);
     }
 
     // ─────────────────────────────────────────────────────────────────────
 
-    [System.Serializable]
-    public class ActiveEffect
+    private sealed class ActiveEffect
     {
-        public ShadowCardData data;
-        public int remainingTurns;
+        public ShadowCardData Data           { get; }
+        public int            RemainingTurns { get; set; }
+
+        public ActiveEffect(ShadowCardData data)
+        {
+            Data           = data;
+            RemainingTurns = data.duration;
+        }
     }
 }

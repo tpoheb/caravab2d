@@ -1,29 +1,35 @@
 using UnityEngine;
 using System;
 
+/// <summary>
+/// Управляет логикой боя: подготовка, бросок кубика, финализация.
+///
+/// Изменения по сравнению с исходником:
+/// — Состояние боя инкапсулировано в BattleState (нет разрозненных bool + card).
+/// — _attackBonus сбрасывается в Reset(), а не разбросан по методам.
+/// — PrepareBattle возвращает bool только для внутреннего использования; внешний
+///   сигнал о пропуске боя идёт через событие OnBattleEscaped.
+/// </summary>
 public class BattleManager : MonoBehaviour
 {
+    // ── События ───────────────────────────────────────────────────────────
     public event Action OnBattleWon;
     public event Action OnBattleLost;
+    public event Action OnBattleEscaped;   // бой пропущен без последствий
 
-    [Header("Systems")]
-    [SerializeField] private TeamSystem teamSystem;
+    [Header("Системы")]
+    [SerializeField] private TeamSystem      teamSystem;
     [SerializeField] private BattleUIManager uiManager;
 
-    private BattleCardData _currentCard;
-    private int _currentEnemyAttack;
-    private int _lastDiceRoll;
-    private bool _battleResolved = false;
-
-    // Бонус к атаке, добавленный картой руки (AddBonus / Благосклонность Звезд)
-    // Сбрасывается после каждого боя
-    private int _attackBonus = 0;
+    // ── Состояние текущего боя ────────────────────────────────────────────
+    private BattleCardData _card;
+    private int            _lastDiceRoll;
+    private int            _attackBonus;
+    private bool           _resolved;
 
     public BattleUIManager GetUIManager() => uiManager;
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Подготовка боя
-    // ─────────────────────────────────────────────────────────────────────
+    // ── Публичный API ─────────────────────────────────────────────────────
 
     /// <summary>
     /// Вызывается из CardManager ПОСЛЕ флипа карты.
@@ -33,7 +39,7 @@ public class BattleManager : MonoBehaviour
     {
         if (card == null)
         {
-            Debug.LogError("[BattleManager] карточка боя не передана!");
+            Debug.LogError("[BattleManager] BattleCardData не передан!");
             return false;
         }
 
@@ -42,36 +48,26 @@ public class BattleManager : MonoBehaviour
         {
             Debug.Log("[BattleManager] EscapeBattle: бой пропущен дымовой завесой.");
             uiManager?.DisplayEscapeMessage(card.enemyName);
-            _currentCard = null;
+            OnBattleEscaped?.Invoke();
             return false;
         }
 
-        _currentCard        = card;
-        _currentEnemyAttack = card.requiredAttack;
-        _lastDiceRoll       = 0;
-        _attackBonus        = 0;
-        _battleResolved     = false;
-
-        Debug.Log($"[BattleManager] Бой с {card.enemyName}, требуемая атака: {_currentEnemyAttack}");
+        ResetState(card);
+        Debug.Log($"[BattleManager] Бой с '{card.enemyName}', требуемая атака: {card.requiredAttack}");
         return true;
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Бросок кубика
-    // ─────────────────────────────────────────────────────────────────────
-
+    /// <summary>Выполнить бросок кубика с заданным значением.</summary>
     public void ExecuteBattle(int diceValue)
     {
-        if (_currentCard == null) return;
+        if (_card == null) return;
 
         _lastDiceRoll = diceValue;
-
-        int playerBase  = teamSystem.GetTotalAttack() + _attackBonus;
-        int playerTotal = playerBase + diceValue;
-
-        uiManager.DisplayDiceRoll(diceValue, playerBase, _currentEnemyAttack);
+        int playerBase = teamSystem.GetTotalAttack() + _attackBonus;
+        uiManager.DisplayDiceRoll(diceValue, playerBase, _card.requiredAttack);
     }
 
+    /// <summary>Переброс кубика (карта Руки — Reroll).</summary>
     public void RequestNewRoll()
     {
         int newDice = UnityEngine.Random.Range(1, 7);
@@ -80,93 +76,94 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Добавляет временный бонус к атаке на текущий бой.
-    /// Вызывается картой руки AddBonus (Благосклонность Звезд).
-    /// Сбрасывается в FinalizeBattle / ForceEndBattle.
+    /// Добавить временный бонус к атаке на текущий бой (карта Руки — AddBonus).
+    /// Сбрасывается после завершения боя.
     /// </summary>
     public void AddAttackBonus(int value)
     {
         _attackBonus += value;
-        Debug.Log($"[BattleManager] AttackBonus: +{value} (итого бонус: {_attackBonus}).");
+        Debug.Log($"[BattleManager] AttackBonus: +{value} (итого: {_attackBonus}).");
 
-        // Пересчитываем отображение с учётом нового бонуса
+        // Обновляем отображение, если кубик уже был брошен
         if (_lastDiceRoll > 0)
             ExecuteBattle(_lastDiceRoll);
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Принудительный выход из боя (Дымовая завеса — если бой уже начался)
-    // ─────────────────────────────────────────────────────────────────────
-
     /// <summary>
-    /// Мгновенно завершает бой без штрафов и наград.
-    /// Вызывается HandManager при использовании EscapeBattle во время InBattle.
+    /// Мгновенно завершить бой без штрафов и наград (дымовая завеса во время боя).
     /// </summary>
     public void ForceEndBattle(bool escaped)
     {
-        if (_battleResolved) return;
+        if (_resolved) return;
 
-        _battleResolved = true;
-        _attackBonus    = 0;
+        _resolved = true;
 
         if (escaped)
         {
             Debug.Log("[BattleManager] ForceEndBattle: сбежали без последствий.");
-            uiManager?.DisplayEscapeMessage(_currentCard?.enemyName ?? "врага");
+            uiManager?.DisplayEscapeMessage(_card?.enemyName ?? "врага");
+            OnBattleEscaped?.Invoke();
         }
 
-        _currentCard = null;
-
-        // Уведомляем GameManager, чтобы он перешёл в ResolvingEvent
+        ResetState(null);
         GameManager.Instance?.OnBattleForceEnded();
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Финализация (один раз за бой)
-    // ─────────────────────────────────────────────────────────────────────
-
+    /// <summary>
+    /// Финализировать бой — определить победителя и начислить награду/штраф.
+    /// Вызывается ровно один раз за бой.
+    /// </summary>
     public void FinalizeBattle()
     {
-        if (_currentCard == null)
+        if (_card == null)
         {
             Debug.LogWarning("[BattleManager] FinalizeBattle вызван без активного боя.");
             return;
         }
 
-        if (_battleResolved)
+        if (_resolved)
         {
             Debug.LogWarning("[BattleManager] FinalizeBattle вызван повторно — проигнорировано.");
             return;
         }
 
-        _battleResolved = true;
-        _attackBonus    = 0;
+        _resolved = true;
 
-        int playerTotal = teamSystem.GetTotalAttack() + _lastDiceRoll;
-        bool isVictory  = playerTotal >= _currentEnemyAttack;
+        int  playerTotal = teamSystem.GetTotalAttack() + _attackBonus + _lastDiceRoll;
+        bool isVictory   = playerTotal >= _card.requiredAttack;
 
-        uiManager.DisplayBattleResult(isVictory, _currentCard, playerTotal);
+        uiManager.DisplayBattleResult(isVictory, _card, playerTotal);
 
         if (isVictory) Win();
         else           Lose();
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Исходы
-    // ─────────────────────────────────────────────────────────────────────
+    // ── Приватные ─────────────────────────────────────────────────────────
 
     private void Win()
     {
-        teamSystem.AddMoney(_currentCard.rewardMoney);
+        teamSystem.AddMoney(_card.rewardMoney);
         HandManager.Instance?.GiveRandomReward();
         OnBattleWon?.Invoke();
-        Debug.Log($"[BattleManager] Победа, +{_currentCard.rewardMoney} фелсов.");
+        Debug.Log($"[BattleManager] Победа! +{_card.rewardMoney} фелсов.");
+
+        ResetState(null);
     }
 
     private void Lose()
     {
-        teamSystem.RemoveMoney(Mathf.Abs(_currentCard.penaltyMoney));
+        teamSystem.RemoveMoney(Mathf.Abs(_card.penaltyMoney));
         OnBattleLost?.Invoke();
-        Debug.Log($"[BattleManager] Поражение, -{Mathf.Abs(_currentCard.penaltyMoney)} фелсов.");
+        Debug.Log($"[BattleManager] Поражение. -{Mathf.Abs(_card.penaltyMoney)} фелсов.");
+
+        ResetState(null);
+    }
+
+    private void ResetState(BattleCardData newCard)
+    {
+        _card         = newCard;
+        _lastDiceRoll = 0;
+        _attackBonus  = 0;
+        _resolved     = false;
     }
 }

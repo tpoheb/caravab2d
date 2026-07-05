@@ -4,30 +4,39 @@ using System.Collections.Generic;
 /// <summary>
 /// Управляет картами в руке игрока.
 /// Карты можно сыграть в состояниях InBattle и ResolvingEvent.
+///
+/// Изменения по сравнению с исходником:
+/// — Убрано GameManager.Instance.GetComponent&lt;ShadowEffectManager&gt;() — прямая ссылка.
+/// — Флаги отложенных эффектов вынесены в отдельный регион для читаемости.
+/// — UseCard разбит на небольшие методы по одному эффекту.
 /// </summary>
 public class HandManager : MonoBehaviour
 {
     public static HandManager Instance { get; private set; }
 
     [Header("Зависимости")]
-    [SerializeField] private BattleManager battleManager;
-    [SerializeField] private PlayerInventory playerInventory;
+    [SerializeField] private BattleManager       battleManager;
+    [SerializeField] private ShadowEffectManager effectManager;   // ← прямая ссылка (было GetComponent)
+    [SerializeField] private PlayerInventory     playerInventory;
 
     [Header("Настройки руки")]
-    [SerializeField] private int maxHandSize = 5;
-    [SerializeField] private List<HandCardData> currentHand = new List<HandCardData>();
+    [SerializeField] private int                  maxHandSize = 5;
+    [SerializeField] private List<HandCardData>   currentHand = new List<HandCardData>();
 
-    [Header("Пул наград")]
-    [SerializeField] private List<HandCardData> rewardPool = new List<HandCardData>();
+    [Header("Пул наград (карты после победы в бою)")]
+    [SerializeField] private List<HandCardData>   rewardPool  = new List<HandCardData>();
 
     [Header("UI")]
-    [SerializeField] private Transform handTransform;
+    [SerializeField] private Transform  handTransform;
     [SerializeField] private GameObject cardPrefab;
 
-    // ── Флаги отложенных эффектов ─────────────────────────────────────
+    // ── Флаги отложенных эффектов ─────────────────────────────────────────
 
-    // ChooseDice: GameManager опрашивает этот флаг перед броском кубика пути
-    private bool _chooseDiceActive = false;
+    private bool _chooseDiceActive    = false;
+    private bool _cancelNextCard      = false;
+    private bool _escapeBattleActive  = false;
+
+    /// <summary>Игрок активировал ChooseDice — GameManager покажет UI выбора числа.</summary>
     public bool ConsumeDiceChoice()
     {
         if (!_chooseDiceActive) return false;
@@ -35,8 +44,7 @@ public class HandManager : MonoBehaviour
         return true;
     }
 
-    // CancelCard: CardManager опрашивает этот флаг перед применением карты
-    private bool _cancelNextCard = false;
+    /// <summary>CardManager опрашивает перед применением вытянутой карты.</summary>
     public bool ConsumeCancelCard()
     {
         if (!_cancelNextCard) return false;
@@ -45,8 +53,7 @@ public class HandManager : MonoBehaviour
         return true;
     }
 
-    // EscapeBattle: BattleManager опрашивает при старте боя
-    private bool _escapeBattleActive = false;
+    /// <summary>BattleManager опрашивает при старте боя.</summary>
     public bool ConsumeEscapeBattle()
     {
         if (!_escapeBattleActive) return false;
@@ -55,9 +62,7 @@ public class HandManager : MonoBehaviour
         return true;
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // Lifecycle
-    // ──────────────────────────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -67,9 +72,7 @@ public class HandManager : MonoBehaviour
 
     private void Start() => RefreshUI();
 
-    // ──────────────────────────────────────────────────────────────────
-    // Управление картами
-    // ──────────────────────────────────────────────────────────────────
+    // ── Управление картами ────────────────────────────────────────────────
 
     public bool AddCard(HandCardData card)
     {
@@ -85,82 +88,20 @@ public class HandManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Вызывается при нажатии на карту в руке.
-    /// </summary>
+    /// <summary>Вызывается при нажатии на карту в руке.</summary>
     public void UseCard(int index)
     {
         if (index < 0 || index >= currentHand.Count) return;
 
         GameState state = GameManager.Instance.State;
-        bool canUse = state == GameState.InBattle || state == GameState.ResolvingEvent;
-        if (!canUse)
+        if (state != GameState.InBattle && state != GameState.ResolvingEvent)
         {
             Debug.LogWarning($"[HandManager] Нельзя сыграть карту в состоянии {state}.");
             return;
         }
 
         HandCardData card = currentHand[index];
-
-        switch (card.effectType)
-        {
-            // ── Существующие ─────────────────────────────────────────
-            case HandCardData.CardEffectType.Reroll:
-                RemoveAndRefresh(index);
-                battleManager.RequestNewRoll();
-                break;
-
-            case HandCardData.CardEffectType.AddBonus:
-                RemoveAndRefresh(index);
-                battleManager.AddAttackBonus(card.value);
-                Debug.Log($"[HandManager] AddBonus: +{card.value} к атаке в этом бою.");
-                break;
-
-            case HandCardData.CardEffectType.CapacityBoost:
-                RemoveAndRefresh(index);
-                // Применяем через ShadowEffectManager или напрямую через PlayerStats
-                GameManager.Instance.GetComponent<ShadowEffectManager>()?.ApplyCard(
-                    CreateTempShadowCard(ShadowEffectType.Capacity, card.value, 1));
-                break;
-
-            case HandCardData.CardEffectType.GoldBoost:
-                RemoveAndRefresh(index);
-                Debug.Log($"[HandManager] GoldBoost: +{card.value}% к следующей сделке.");
-                break;
-
-            // ── Новые ────────────────────────────────────────────────
-
-            case HandCardData.CardEffectType.ChooseDice:
-                // Активируем флаг; GameManager покажет UI выбора числа перед броском
-                _chooseDiceActive = true;
-                RemoveAndRefresh(index);
-                GameManager.Instance.PromptDiceChoice(); // реализовать в GameManager
-                Debug.Log("[HandManager] ChooseDice: игрок выбирает значение кубика.");
-                break;
-
-            case HandCardData.CardEffectType.EscapeBattle:
-                _escapeBattleActive = true;
-                RemoveAndRefresh(index);
-                // BattleManager проверит флаг при следующем PrepareBattle
-                // Если бой уже идёт — завершаем немедленно
-                if (state == GameState.InBattle)
-                    battleManager.ForceEndBattle(escaped: true);
-                Debug.Log("[HandManager] EscapeBattle: дымовая завеса активирована.");
-                break;
-
-            case HandCardData.CardEffectType.CancelCard:
-                _cancelNextCard = true;
-                RemoveAndRefresh(index);
-                Debug.Log("[HandManager] CancelCard: следующая карта Тени/Битвы будет отменена.");
-                break;
-
-            case HandCardData.CardEffectType.DoubleGoods:
-                RemoveAndRefresh(index);
-                // Показываем UI выбора товара для удвоения
-                GameManager.Instance.PromptDoubleGoods(); // реализовать в GameManager
-                Debug.Log("[HandManager] DoubleGoods: игрок выбирает товар для удвоения.");
-                break;
-        }
+        ExecuteCardEffect(card, index, state);
     }
 
     public void DiscardCard(int index)
@@ -171,6 +112,7 @@ public class HandManager : MonoBehaviour
         RefreshUI();
     }
 
+    /// <summary>Выдать случайную карту из пула наград (вызывается после победы в бою).</summary>
     public void GiveRandomReward()
     {
         if (rewardPool == null || rewardPool.Count == 0)
@@ -181,15 +123,75 @@ public class HandManager : MonoBehaviour
         AddCard(rewardPool[Random.Range(0, rewardPool.Count)]);
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // UI
-    // ──────────────────────────────────────────────────────────────────
+    // ── Диспетчер эффектов ────────────────────────────────────────────────
+
+    private void ExecuteCardEffect(HandCardData card, int index, GameState state)
+    {
+        switch (card.effectType)
+        {
+            case HandCardData.CardEffectType.Reroll:
+                ConsumeCard(index);
+                battleManager.RequestNewRoll();
+                break;
+
+            case HandCardData.CardEffectType.AddBonus:
+                ConsumeCard(index);
+                battleManager.AddAttackBonus(card.value);
+                Debug.Log($"[HandManager] AddBonus: +{card.value} к атаке в текущем бою.");
+                break;
+
+            case HandCardData.CardEffectType.CapacityBoost:
+                ConsumeCard(index);
+                effectManager.ApplyTransientCard(ShadowEffectType.Capacity, card.value, duration: 1);
+                Debug.Log($"[HandManager] CapacityBoost: +{card.value} к грузоподъёмности на 1 ход.");
+                break;
+
+            case HandCardData.CardEffectType.GoldBoost:
+                ConsumeCard(index);
+                effectManager.ApplyTransientCard(ShadowEffectType.BonusTrade, card.value, duration: 0);
+                Debug.Log($"[HandManager] GoldBoost: +{card.value}% к следующей сделке.");
+                break;
+
+            case HandCardData.CardEffectType.ChooseDice:
+                _chooseDiceActive = true;
+                ConsumeCard(index);
+                GameManager.Instance.PromptDiceChoice();
+                Debug.Log("[HandManager] ChooseDice: игрок выбирает значение кубика.");
+                break;
+
+            case HandCardData.CardEffectType.EscapeBattle:
+                _escapeBattleActive = true;
+                ConsumeCard(index);
+                if (state == GameState.InBattle)
+                    battleManager.ForceEndBattle(escaped: true);
+                Debug.Log("[HandManager] EscapeBattle: дымовая завеса активирована.");
+                break;
+
+            case HandCardData.CardEffectType.CancelCard:
+                _cancelNextCard = true;
+                ConsumeCard(index);
+                Debug.Log("[HandManager] CancelCard: следующая карта Тени/Битвы будет отменена.");
+                break;
+
+            case HandCardData.CardEffectType.DoubleGoods:
+                ConsumeCard(index);
+                GameManager.Instance.PromptDoubleGoods();
+                Debug.Log("[HandManager] DoubleGoods: игрок выбирает товар для удвоения.");
+                break;
+
+            default:
+                Debug.LogWarning($"[HandManager] Неизвестный тип эффекта: {card.effectType}");
+                break;
+        }
+    }
+
+    // ── UI ───────────────────────────────────────────────────────────────
 
     public void RefreshUI()
     {
         if (handTransform == null || cardPrefab == null) return;
 
-        bool isCity = GameManager.Instance.State == GameState.InCity;
+        bool isCity = GameManager.Instance != null && GameManager.Instance.State == GameState.InCity;
         handTransform.gameObject.SetActive(!isCity);
         if (isCity) return;
 
@@ -198,34 +200,17 @@ public class HandManager : MonoBehaviour
 
         for (int i = 0; i < currentHand.Count; i++)
         {
-            GameObject obj = Instantiate(cardPrefab, handTransform);
-            var slot = obj.GetComponent<CardSlotUI>();
+            GameObject obj  = Instantiate(cardPrefab, handTransform);
+            var        slot = obj.GetComponent<CardSlotUI>();
             slot?.Setup(currentHand[i], i);
         }
     }
 
-    // ──────────────────────────────────────────────────────────────────
-    // Вспомогательные
-    // ──────────────────────────────────────────────────────────────────
+    // ── Вспомогательные ──────────────────────────────────────────────────
 
-    private void RemoveAndRefresh(int index)
+    private void ConsumeCard(int index)
     {
         currentHand.RemoveAt(index);
         RefreshUI();
-    }
-
-    /// <summary>
-    /// Создаёт временный ShadowCardData на лету для применения через ShadowEffectManager.
-    /// Нужен для CapacityBoost и подобных — чтобы не дублировать логику откатов.
-    /// </summary>
-    private ShadowCardData CreateTempShadowCard(ShadowEffectType type, int value, int duration)
-    {
-        var card = ScriptableObject.CreateInstance<ShadowCardData>();
-        card.cardName = $"[HandCard] {type}";
-        card.effectType = type;
-        card.value = value;
-        card.isTemporary = duration > 0;
-        card.duration = duration;
-        return card;
     }
 }

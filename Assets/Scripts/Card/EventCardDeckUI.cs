@@ -5,44 +5,44 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Менеджер колоды карт событий на Canvas.
+/// Отвечает только за визуальный слой: очередь EventCardData → анимация флипа.
 ///
 /// Иерархия сцены:
 /// Canvas
 ///   └─ ShadowDeckUI  (этот компонент)
-///        ├─ DeckAnchor      ← Image рубашки + счётчик (привязать к углу)
+///        ├─ DeckAnchor      ← Image рубашки + счётчик
 ///        │    └─ DeckCountText (TextMeshProUGUI, опционально)
 ///        └─ CardSpawnRoot   ← пустой RectTransform по центру Canvas
 /// </summary>
 public class EventCardDeckUI : MonoBehaviour
 {
     [Header("Ссылки")]
-    [SerializeField] private EventCardDisplay cardDisplayPrefab;
-    [SerializeField] private RectTransform cardSpawnRoot;
-    [SerializeField] private Image deckVisual;
-    [SerializeField] private TMPro.TextMeshProUGUI deckCountText;
+    [SerializeField] private EventCardDisplay         cardDisplayPrefab;
+    [SerializeField] private RectTransform            cardSpawnRoot;
+    [SerializeField] private Image                    deckVisual;
+    [SerializeField] private TMPro.TextMeshProUGUI    deckCountText;
 
     [Header("Рубашка по умолчанию")]
-    [Tooltip("Спрайт рубашки, если у EventCardData своей нет")]
+    [Tooltip("Используется, если у EventCardData своей рубашки нет")]
     [SerializeField] private Sprite defaultBackSprite;
     public Sprite DefaultBackSprite => defaultBackSprite;
 
     [Header("Настройки")]
     [SerializeField] private bool shuffleOnStart = false;
 
-    // ── состояние ──────────────────────────────────────────────────────────
-    private Queue<EventCardData> _deck = new Queue<EventCardData>();
-    private EventCardDisplay _activeCard;
+    // ── Состояние ─────────────────────────────────────────────────────────
+    private readonly Queue<EventCardData> _deck = new Queue<EventCardData>();
+    private EventCardDisplay              _activeCard;
 
-    // ──────────────────────────────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────────
+
     private void Start()
     {
         if (shuffleOnStart) ShuffleDeck();
         UpdateDeckVisual();
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Public API
-    // ──────────────────────────────────────────────────────────────────────
+    // ── Публичный API ─────────────────────────────────────────────────────
 
     public void AddCard(EventCardData card)
     {
@@ -57,9 +57,8 @@ public class EventCardDeckUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Вытаскивает верхнюю карту и показывает с анимацией.
-    /// <para>onRevealedCallback — вызывается ровно по завершении флипа (лицо открыто).</para>
-    /// Возвращает EventCardDisplay или null если колода пуста.
+    /// Вытащить верхнюю карту и показать с анимацией флипа.
+    /// onRevealedCallback вызывается ровно по завершении флипа.
     /// </summary>
     public EventCardDisplay DrawAndShowTopCard(Action onRevealedCallback = null)
     {
@@ -69,23 +68,16 @@ public class EventCardDeckUI : MonoBehaviour
             return null;
         }
 
-        // Убрать предыдущую карту мгновенно
-        if (_activeCard != null)
-        {
-            _activeCard.OnCardRevealed -= OnCardRevealedInternal;
-            _activeCard.HideCard(immediate: true);
-        }
+        // Убираем предыдущую карту мгновенно
+        DismissActiveCard(immediate: true);
 
         EventCardData drawnCard = _deck.Dequeue();
         UpdateDeckVisual();
 
         _activeCard = GetOrCreateCardDisplay();
         _activeCard.Setup(drawnCard, defaultBackSprite);
-
-        // Постоянная подписка (лог)
         _activeCard.OnCardRevealed += OnCardRevealedInternal;
 
-        // Одноразовый callback для coroutine в CardManager
         if (onRevealedCallback != null)
         {
             Action oneTime = null;
@@ -101,16 +93,27 @@ public class EventCardDeckUI : MonoBehaviour
         return _activeCard;
     }
 
+    /// <summary>
+    /// Показать карту с особым оформлением «отменено» (эффект CancelCard).
+    /// Карта не приносит эффекта — только анимация для обратной связи с игроком.
+    /// </summary>
+    public void ShowCancelledCard(ICard card)
+    {
+        if (card == null) return;
+        var data         = card.ToEventCardData();
+        data.cardTitle   = $"[Отменено] {data.cardTitle}";
+        AddCard(data);
+        DrawAndShowTopCard();
+    }
+
     /// <summary>Скрыть текущую карту (плавно).</summary>
     public void HideCurrentCard()
     {
-        if (_activeCard == null) return;
-        _activeCard.OnCardRevealed -= OnCardRevealedInternal;
-        _activeCard.HideCard(immediate: false);
+        DismissActiveCard(immediate: false);
         _activeCard = null;
     }
 
-    public int RemainingCount => _deck.Count;
+    public int  RemainingCount => _deck.Count;
 
     public void ShuffleDeck()
     {
@@ -125,9 +128,14 @@ public class EventCardDeckUI : MonoBehaviour
         UpdateDeckVisual();
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // Приватные методы
-    // ──────────────────────────────────────────────────────────────────────
+    // ── Приватные методы ──────────────────────────────────────────────────
+
+    private void DismissActiveCard(bool immediate)
+    {
+        if (_activeCard == null) return;
+        _activeCard.OnCardRevealed -= OnCardRevealedInternal;
+        _activeCard.HideCard(immediate);
+    }
 
     private EventCardDisplay GetOrCreateCardDisplay()
     {
@@ -142,7 +150,7 @@ public class EventCardDeckUI : MonoBehaviour
     private void UpdateDeckVisual()
     {
         bool hasCards = _deck.Count > 0;
-        if (deckVisual != null)    deckVisual.gameObject.SetActive(hasCards);
+        if (deckVisual   != null) deckVisual.gameObject.SetActive(hasCards);
         if (deckCountText != null) deckCountText.text = hasCards ? $"×{_deck.Count}" : "";
     }
 
@@ -151,6 +159,7 @@ public class EventCardDeckUI : MonoBehaviour
         Debug.Log("[EventCardDeckUI] Флип завершён — карта открыта.");
     }
 
+    // ── Тест (только в редакторе) ─────────────────────────────────────────
 #if UNITY_EDITOR
     [Header("— Тест (Play Mode) —")]
     [SerializeField] private EventCardData[] testCards;

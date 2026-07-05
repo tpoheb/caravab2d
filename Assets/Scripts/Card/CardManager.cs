@@ -2,25 +2,36 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// Управляет единой перемешанной колодой из Shadow- и Battle-карт.
+/// Вытягивает карты по запросу GameManager и маршрутизирует их
+/// в ShadowEffectManager или BattleManager соответственно.
+/// </summary>
 public class CardManager : MonoBehaviour
 {
-    [Header("Системы")]
-    [SerializeField] private GameManager gameManager;
-    [SerializeField] private BattleManager battleManager;
-    [SerializeField] private ShadowEffectManager effectManager;
-
-    [Header("Единая колода (Shadow + Battle вперемешку)")]
-    [SerializeField] private List<ShadowCardData> allShadowCards;
-    [SerializeField] private List<BattleCardData> allBattleCards;
-
-    [Header("UI колоды")]
-    [SerializeField] private EventCardDeckUI deckUI;
-
-    // --- Одиночка ---
+    // ── Одиночка ─────────────────────────────────────────────────────────
     public static CardManager Instance { get; private set; }
 
-    // Внутренняя перемешанная колода: хранит ShadowCardData или BattleCardData
-    private List<object> _shuffledDeck = new List<object>();
+    [Header("Системы")]
+    [SerializeField] private GameManager          gameManager;
+    [SerializeField] private BattleManager        battleManager;
+    [SerializeField] private ShadowEffectManager  effectManager;
+
+    [Header("Карты")]
+    [SerializeField] private List<ShadowCardData> allShadowCards = new List<ShadowCardData>();
+    [SerializeField] private List<BattleCardData> allBattleCards = new List<BattleCardData>();
+
+    [Header("UI")]
+    [SerializeField] private EventCardDeckUI deckUI;
+
+    // ── Состояние ────────────────────────────────────────────────────────
+    private readonly CardDeck _deck = new CardDeck();
+
+    public int RemainingCards => _deck.Count;
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Lifecycle
+    // ─────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -28,65 +39,81 @@ public class CardManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
-    {
-        BuildAndShuffleDeck();
-    }
+    private void Start() => RebuildDeck();
 
     // ─────────────────────────────────────────────────────────────────────
     // Сборка колоды
     // ─────────────────────────────────────────────────────────────────────
 
-    private void BuildAndShuffleDeck()
+    private void RebuildDeck()
     {
-        _shuffledDeck.Clear();
-
-        foreach (var c in allShadowCards) _shuffledDeck.Add(c);
-        foreach (var c in allBattleCards) _shuffledDeck.Add(c);
-
-        // Fisher-Yates shuffle
-        for (int i = _shuffledDeck.Count - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            (_shuffledDeck[i], _shuffledDeck[j]) = (_shuffledDeck[j], _shuffledDeck[i]);
-        }
-
-        Debug.Log($"[CardManager] Колода собрана: {_shuffledDeck.Count} карт.");
+        _deck.Clear();
+        foreach (var c in allShadowCards) _deck.Add(c);
+        foreach (var c in allBattleCards) _deck.Add(c);
+        _deck.Shuffle();
+        Debug.Log($"[CardManager] Колода собрана: {_deck.Count} карт.");
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Вытянуть карту — вызывается из GameManager по кнопке
+    // Публичный API
     // ─────────────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Вытянуть карту. Вызывается из GameManager по кнопке.
+    /// Если колода кончилась — пересобирается автоматически.
+    /// </summary>
     public void DrawCard()
     {
-        if (_shuffledDeck.Count == 0)
+        if (_deck.IsEmpty)
         {
             Debug.Log("[CardManager] Колода кончилась — пересобираем.");
-            BuildAndShuffleDeck();
+            RebuildDeck();
         }
 
-        object topCard = _shuffledDeck[0];
-        _shuffledDeck.RemoveAt(0);
+        // Проверяем флаг отмены карты (карта Руки CancelCard)
+        if (HandManager.Instance != null && HandManager.Instance.ConsumeCancelCard())
+        {
+            // Карту «поглощаем» без эффекта, но анимируем рубашку
+            ICard cancelled = _deck.Draw();
+            Debug.Log($"[CardManager] CancelCard: карта '{cancelled?.CardName}' отменена.");
+            deckUI?.ShowCancelledCard(cancelled);
+            gameManager.OnCardCancelled();
+            return;
+        }
 
-        if (topCard is ShadowCardData shadow)
-            DrawShadowCard(shadow);
-        else if (topCard is BattleCardData battle)
-            DrawBattleCard(battle);
+        ICard card = _deck.Draw();
+        RouteCard(card);
     }
 
-    public int RemainingCards => _shuffledDeck.Count;
+    /// <summary>Скрыть текущую карту. Вызывается из GameManager.RequestEndTurn.</summary>
+    public void HideEventCard() => deckUI?.HideCurrentCard();
 
     // ─────────────────────────────────────────────────────────────────────
-    // Shadow Card
+    // Маршрутизация
     // ─────────────────────────────────────────────────────────────────────
 
-    private void DrawShadowCard(ShadowCardData card)
+    private void RouteCard(ICard card)
+    {
+        switch (card)
+        {
+            case ShadowCardData shadow:
+                HandleShadowCard(shadow);
+                break;
+            case BattleCardData battle:
+                HandleBattleCard(battle);
+                break;
+            default:
+                Debug.LogError($"[CardManager] Неизвестный тип карты: {card?.GetType()}");
+                break;
+        }
+    }
+
+    private void HandleShadowCard(ShadowCardData card)
     {
         if (deckUI != null)
         {
-            deckUI.AddCard(ShadowCardToEventCard(card));
-            StartCoroutine(DrawWithAnimation(() =>
+            deckUI.AddCard(card.ToEventCardData());
+            StartCoroutine(PlayCardWithAnimation(() =>
             {
                 effectManager.ApplyCard(card);
                 gameManager.OnShadowCardRevealed();
@@ -94,24 +121,18 @@ public class CardManager : MonoBehaviour
         }
         else
         {
-            // Fallback без анимации
             effectManager.ApplyCard(card);
             gameManager.OnShadowCardRevealed();
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Battle Card
-    // ─────────────────────────────────────────────────────────────────────
-
-    private void DrawBattleCard(BattleCardData card)
+    private void HandleBattleCard(BattleCardData card)
     {
         if (deckUI != null)
         {
-            deckUI.AddCard(BattleCardToEventCard(card));
-            StartCoroutine(DrawWithAnimation(() =>
+            deckUI.AddCard(card.ToEventCardData());
+            StartCoroutine(PlayCardWithAnimation(() =>
             {
-                // Карта открыта — запускаем подготовку боя и автобросок кубика
                 battleManager.PrepareBattle(card);
                 gameManager.OnBattleCardRevealed();
             }));
@@ -124,48 +145,14 @@ public class CardManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Coroutine: ждём конца флипа, затем вызываем логику
+    // Анимация
     // ─────────────────────────────────────────────────────────────────────
 
-    private IEnumerator DrawWithAnimation(System.Action onRevealed)
+    private IEnumerator PlayCardWithAnimation(System.Action onRevealed)
     {
         bool flipDone = false;
         deckUI.DrawAndShowTopCard(onRevealedCallback: () => flipDone = true);
         yield return new WaitUntil(() => flipDone);
         onRevealed?.Invoke();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Скрыть карту — вызывается из GameManager.RequestEndTurn
-    // ─────────────────────────────────────────────────────────────────────
-
-    public void HideEventCard()
-    {
-        deckUI?.HideCurrentCard();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Конвертеры данных → EventCardData (только для анимации)
-    // ─────────────────────────────────────────────────────────────────────
-
-    private EventCardData ShadowCardToEventCard(ShadowCardData shadow)
-    {
-        var data         = ScriptableObject.CreateInstance<EventCardData>();
-        data.cardTitle   = shadow.cardName;
-        data.description = shadow.description;
-        data.cardType    = EventCardType.Shadow;
-        return data;
-    }
-
-    private EventCardData BattleCardToEventCard(BattleCardData battle)
-    {
-        var data         = ScriptableObject.CreateInstance<EventCardData>();
-        data.cardTitle   = battle.enemyName;
-        data.description = $"Требуемая атака: {battle.requiredAttack}\n"
-                         + $"Победа: +{battle.rewardMoney} фелсов\n"
-                         + $"Поражение: {battle.penaltyMoney} фелсов";
-        data.cardType    = EventCardType.Battle;
-        data.difficulty  = battle.requiredAttack;
-        return data;
     }
 }

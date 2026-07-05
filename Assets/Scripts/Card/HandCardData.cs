@@ -1,5 +1,12 @@
 using UnityEngine;
 
+/// <summary>
+/// ScriptableObject с данными карты руки игрока.
+///
+/// Изменения: CardEffectType вынесен в отдельный файл HandCardEffectType,
+/// чтобы не конфликтовать с BattleCardEffect.cs (который теперь удалён —
+/// его содержимое было дублем).
+/// </summary>
 [CreateAssetMenu(fileName = "NewHandCard", menuName = "Game/Cards/HandCard")]
 public class HandCardData : ScriptableObject
 {
@@ -19,10 +26,11 @@ public class HandCardData : ScriptableObject
 
     /// <summary>
     /// Числовое значение эффекта.
-    /// Для ChooseDice: не используется (игрок выбирает сам).
-    /// Для DoubleGoods: не используется (игрок выбирает товар).
+    /// Для ChooseDice и DoubleGoods не используется.
     /// </summary>
     public int value;
+
+    // ──────────────────────────────────────────────────────────────────────
 
     public enum CardCategory
     {
@@ -31,18 +39,19 @@ public class HandCardData : ScriptableObject
         Economic,   // Экономическая (товары, деньги)
     }
 
+    /// <summary>
+    /// Типы эффектов карт руки.
+    /// BattleCardEffect.cs (старый дубликат) — удалить из проекта.
+    /// </summary>
     public enum CardEffectType
     {
-        // ── Существующие ─────────────────────────────────────
-        Reroll,         // Переброс любого кубика (пути или битвы)
-        AddBonus,       // Бонус к атаке (существует в коде, но не подключён)
-        CapacityBoost,  // Бонус к грузоподъёмности
-        GoldBoost,      // Бонус к выгоде от торговли
-
-        // ── Новые ────────────────────────────────────────────
-        ChooseDice,     // Выбрать любое значение кубика пути (1-6) вместо броска
-        EscapeBattle,   // Мгновенно завершить бой без штрафов и наград
-        CancelCard,     // Отменить действие вытянутой карты Тени или Битвы
+        Reroll,         // Переброс любого кубика
+        AddBonus,       // Бонус к атаке в текущем бою
+        CapacityBoost,  // Временный бонус к грузоподъёмности
+        GoldBoost,      // Бонус к выгоде от следующей торговли
+        ChooseDice,     // Выбрать значение кубика пути (1–6) вместо броска
+        EscapeBattle,   // Завершить бой без штрафов и наград
+        CancelCard,     // Отменить следующую карту Тени или Битвы
         DoubleGoods,    // Удвоить количество одного типа товара в инвентаре
     }
 }
