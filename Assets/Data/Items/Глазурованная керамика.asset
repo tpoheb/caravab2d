@@ -15,5 +15,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Item
   itemName: "\u0413\u043B\u0430\u0437\u0443\u0440\u043E\u0432\u0430\u043D\u043D\u0430\u044F
     \u043A\u0435\u0440\u0430\u043C\u0438\u043A\u0430"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4d0da5c3ef41d3b439f45bb3f06e3479, type: 3}
   weight: 1

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64ace5bd618d54e4ea9a83a6eb1218fb, type: 3}
+  m_Name: "Card_18_\u0417\u0430\u043A\u043B\u0438\u043D\u0430\u0442\u0435\u043B\u044C
+    \u043F\u0435\u0441\u0447\u0430\u043D\u043E\u0439 \u0431\u0443\u0440\u0438"
+  m_EditorClassIdentifier: Assembly-CSharp::BattleCardData
+  cardID: 18
+  enemyName: "\u0417\u0430\u043A\u043B\u0438\u043D\u0430\u0442\u0435\u043B\u044C
+    \u043F\u0435\u0441\u0447\u0430\u043D\u043E\u0439 \u0431\u0443\u0440\u0438"
+  description: 
+  requiredAttack: 19
+  rewardMoney: 225
+  rewardHandCardID: 0
+  penaltyMoney: -200
+  crewLoss: 0
