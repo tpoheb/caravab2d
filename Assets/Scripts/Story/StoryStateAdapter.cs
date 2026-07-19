@@ -4,22 +4,18 @@ using UnityEngine;
 namespace StorySystem
 {
     /// <summary>
-    /// Фасад состояния игры для StorySystem.
-    /// Этот класс — адаптер: он обращается к существующим системам
-    /// (PlayerInventory, TurnQueue, PathController и т.д.) и возвращает
-    /// данные в формате, понятном StoryManager.
-    ///
-    /// ИНСТРУКЦИЯ: замени заглушки реальными вызовами своих классов.
+    /// Адаптер состояния игры для StorySystem.
+    /// Подписывается на PlayerToken.OnArrivedAtCity и транслирует
+    /// события в GameEvents — StoryManager реагирует автоматически.
     /// </summary>
-    public class GameState : MonoBehaviour
+    public class StoryStateAdapter : MonoBehaviour
     {
-        public static GameState Instance { get; private set; }
+        public static StoryStateAdapter Instance { get; private set; }
 
         // ── Ссылки на существующие системы (назначь в Inspector) ──────────
         [Header("Ссылки на существующие системы")]
-        [SerializeField] private PlayerInventory playerInventory;   // уже существует
-        // [SerializeField] private PathController pathController;   // раскомментируй если нужно
-        // [SerializeField] private TurnQueue turnQueue;             // раскомментируй если нужно
+        [SerializeField] private PlayerInventory playerInventory;
+        [SerializeField] private PlayerToken playerToken;  // источник события прибытия в город
 
         // ── Внутреннее состояние для отслеживания ─────────────────────────
         private string _lastVisitedCityId = "";
@@ -39,10 +35,38 @@ namespace StorySystem
 
         private void Start()
         {
-            // Подписываемся на те же события, чтобы обновлять локальное состояние
+            // Подписываемся на PlayerToken.OnArrivedAtCity — он уже есть в проекте.
+            // City.cityId используется как идентификатор для условий StoryBeat.
+            if (playerToken != null)
+                playerToken.OnArrivedAtCity += OnPlayerArrivedAtCity;
+            else
+                Debug.LogWarning("[StoryStateAdapter] PlayerToken не назначен в Inspector — " +
+                                 "триггер ArriveAtCity не будет работать.");
+
+            // Обновляем локальное состояние при срабатывании GameEvents
             GameEvents.OnPlayerArrivedAtCity += city => _lastVisitedCityId = city;
             GameEvents.OnEventCardCollected   += card => _collectedEventCardIds.Add(card);
             GameEvents.OnUnitHired            += unit => _hiredUnitTypes.Add(unit);
+        }
+
+        private void OnDestroy()
+        {
+            if (playerToken != null)
+                playerToken.OnArrivedAtCity -= OnPlayerArrivedAtCity;
+        }
+
+        // ── Обработчик прибытия в город ───────────────────────────────────
+
+        /// <summary>
+        /// Вызывается когда PlayerToken прибывает в город (старт и финиш пути).
+        /// Транслирует событие в GameEvents — StoryManager подхватит автоматически.
+        /// City.cityId должен совпадать со строкой в StoryCondition.targetCityId.
+        /// </summary>
+        private void OnPlayerArrivedAtCity(City city)
+        {
+            if (city == null) return;
+            GameEvents.PlayerArrivedAtCity(city.CityName);
+            Debug.Log($"[StoryStateAdapter] Прибытие в город: {city.CityName}");
         }
 
         // ──────────────────────────────────────────────
@@ -59,16 +83,23 @@ namespace StorySystem
         public bool HasEventCard(string cardId) => _collectedEventCardIds.Contains(cardId);
 
         /// <summary>Количество товара в инвентаре игрока.</summary>
+        /// <param name="itemId">Имя Item-ассета (совпадает с именем файла в Resources/Items/)</param>
         public int GetItemAmount(string itemId)
         {
             if (playerInventory == null)
             {
-                Debug.LogWarning("[GameState] playerInventory не назначен в Inspector.");
+                Debug.LogWarning("[StoryStateAdapter] playerInventory не назначен в Inspector.");
                 return 0;
             }
-            // TODO: замени на реальный вызов PlayerInventory
-            // Пример: return playerInventory.GetAmount(itemId);
-            return playerInventory.GetAmount(itemId);
+
+            Item item = Resources.Load<Item>($"Items/{itemId}");
+            if (item == null)
+            {
+                Debug.LogWarning($"[StoryStateAdapter] Item '{itemId}' не найден в Resources/Items/.");
+                return 0;
+            }
+
+            return playerInventory.GetItemStock(item);
         }
 
         /// <summary>Есть ли в команде юнит указанного типа?</summary>

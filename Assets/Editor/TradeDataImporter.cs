@@ -38,7 +38,7 @@ namespace Editor
         private const int   DefaultWeight        = 1;
         private const int   DefaultStock         = 0;
 
-        [MenuItem("Trade/Import Trade Data")]
+        [MenuItem("Tools/Trade/Import Trade Data")]
         public static void ImportTradeData()
         {
             Debug.Log("=== НАЧАЛО ИМПОРТА ===");

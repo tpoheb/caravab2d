@@ -114,20 +114,20 @@ namespace StorySystem
             switch (condition.conditionType)
             {
                 case StoryConditionType.ArriveAtCity:
-                    return GameState.Instance.LastVisitedCityId == condition.targetCityId;
+                    return StoryStateAdapter.Instance.LastVisitedCityId == condition.targetCityId;
 
                 case StoryConditionType.CollectEventCards:
                     bool countOk = condition.requiredCardCount <= 0
-                        || GameState.Instance.CollectedEventCardCount >= condition.requiredCardCount;
+                        || StoryStateAdapter.Instance.CollectedEventCardCount >= condition.requiredCardCount;
                     bool cardOk = string.IsNullOrEmpty(condition.specificCardId)
-                        || GameState.Instance.HasEventCard(condition.specificCardId);
+                        || StoryStateAdapter.Instance.HasEventCard(condition.specificCardId);
                     return countOk && cardOk;
 
                 case StoryConditionType.HaveItemInInventory:
-                    return GameState.Instance.GetItemAmount(condition.requiredItemId) >= condition.requiredItemAmount;
+                    return StoryStateAdapter.Instance.GetItemAmount(condition.requiredItemId) >= condition.requiredItemAmount;
 
                 case StoryConditionType.HireUnitByType:
-                    return GameState.Instance.HasUnitOfType(condition.requiredUnitType);
+                    return StoryStateAdapter.Instance.HasUnitOfType(condition.requiredUnitType);
 
                 default:
                     Debug.LogWarning($"[StoryManager] Неизвестный тип условия: {condition.conditionType}");
