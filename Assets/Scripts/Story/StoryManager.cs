@@ -75,17 +75,26 @@ namespace StorySystem
         {
             bool anyQueued = false;
 
+            Debug.Log($"[StoryManager] CheckAllBeats. Всего beats: {allBeats.Count}, " +
+                      $"StoryStateAdapter: {(StoryStateAdapter.Instance != null ? "OK" : "NULL")}, " +
+                      $"LastCity: '{StoryStateAdapter.Instance?.LastVisitedCityId}'");
+
             foreach (StoryBeat beat in allBeats)
             {
-                if (_shownBeats.Contains(beat.beatId)) continue;
-                if (IsAlreadyPending(beat)) continue;
-                if (!AllConditionsMet(beat)) continue;
+                if (beat == null) { Debug.LogWarning("[StoryManager] Beat = null, пропуск."); continue; }
+
+                bool shown   = _shownBeats.Contains(beat.beatId);
+                bool pending = IsAlreadyPending(beat);
+                bool met     = !shown && !pending && AllConditionsMet(beat);
+
+                Debug.Log($"[StoryManager] Beat '{beat.beatId}': показан={shown}, в очереди={pending}, условия={(!shown && !pending ? met.ToString() : "не проверялись")}");
+
+                if (shown || pending || !met) continue;
 
                 _pendingBeats.Enqueue(beat);
                 anyQueued = true;
             }
 
-            // Показываем первую из очереди, если окно сейчас свободно
             if (anyQueued || _pendingBeats.Count > 0)
                 TryShowNextBeat();
         }
@@ -114,7 +123,9 @@ namespace StorySystem
             switch (condition.conditionType)
             {
                 case StoryConditionType.ArriveAtCity:
-                    return StoryStateAdapter.Instance.LastVisitedCityId == condition.targetCityId;
+                    bool cityMatch = StoryStateAdapter.Instance.LastVisitedCityId == condition.targetCityId;
+                    Debug.Log($"[StoryManager] ArriveAtCity: последний город='{StoryStateAdapter.Instance.LastVisitedCityId}', ожидается='{condition.targetCityId}', совпадение={cityMatch}");
+                    return cityMatch;
 
                 case StoryConditionType.CollectEventCards:
                     bool countOk = condition.requiredCardCount <= 0
@@ -141,7 +152,9 @@ namespace StorySystem
 
         private void TryShowNextBeat()
         {
-            if (storyWindowUI.IsVisible) return;          // окно уже открыто — ждём
+            Debug.Log($"[StoryManager] TryShowNextBeat: storyWindowUI={(storyWindowUI != null ? "OK" : "NULL")}, IsVisible={storyWindowUI?.IsVisible}, очередь={_pendingBeats.Count}");
+            if (storyWindowUI == null) { Debug.LogError("[StoryManager] storyWindowUI не назначен в Inspector!"); return; }
+            if (storyWindowUI.IsVisible) return;
             if (_pendingBeats.Count == 0) return;
 
             StoryBeat beat = _pendingBeats.Dequeue();
