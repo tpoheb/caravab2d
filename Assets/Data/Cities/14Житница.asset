@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "14\u0416\u0438\u0442\u043D\u0438\u0446\u0430"
   m_EditorClassIdentifier: Assembly-CSharp::CityData
   cityName: "14\u0416\u0438\u0442\u043D\u0438\u0446\u0430"
-  cityGold: 0
+  cityGold: 500
   items:
   - item: {fileID: 11400000, guid: db3e249a689981c4f95f398834ff3d6a, type: 2}
     stock: 30
