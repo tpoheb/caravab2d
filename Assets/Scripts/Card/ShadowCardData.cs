@@ -1,28 +1,26 @@
 using UnityEngine;
 
-public enum ShadowEffectType
-{
-    Money,           // Изменение динаров (мгновенно)
-    Attack,          // Изменение атаки (временно)
-    Capacity,        // Изменение грузоподъёмности (временно)
-    Bargain,         // Изменение торговли (временно)
-    AddGoods,        // Добавить N ед. случайного товара
-    RemoveGoods,     // Удалить N ед. случайных товаров
-    FireCrewMember,  // Уволить случайного члена команды
-    WagePenalty,     // Двойное жалованье в следующем городе
-    Confiscation,    // Конфисковать контрабанду + штраф
-    TeamStats,       // Все характеристики команды * множитель на duration ходов
-    BonusTrade,      // % бонус к выгоде в следующем городе
-}
-
-[CreateAssetMenu(fileName = "NewShadowCard", menuName = "Event System/Shadow Card")]
+[CreateAssetMenu(fileName = "NewShadowCard", menuName = "ThousandRoads/Cards/Shadow Card")]
 public class ShadowCardData : ScriptableObject, ICard
 {
     [Header("Основное")]
     public string cardName;
 
-    [TextArea]
+    [TextArea(3, 6)]
     public string description;
+
+    [Header("Условия появления")]
+    [Tooltip("Минимальная сложность хода для появления карты")]
+    [Range(0, 10)]
+    public int minDifficulty = 0;
+
+    [Tooltip("Максимальная сложность хода для появления карты")]
+    [Range(0, 10)]
+    public int maxDifficulty = 10;
+
+    [Tooltip("Вероятность появления относительно других карт (вес)")]
+    [Range(1, 100)]
+    public int weight = 10;
 
     [Header("Эффект")]
     public ShadowEffectType effectType;
@@ -35,6 +33,7 @@ public class ShadowCardData : ScriptableObject, ICard
     public bool isTemporary;
 
     [Tooltip("Количество ходов действия (если isTemporary = true)")]
+    [Range(1, 10)]
     public int duration = 1;
 
     [Header("Дополнительно")]
@@ -42,7 +41,7 @@ public class ShadowCardData : ScriptableObject, ICard
     public int penaltyValue = 200;
 
     // ── ICard ────────────────────────────────────────────────────────────
-    string ICard.CardName    => cardName;
-    string ICard.Description => description;
-    CardDeckType ICard.DeckType   => CardDeckType.Shadow;
+    public string CardName       => cardName;
+    public string Description    => description;
+    public CardDeckType DeckType => CardDeckType.Shadow;
 }

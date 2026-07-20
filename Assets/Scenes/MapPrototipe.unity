@@ -123339,7 +123339,9 @@ MonoBehaviour:
   deckCountText: {fileID: 1800471880}
   defaultBackSprite: {fileID: 21300000, guid: 7fdf16727f03dc34c9b09b69c0d77896, type: 3}
   shuffleOnStart: 1
-  testCards: []
+  _activeCard: {fileID: 0}
+  testCards:
+  - {fileID: 0}
 --- !u!1001 &818879557
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -182380,7 +182382,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1219851191
 RectTransform:
   m_ObjectHideFlags: 0
@@ -270283,6 +270285,7 @@ GameObject:
   - component: {fileID: 1836032676}
   - component: {fileID: 1836032680}
   - component: {fileID: 1836032681}
+  - component: {fileID: 1836032682}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -270420,6 +270423,25 @@ MonoBehaviour:
   battlePanel: {fileID: 1831193368}
   endTurnButton: {fileID: 1817803071}
   diceButton: {fileID: 348006770}
+--- !u!114 &1836032682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1836032675}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9556986617bed884b80cddd31fc63fbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CardDeckUI
+  cardDisplayPrefab: {fileID: 2828676151028258599, guid: 01b6865d1bd0a6a4c8fda7e330516047, type: 3}
+  cardSpawnRoot: {fileID: 617046559}
+  deckVisual: {fileID: 327997215}
+  deckCountText: {fileID: 1800471880}
+  defaultBackSprite: {fileID: 21300000, guid: 436102b32ddb6b646b253845257c98de, type: 3}
+  shuffleOnStart: 0
+  testCards: []
 --- !u!1001 &1836587063
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -300724,7 +300746,7 @@ MonoBehaviour:
   handManager: {fileID: 2041521377}
   playerStats: {fileID: 11400000, guid: 435a1dbb7ffba1149be53d9b92fbdc64, type: 2}
   shadowEffectManager: {fileID: 2041521378}
-  playerInventory: {fileID: 0}
+  playerInventory: {fileID: 2041521372}
   drawCardButton: {fileID: 348006770}
   diceChoicePanel: {fileID: 0}
   doubleGoodsPanelPrefab: {fileID: 0}

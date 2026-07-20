@@ -1,14 +1,6 @@
-// =============================================================================
-// BattleCardData.cs
-// ScriptableObject для одной карты битвы.
-//
-// Создать вручную: Assets → Create → Battle Cards → Battle Card Data
-// Или заполнить через импортёр: Tools → Battle Cards → Import from CSV
-// =============================================================================
-
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "Card_0_New", menuName = "Battle Cards/Battle Card Data")]
+[CreateAssetMenu(fileName = "Card_0_New", menuName = "ThousandRoads/Cards/Battle Card")]
 public class BattleCardData : ScriptableObject, ICard
 {
     [Header("Идентификация")]
@@ -23,13 +15,18 @@ public class BattleCardData : ScriptableObject, ICard
     [TextArea(2, 4)]
     public string description;
 
-    // ── Реализация ICard ─────────────────────────────────────────────────
-    // CardName  → enemyName (имя врага и есть «название» карты в колоде)
-    // Description → поле description выше
-    // DeckType  → всегда Battle для этого типа карт
-    public string       CardName    => enemyName;
-    public string       Description => description;
-    public CardDeckType DeckType    => CardDeckType.Battle;
+    [Header("Условия появления")]
+    [Tooltip("Минимальная сложность хода для появления карты")]
+    [Range(0, 10)]
+    public int minDifficulty = 0;
+
+    [Tooltip("Максимальная сложность хода для появления карты")]
+    [Range(0, 10)]
+    public int maxDifficulty = 10;
+
+    [Tooltip("Вероятность появления относительно других карт (вес)")]
+    [Range(1, 100)]
+    public int weight = 10;
 
     [Header("Условие победы")]
     [Tooltip("Минимальная суммарная атака каравана для победы в бою.")]
@@ -56,4 +53,9 @@ public class BattleCardData : ScriptableObject, ICard
         "0 = потерь в команде нет."
     )]
     public int crewLoss;
+
+    // ── ICard ────────────────────────────────────────────────────────────
+    public string CardName       => enemyName;
+    public string Description    => description;
+    public CardDeckType DeckType => CardDeckType.Battle;
 }
