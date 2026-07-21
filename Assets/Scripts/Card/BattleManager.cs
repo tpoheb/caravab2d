@@ -25,6 +25,8 @@ public class BattleManager : MonoBehaviour
     private BattleCardData _card;
     private int            _lastDiceRoll;
     private int            _attackBonus;
+
+    private int            _effectiveEnemyAttack;   // requiredAttack с учётом дебаффа (Пыль в глаза)
     private bool           _resolved;
 
     public BattleUIManager GetUIManager() => uiManager;
@@ -59,13 +61,25 @@ public class BattleManager : MonoBehaviour
 
     /// <summary>Выполнить бросок кубика с заданным значением.</summary>
     public void ExecuteBattle(int diceValue)
-    {
-        if (_card == null) return;
+{
+    if (_card == null) return;
 
-        _lastDiceRoll = diceValue;
-        int playerBase = teamSystem.GetTotalAttack() + _attackBonus;
-        uiManager.DisplayDiceRoll(diceValue, playerBase, _card.requiredAttack);
-    }
+    _lastDiceRoll = diceValue;
+
+    // Пыль в глаза: снижаем атаку противника до сравнения
+    int enemyDebuff    = HandManager.Instance?.ConsumeEnemyDebuff() ?? 0;
+    int effectiveEnemy = Mathf.Max(0, _card.requiredAttack - enemyDebuff);
+
+    int playerBase = teamSystem.GetTotalAttack() + _attackBonus;
+
+    if (enemyDebuff > 0)
+        Debug.Log($"[BattleManager] EnemyDebuff: {_card.requiredAttack} → {effectiveEnemy} (дебафф -{enemyDebuff})");
+
+    uiManager.DisplayDiceRoll(diceValue, playerBase, effectiveEnemy);
+
+    // Сохраняем для FinalizeBattle
+    _effectiveEnemyAttack = effectiveEnemy;
+}
 
     /// <summary>Переброс кубика (карта Руки — Reroll).</summary>
     public void RequestNewRoll()
@@ -114,29 +128,29 @@ public class BattleManager : MonoBehaviour
     /// Вызывается ровно один раз за бой.
     /// </summary>
     public void FinalizeBattle()
+{
+    if (_card == null)
     {
-        if (_card == null)
-        {
-            Debug.LogWarning("[BattleManager] FinalizeBattle вызван без активного боя.");
-            return;
-        }
-
-        if (_resolved)
-        {
-            Debug.LogWarning("[BattleManager] FinalizeBattle вызван повторно — проигнорировано.");
-            return;
-        }
-
-        _resolved = true;
-
-        int  playerTotal = teamSystem.GetTotalAttack() + _attackBonus + _lastDiceRoll;
-        bool isVictory   = playerTotal >= _card.requiredAttack;
-
-        uiManager.DisplayBattleResult(isVictory, _card, playerTotal);
-
-        if (isVictory) Win();
-        else           Lose();
+        Debug.LogWarning("[BattleManager] FinalizeBattle вызван без активного боя.");
+        return;
     }
+
+    if (_resolved)
+    {
+        Debug.LogWarning("[BattleManager] FinalizeBattle вызван повторно — проигнорировано.");
+        return;
+    }
+
+    _resolved = true;
+
+    int  playerTotal = teamSystem.GetTotalAttack() + _attackBonus + _lastDiceRoll;
+    bool isVictory   = playerTotal >= _effectiveEnemyAttack;   // ← было _card.requiredAttack
+
+    uiManager.DisplayBattleResult(isVictory, _card, playerTotal);
+
+    if (isVictory) Win();
+    else           Lose();
+}
 
     // ── Приватные ─────────────────────────────────────────────────────────
 
@@ -151,19 +165,29 @@ public class BattleManager : MonoBehaviour
     }
 
     private void Lose()
-    {
-        teamSystem.RemoveMoney(Mathf.Abs(_card.penaltyMoney));
-        OnBattleLost?.Invoke();
-        Debug.Log($"[BattleManager] Поражение. -{Mathf.Abs(_card.penaltyMoney)} фелсов.");
+{
+    int basePenalty = Mathf.Abs(_card.penaltyMoney);
 
-        ResetState(null);
-    }
+    // Клятва Пути: снижаем штраф до начисления
+    float reduction    = HandManager.Instance?.ConsumePenaltyReduction() ?? 0f;
+    int finalPenalty   = Mathf.RoundToInt(basePenalty * (1f - reduction));
+
+    if (reduction > 0f)
+        Debug.Log($"[BattleManager] PenaltyReduction: {basePenalty} → {finalPenalty} (снижение {reduction:P0})");
+
+    teamSystem.RemoveMoney(finalPenalty);
+    OnBattleLost?.Invoke();
+    Debug.Log($"[BattleManager] Поражение. -{finalPenalty} фелсов.");
+
+    ResetState(null);
+}
 
     private void ResetState(BattleCardData newCard)
-    {
-        _card         = newCard;
-        _lastDiceRoll = 0;
-        _attackBonus  = 0;
-        _resolved     = false;
-    }
+{
+    _card                 = newCard;
+    _lastDiceRoll         = 0;
+    _attackBonus          = 0;
+    _effectiveEnemyAttack = 0;   // ← новое поле
+    _resolved             = false;
+}
 }

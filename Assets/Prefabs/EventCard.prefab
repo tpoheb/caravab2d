@@ -338,6 +338,8 @@ MonoBehaviour:
   titleText: {fileID: 6115825796134503937}
   descriptionText: {fileID: 8879454591462236736}
   typeIcon: {fileID: 0}
+  cardFaceSprite: {fileID: 21300000, guid: 5e0d4fe9e8b094b4d81a59d5fbd04fa2, type: 3}
+  cardBackSprite: {fileID: 21300000, guid: 5e0d4fe9e8b094b4d81a59d5fbd04fa2, type: 3}
   flipDuration: 0.5
   flipCurve:
     serializedVersion: 2

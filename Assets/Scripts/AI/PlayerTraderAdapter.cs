@@ -25,7 +25,7 @@ public class PlayerTraderAdapter : MonoBehaviour, ITrader
     public Inventory Inventory   { get; } = new Inventory();
 
     public event Action<ITrader, City>                OnArrivedAtCity;
-    public event Action<ITrader, PathCellInitializer> OnPathBlocked;
+    public event Action<ITrader, PathCellInitializer> OnPathBlocked { add { } remove { } }
 
     // --- Состояние хода ---
     public bool IsReady { get; private set; }

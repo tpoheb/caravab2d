@@ -3,12 +3,12 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Управляет картами в руке игрока.
-/// Карты можно сыграть в состояниях InBattle и ResolvingEvent.
 ///
-/// Изменения по сравнению с исходником:
-/// — Убрано GameManager.Instance.GetComponent&lt;ShadowEffectManager&gt;() — прямая ссылка.
-/// — Флаги отложенных эффектов вынесены в отдельный регион для читаемости.
-/// — UseCard разбит на небольшие методы по одному эффекту.
+/// Торговые карты (SaleBonus, IgnoreTax, SalePriceBoost, PurchaseDiscount)
+/// публикуют события через TradeCardEvents → TradeCardModifiers.
+///
+/// Боевые карты используют Consume-паттерн:
+/// BattleManager опрашивает ConsumeEnemyDebuff() и ConsumePenaltyReduction().
 /// </summary>
 public class HandManager : MonoBehaviour
 {
@@ -16,27 +16,33 @@ public class HandManager : MonoBehaviour
 
     [Header("Зависимости")]
     [SerializeField] private BattleManager       battleManager;
-    [SerializeField] private ShadowEffectManager effectManager;   // ← прямая ссылка (было GetComponent)
+    [SerializeField] private ShadowEffectManager effectManager;
     [SerializeField] private PlayerInventory     playerInventory;
 
     [Header("Настройки руки")]
-    [SerializeField] private int                  maxHandSize = 5;
-    [SerializeField] private List<HandCardData>   currentHand = new List<HandCardData>();
+    [SerializeField] private int                maxHandSize = 5;
+    [SerializeField] private List<HandCardData> currentHand = new List<HandCardData>();
 
-    [Header("Пул наград (карты после победы в бою)")]
-    [SerializeField] private List<HandCardData>   rewardPool  = new List<HandCardData>();
+    [Header("Пул наград")]
+    [SerializeField] private List<HandCardData> rewardPool = new List<HandCardData>();
 
     [Header("UI")]
     [SerializeField] private Transform  handTransform;
     [SerializeField] private GameObject cardPrefab;
 
-    // ── Флаги отложенных эффектов ─────────────────────────────────────────
+    // ── Флаги отложенных эффектов ────────────────────────────────────────
 
-    private bool _chooseDiceActive    = false;
-    private bool _cancelNextCard      = false;
-    private bool _escapeBattleActive  = false;
+    // Существующие
+    private bool _chooseDiceActive   = false;
+    private bool _cancelNextCard     = false;
+    private bool _escapeBattleActive = false;
 
-    /// <summary>Игрок активировал ChooseDice — GameManager покажет UI выбора числа.</summary>
+    // Новые боевые
+    private int   _pendingEnemyDebuff      = 0;   // Пыль в глаза
+    private float _pendingPenaltyReduction = 0f;  // Клятва Пути (0..1)
+
+    // ── Consume-методы (существующие) ────────────────────────────────────
+
     public bool ConsumeDiceChoice()
     {
         if (!_chooseDiceActive) return false;
@@ -44,7 +50,6 @@ public class HandManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>CardManager опрашивает перед применением вытянутой карты.</summary>
     public bool ConsumeCancelCard()
     {
         if (!_cancelNextCard) return false;
@@ -53,13 +58,38 @@ public class HandManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>BattleManager опрашивает при старте боя.</summary>
     public bool ConsumeEscapeBattle()
     {
         if (!_escapeBattleActive) return false;
         _escapeBattleActive = false;
         Debug.Log("[HandManager] EscapeBattle: бой пропущен без штрафов.");
         return true;
+    }
+
+    // ── Consume-методы (новые боевые) ────────────────────────────────────
+
+    /// <summary>
+    /// BattleManager опрашивает до сравнения атак.
+    /// Возвращает накопленный дебафф атаки противника и сбрасывает его.
+    /// </summary>
+    public int ConsumeEnemyDebuff()
+    {
+        int v = _pendingEnemyDebuff;
+        _pendingEnemyDebuff = 0;
+        if (v != 0) Debug.Log($"[HandManager] EnemyDebuff применён: -{v} к атаке врага.");
+        return v;
+    }
+
+    /// <summary>
+    /// BattleManager опрашивает после поражения, до начисления штрафа.
+    /// Возвращает множитель снижения (0..1) и сбрасывает его.
+    /// </summary>
+    public float ConsumePenaltyReduction()
+    {
+        float v = _pendingPenaltyReduction;
+        _pendingPenaltyReduction = 0f;
+        if (v > 0f) Debug.Log($"[HandManager] PenaltyReduction применён: -{v:P0} штрафа.");
+        return v;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -88,20 +118,18 @@ public class HandManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>Вызывается при нажатии на карту в руке.</summary>
     public void UseCard(int index)
     {
         if (index < 0 || index >= currentHand.Count) return;
 
         GameState state = GameManager.Instance.State;
-        if (state != GameState.InBattle && state != GameState.ResolvingEvent)
+        if (state != GameState.InBattle && state != GameState.ResolvingEvent && state != GameState.InCity)
         {
             Debug.LogWarning($"[HandManager] Нельзя сыграть карту в состоянии {state}.");
             return;
         }
 
-        HandCardData card = currentHand[index];
-        ExecuteCardEffect(card, index, state);
+        ExecuteCardEffect(currentHand[index], index, state);
     }
 
     public void DiscardCard(int index)
@@ -112,7 +140,6 @@ public class HandManager : MonoBehaviour
         RefreshUI();
     }
 
-    /// <summary>Выдать случайную карту из пула наград (вызывается после победы в бою).</summary>
     public void GiveRandomReward()
     {
         if (rewardPool == null || rewardPool.Count == 0)
@@ -129,6 +156,8 @@ public class HandManager : MonoBehaviour
     {
         switch (card.effectType)
         {
+            // ── Существующие боевые/тактические ──────────────────────────
+
             case HandCardData.CardEffectType.Reroll:
                 ConsumeCard(index);
                 battleManager.RequestNewRoll();
@@ -137,7 +166,7 @@ public class HandManager : MonoBehaviour
             case HandCardData.CardEffectType.AddBonus:
                 ConsumeCard(index);
                 battleManager.AddAttackBonus(card.value);
-                Debug.Log($"[HandManager] AddBonus: +{card.value} к атаке в текущем бою.");
+                Debug.Log($"[HandManager] AddBonus: +{card.value} к атаке команды.");
                 break;
 
             case HandCardData.CardEffectType.CapacityBoost:
@@ -164,19 +193,59 @@ public class HandManager : MonoBehaviour
                 ConsumeCard(index);
                 if (state == GameState.InBattle)
                     battleManager.ForceEndBattle(escaped: true);
-                Debug.Log("[HandManager] EscapeBattle: дымовая завеса активирована.");
+                Debug.Log("[HandManager] EscapeBattle: бой избегнут.");
                 break;
 
             case HandCardData.CardEffectType.CancelCard:
                 _cancelNextCard = true;
                 ConsumeCard(index);
-                Debug.Log("[HandManager] CancelCard: следующая карта Тени/Битвы будет отменена.");
+                Debug.Log("[HandManager] CancelCard: следующая карта отменена.");
                 break;
 
             case HandCardData.CardEffectType.DoubleGoods:
                 ConsumeCard(index);
                 GameManager.Instance.PromptDoubleGoods();
-                Debug.Log("[HandManager] DoubleGoods: игрок выбирает товар для удвоения.");
+                Debug.Log("[HandManager] DoubleGoods: выбор товара для удвоения.");
+                break;
+
+            // ── Новые торговые (публикуют событие) ───────────────────────
+
+            case HandCardData.CardEffectType.SaleBonus:
+                ConsumeCard(index);
+                TradeCardEvents.SaleBonusActivated(card.value);
+                Debug.Log($"[HandManager] SaleBonus: +{card.value} монет к продаже.");
+                break;
+
+            case HandCardData.CardEffectType.IgnoreTax:
+                ConsumeCard(index);
+                TradeCardEvents.IgnoreTaxActivated();
+                Debug.Log("[HandManager] IgnoreTax: пошлина будет проигнорирована.");
+                break;
+
+            case HandCardData.CardEffectType.SalePriceBoost:
+                ConsumeCard(index);
+                TradeCardEvents.SalePriceBoostActivated(card.value * 0.01f);
+                Debug.Log($"[HandManager] SalePriceBoost: +{card.value}% к цене продажи.");
+                break;
+
+            case HandCardData.CardEffectType.PurchaseDiscount:
+                ConsumeCard(index);
+                TradeCardEvents.PurchaseDiscountActivated(card.value * 0.01f);
+                Debug.Log($"[HandManager] PurchaseDiscount: -{card.value}% к цене покупки.");
+                break;
+
+            // ── Новые боевые (Consume-паттерн) ───────────────────────────
+
+            case HandCardData.CardEffectType.EnemyAttackDebuff:
+                _pendingEnemyDebuff += card.value;
+                ConsumeCard(index);
+                Debug.Log($"[HandManager] EnemyDebuff: -{card.value} к атаке противника.");
+                break;
+
+            case HandCardData.CardEffectType.BattlePenaltyReduce:
+                _pendingPenaltyReduction += card.value * 0.01f;
+                ConsumeCard(index);
+                Debug.Log($"[HandManager] PenaltyReduce: -{card.value}% штрафа после поражения.");
                 break;
 
             default:
@@ -185,7 +254,7 @@ public class HandManager : MonoBehaviour
         }
     }
 
-    // ── UI ───────────────────────────────────────────────────────────────
+    // ── UI ────────────────────────────────────────────────────────────────
 
     public void RefreshUI()
     {
@@ -206,7 +275,7 @@ public class HandManager : MonoBehaviour
         }
     }
 
-    // ── Вспомогательные ──────────────────────────────────────────────────
+    // ── Вспомогательные ───────────────────────────────────────────────────
 
     private void ConsumeCard(int index)
     {

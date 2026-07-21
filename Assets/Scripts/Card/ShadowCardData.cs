@@ -3,6 +3,10 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "NewShadowCard", menuName = "ThousandRoads/Cards/Shadow Card")]
 public class ShadowCardData : ScriptableObject, ICard
 {
+    [Header("Идентификация")]
+    [Tooltip("Уникальный числовой ID карты. Должен совпадать с ID в CSV.")]
+    public int cardID;
+
     [Header("Основное")]
     public string cardName;
 
