@@ -15823,14 +15823,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 108987381}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2389f38d58b833444a1606c605f6c7e0, type: 3}
+  m_Script: {fileID: 11500000, guid: bb7f1307c41dace4593f3fa578a4a033, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::HirePanelUI
   cityNameText: {fileID: 1706062435}
+  moneyText: {fileID: 1557905086}
+  closeButton: {fileID: 1974550915}
   availableUnitsContainer: {fileID: 922625532}
   currentTeamContainer: {fileID: 1756025008}
-  moneyText: {fileID: 1557905086}
-  unitButtonPrefab: {fileID: 1722918209209454389, guid: fe18adbeaea2ec649ba65af2cf9a6463, type: 3}
+  unitCardPrefab: {fileID: 1722918209209454389, guid: fe18adbeaea2ec649ba65af2cf9a6463, type: 3}
 --- !u!1001 &109351823
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -182283,7 +182284,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1219851191
 RectTransform:
   m_ObjectHideFlags: 0
@@ -259658,8 +259659,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 347.47025, y: -107.68038}
-  m_SizeDelta: {x: 372.584, y: 481.3}
+  m_AnchoredPosition: {x: 461.1535, y: -107.68038}
+  m_SizeDelta: {x: 661.88, y: 481.3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1756025009
 MonoBehaviour:
@@ -259670,9 +259671,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1756025007}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 59f8146938fff824cb5fd77236b75775, type: 3}
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
   m_Padding:
     m_Left: 0
     m_Right: 0
@@ -290350,9 +290351,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 108987383}
+      - m_Target: {fileID: 11500000, guid: bb7f1307c41dace4593f3fa578a4a033, type: 3}
         m_TargetAssemblyTypeName: HirePanelUI, Assembly-CSharp
-        m_MethodName: ClosePanel
+        m_MethodName: 
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
