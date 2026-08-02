@@ -100,6 +100,16 @@ public class WorldEconomy : MonoBehaviour
             aiTrader.RecordPurchase(itemName, amount, totalCost);
         }
 
+        AIDebugLog.RecordTrade(
+            traderName: trader.DisplayName,
+            kind:       AIDebugLog.TradeType.Buy,
+            itemName:   itemName,
+            amount:     amount,
+            totalCost:  totalCost,
+            cityName:   city.CityName
+        );
+
+
         Debug.Log($"[WorldEconomy] {trader.DisplayName} купил {amount}x {itemName} " +
                   $"в {city.CityName} за {totalCost}g");
     }
@@ -155,6 +165,15 @@ public class WorldEconomy : MonoBehaviour
             cityItem.currentSellPrice = Mathf.Max(cityItem.minSellPrice,
                 cityItem.currentSellPrice * (1f - cityItem.volatility));
         }
+
+        AIDebugLog.RecordTrade(
+            traderName: aiTrader.DisplayName,
+            kind:       AIDebugLog.TradeType.Sell,
+            itemName:   itemName,
+            amount:     amount,
+            totalCost:  totalValue,
+            cityName:   city.CityName
+            );
 
         Debug.Log($"[WorldEconomy] {trader.DisplayName} продал {amount}x {itemName} " +
                   $"в {city.CityName} за {totalValue}g");

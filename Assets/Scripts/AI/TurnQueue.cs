@@ -39,6 +39,7 @@ public class TurnQueue
     {
         TurnNumber++;
         OnTurnStarted?.Invoke(TurnNumber);
+        AIDebugLog.NewTurn(TurnNumber);
 
         var snapshot = _economy.TakeSnapshot();
 
@@ -71,9 +72,30 @@ public class TurnQueue
         var sorted = intents.OrderByDescending(i => i.Trader.Initiative).ToList();
         AssignPaths(sorted);
 
+        var goldBefore = new Dictionary<string, int>();
+        foreach (var intent in sorted)
+            if (intent.Trader is AITrader aiSnap)
+                goldBefore[aiSnap.DisplayName] = aiSnap.Gold;
+
         // 3. Торговля
         foreach (var intent in sorted)
             intent.Trader.ExecuteTrade(intent, _economy);
+
+                // Логируем финансы и движение
+        foreach (var intent in sorted)
+        {
+            string name = intent.Trader.DisplayName;
+ 
+            // Финансы
+            if (intent.Trader is AITrader aiLog && goldBefore.TryGetValue(name, out int before))
+                AIDebugLog.RecordFinance(name, before, aiLog.Gold);
+ 
+            // Движение
+            string pathName = intent.SelectedPath?.name;
+            string destName = intent.SelectedPath?.FinishCity?.CityName ?? "?";
+            AIDebugLog.RecordMove(name, pathName, destName);
+        }
+
 
         // 4. Один шаг движения для каждого ИИ — одновременно
         var moveCoroutines = sorted
