@@ -1,18 +1,20 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
+/// <summary>
+/// Управляет кнопками боевой панели и делегирует отображение текстов в EventPanelUI.
+/// Текстовые поля (rewardText, effectText, resultText) удалены —
+/// BattleUIManager больше не владеет TMP-объектами напрямую.
+/// </summary>
 public class BattleUIManager : MonoBehaviour
 {
-    [Header("EventPanel — текстовые поля")]
-    [SerializeField] private TMP_Text rewardText;
-    [SerializeField] private TMP_Text effectText;
-    [SerializeField] private TMP_Text resultText;
-
     [Header("Панель и кнопки")]
     [SerializeField] private GameObject battlePanel;
     [SerializeField] private Button endTurnButton;
     [SerializeField] private Button diceButton;
+
+    [Header("Зависимости")]
+    [SerializeField] private EventPanelUI eventPanel;
 
     private void Start()
     {
@@ -23,59 +25,45 @@ public class BattleUIManager : MonoBehaviour
 
     private void ValidateReferences()
     {
-        if (battlePanel   == null) Debug.LogError($"{nameof(battlePanel)} не назначен!");
-        if (endTurnButton == null) Debug.LogError($"{nameof(endTurnButton)} не назначен!");
-        if (rewardText    == null) Debug.LogWarning($"{nameof(rewardText)} не назначен!");
-        if (effectText    == null) Debug.LogWarning($"{nameof(effectText)} не назначен!");
-        if (resultText    == null) Debug.LogWarning($"{nameof(resultText)} не назначен!");
-        if (diceButton    == null) Debug.LogWarning($"{nameof(diceButton)} не назначен!");
+        if (battlePanel   == null) Debug.LogError($"[BattleUIManager] {nameof(battlePanel)} не назначен!");
+        if (endTurnButton == null) Debug.LogError($"[BattleUIManager] {nameof(endTurnButton)} не назначен!");
+        if (diceButton    == null) Debug.LogWarning($"[BattleUIManager] {nameof(diceButton)} не назначен!");
+        if (eventPanel    == null) Debug.LogError($"[BattleUIManager] {nameof(eventPanel)} не назначен — тексты боя не будут показаны!");
     }
+
+    // ── Состояния ─────────────────────────────────────────────────────────
 
     public void SetIdleState()
     {
-        ClearAll();
+        eventPanel?.ClearAll();
         ShowEndTurnButton(false);
         ShowDiceButton(true);
     }
 
+    // ── Тексты — делегируем в EventPanelUI ───────────────────────────────
+
+    /// <summary>
+    /// Результат броска кубика: атака игрока vs атака врага.
+    /// </summary>
     public void DisplayDiceRoll(int diceResult, int baseAttack, int enemyAttack)
-    {
-        int totalAttack = baseAttack + diceResult;
-        bool wouldWin   = totalAttack >= enemyAttack;
+        => eventPanel?.DisplayDiceRoll(diceResult, baseAttack, enemyAttack);
 
-        if (rewardText != null)
-            rewardText.text = $"Ваша атака: <b>{baseAttack}</b> + <color=yellow>{diceResult}</color> = <b>{totalAttack}</b>\n"
-                            + $"Атака врага: <b>{enemyAttack}</b>";
-
-        if (effectText != null)
-            effectText.text = wouldWin
-                ? "<color=green>Сил достаточно!</color>"
-                : "<color=red>Сил не хватает!</color>";
-    }
-
+    /// <summary>
+    /// Итог боя: победа или поражение.
+    /// </summary>
     public void DisplayBattleResult(bool victory, BattleCardData card, int playerFinalAttack)
     {
-        if (resultText != null)
-            resultText.text = victory
-                ? $"<color=green><b>ПОБЕДА!</b></color> +{card.rewardMoney} фелсов"
-                : $"<color=red><b>ПОРАЖЕНИЕ!</b></color> {card.penaltyMoney} фелсов";
+        int amount = victory ? card.rewardMoney : card.penaltyMoney;
+        eventPanel?.DisplayBattleResult(victory, amount);
     }
 
     /// <summary>
-    /// Показывает сообщение о побеге (Дымовая Завеса).
-    /// Вызывается BattleManager.PrepareBattle и ForceEndBattle.
+    /// Сообщение о побеге (Дымовая Завеса).
     /// </summary>
     public void DisplayEscapeMessage(string enemyName)
-    {
-        if (rewardText != null)
-            rewardText.text = $"Встреча с <b>{enemyName}</b>";
+        => eventPanel?.DisplayEscapeMessage(enemyName);
 
-        if (effectText != null)
-            effectText.text = "<color=yellow>Дымовая завеса!</color>";
-
-        if (resultText != null)
-            resultText.text = "Вы скрылись без потерь.";
-    }
+    // ── Кнопки ────────────────────────────────────────────────────────────
 
     public Button EndTurnButton => endTurnButton;
 
@@ -91,29 +79,14 @@ public class BattleUIManager : MonoBehaviour
             diceButton.gameObject.SetActive(isVisible);
     }
 
-    public void ClearEventText() => ClearAll();
-
-    private void ClearAll()
-    {
-        if (rewardText != null) rewardText.text = "";
-        if (effectText != null) effectText.text = "";
-        if (resultText != null) resultText.text = "";
-    }
+    // ── Устаревшие методы (совместимость) ────────────────────────────────
 
     [System.Obsolete("Используй DisplayDiceRoll(diceResult, baseAttack, enemyAttack).")]
-    public void DisplayDiceRoll(int diceResult, int baseAttack) => DisplayDiceRoll(diceResult, baseAttack, 0);
+    public void DisplayDiceRoll(int diceResult, int baseAttack)
+        => DisplayDiceRoll(diceResult, baseAttack, 0);
 
     [System.Obsolete("Предварительный результат теперь внутри DisplayDiceRoll.")]
     public void ShowPreliminaryResult(bool wouldWin) { }
-
-    [System.Obsolete("Текст события теперь на карте.")]
-    public void DisplayEventInfo(DiceEventType type, int diceValue) { }
-
-    [System.Obsolete("Текст тени теперь на карте.")]
-    public void DisplayShadowCard(ShadowCardData card) { }
-
-    [System.Obsolete("Текст битвы теперь на карте.")]
-    public void DisplayChallenge(BattleCardData card) { }
 
     [System.Obsolete("Используй ShowDiceButton().")]
     public void ShowBattleRollButton(bool isVisible) { }
@@ -121,6 +94,6 @@ public class BattleUIManager : MonoBehaviour
     [System.Obsolete("Кнопка финализации удалена.")]
     public void EnableFinishBattleButton(bool isActive) { }
 
-    [System.Obsolete("cardPanel перенесён в EventCardDeckUI.")]
-    public void ShowCardPanel(bool isVisible) { }
+    [System.Obsolete("Очистка текстов через EventPanelUI.ClearAll().")]
+    public void ClearEventText() => eventPanel?.ClearAll();
 }

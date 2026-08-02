@@ -3,30 +3,53 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Управляет колодой карт и показом CardDisplay.
+///
+/// Иерархия в сцене:
+///   EventPanelUI
+///   ├── DeckImage          ← Image со спрайтом рубашки (статичный, всегда виден)
+///   ├── CardSpawnRoot      ← сюда назначить cardSpawnRoot; сюда спавнится CardDisplay
+///   └── ...текстовые поля EventPanelUI
+/// </summary>
 public class CardDeckUI : MonoBehaviour
 {
-    [Header("Ссылки")]
-    [SerializeField] private CardDisplay cardDisplayPrefab;
-    [SerializeField] private RectTransform cardSpawnRoot;
-    [SerializeField] private Image deckVisual;
+    [Header("Колода")]
     [SerializeField] private TMPro.TextMeshProUGUI deckCountText;
 
-    [Header("Настройки")]
-    [SerializeField] private bool shuffleOnStart = false;
+    [Header("Карта события")]
+    [Tooltip("Префаб с компонентом CardDisplay. Не содержит рубашку и анимацию.")]
+    [SerializeField] private CardDisplay cardDisplayPrefab;
+    [Tooltip("RectTransform, куда спавнится CardDisplay (поверх DeckImage).")]
+    [SerializeField] private RectTransform cardSpawnRoot;
 
-    private readonly Queue<ICard> _deck = new Queue<ICard>();
-    private readonly List<ICard> _discardPile = new List<ICard>();
+    [Header("Панель событий")]
+    [SerializeField] private EventPanelUI eventPanelUI;
+
+    private readonly Queue<ICard> _deck    = new Queue<ICard>();
+    private readonly List<ICard>  _discard = new List<ICard>();
     private CardDisplay _activeCard;
 
     public event Action<ICard> OnCardDrawn;
     public event Action<ICard> OnCardRevealed;
     public event Action<ICard> OnCardDiscarded;
 
+    public int RemainingCount => _deck.Count;
+    public int DiscardCount   => _discard.Count;
+
+    // ── Unity ─────────────────────────────────────────────────────────────
+
     private void Start()
     {
-        if (shuffleOnStart) ShuffleDeck();
         UpdateDeckVisual();
+
+        if (cardDisplayPrefab == null)
+            Debug.LogError("[CardDeckUI] cardDisplayPrefab не назначен!");
+        if (eventPanelUI == null)
+            Debug.LogWarning("[CardDeckUI] eventPanelUI не назначен — детали карт не будут показаны.");
     }
+
+    // ── Публичный API — колода ────────────────────────────────────────────
 
     public void AddCard(ICard card)
     {
@@ -40,6 +63,10 @@ public class CardDeckUI : MonoBehaviour
         foreach (var c in cards) AddCard(c);
     }
 
+    /// <summary>
+    /// Вытянуть верхнюю карту и показать мгновенно.
+    /// После показа уведомляет EventPanelUI и вызывает onRevealedCallback.
+    /// </summary>
     public CardDisplay DrawAndShowTopCard(Action onRevealedCallback = null)
     {
         if (_deck.Count == 0)
@@ -48,51 +75,67 @@ public class CardDeckUI : MonoBehaviour
             return null;
         }
 
-        DismissActiveCard(immediate: true);
+        // Скрываем предыдущую карту если была
+        HideActiveCard();
 
         ICard drawnCard = _deck.Dequeue();
         OnCardDrawn?.Invoke(drawnCard);
         UpdateDeckVisual();
 
+        // Получаем или создаём CardDisplay
         _activeCard = GetOrCreateCardDisplay();
-        _activeCard.Setup(drawnCard);
-        _activeCard.OnCardRevealed += () =>
+
+        // Подписываемся на OnCardRevealed до ShowCard
+        _activeCard.OnCardRevealed += OnRevealed;
+
+        // Показываем карту — мгновенно, OnCardRevealed сработает внутри ShowCard
+        _activeCard.ShowCard(drawnCard);
+
+        return _activeCard;
+
+        void OnRevealed()
         {
+            _activeCard.OnCardRevealed -= OnRevealed;
+            NotifyEventPanel(drawnCard);
             OnCardRevealed?.Invoke(drawnCard);
             onRevealedCallback?.Invoke();
-        };
-
-        _activeCard.ShowCard();
-        return _activeCard;
+        }
     }
 
+    /// <summary>
+    /// Показать отменённую карту с пометкой.
+    /// </summary>
     public void ShowCancelledCard(ICard card)
     {
         if (card == null) return;
-        var cancelled = new CancelledCardWrapper(card);
-        AddCard(cancelled);
         DrawAndShowTopCard();
     }
 
+    /// <summary>
+    /// Сбросить текущую карту в отбой.
+    /// </summary>
     public void DiscardCurrentCard()
     {
         if (_activeCard == null) return;
-        
+
         var card = _activeCard.GetCurrentCard();
-        _discardPile.Add(card);
-        OnCardDiscarded?.Invoke(card);
-        
+        if (card != null)
+        {
+            _discard.Add(card);
+            OnCardDiscarded?.Invoke(card);
+        }
+
         HideCurrentCard();
     }
 
+    /// <summary>
+    /// Скрыть текущую карту без сброса в отбой.
+    /// </summary>
     public void HideCurrentCard()
     {
-        DismissActiveCard(immediate: false);
+        HideActiveCard();
         _activeCard = null;
     }
-
-    public int RemainingCount => _deck.Count;
-    public int DiscardCount => _discardPile.Count;
 
     public void ShuffleDeck()
     {
@@ -105,32 +148,55 @@ public class CardDeckUI : MonoBehaviour
 
     public void ReshuffleDiscardIntoDeck()
     {
-        foreach (var c in _discardPile) _deck.Enqueue(c);
-        _discardPile.Clear();
+        foreach (var c in _discard) _deck.Enqueue(c);
+        _discard.Clear();
         ShuffleDeck();
     }
 
-    private void DismissActiveCard(bool immediate)
+    // ── Приватные методы ──────────────────────────────────────────────────
+
+    private void NotifyEventPanel(ICard card)
+    {
+        if (eventPanelUI == null) return;
+
+        switch (card)
+        {
+            case ShadowCardData shadow:
+                eventPanelUI.DisplayShadowCard(shadow);
+                break;
+            case BattleCardData battle:
+                eventPanelUI.DisplayBattleCard(battle);
+                break;
+            case CancelledCardWrapper cancelled:
+                eventPanelUI.ClearAll();
+                eventPanelUI.DisplayResult($"Карта «{cancelled.CardName}» отменена.", isPositive: true);
+                break;
+        }
+    }
+
+    private void HideActiveCard()
     {
         if (_activeCard == null) return;
-        _activeCard.HideCard(immediate);
+        _activeCard.HideCard();
     }
 
     private CardDisplay GetOrCreateCardDisplay()
     {
-        var existing = cardSpawnRoot.GetComponentInChildren<CardDisplay>(includeInactive: true);
+        Transform parent = cardSpawnRoot != null ? cardSpawnRoot : transform;
+
+        // Переиспользуем существующий инстанс если есть
+        var existing = parent.GetComponentInChildren<CardDisplay>(includeInactive: true);
         if (existing != null) return existing;
 
-        var instance = Instantiate(cardDisplayPrefab, cardSpawnRoot);
+        var instance = Instantiate(cardDisplayPrefab, parent);
         instance.gameObject.SetActive(false);
         return instance;
     }
 
     private void UpdateDeckVisual()
     {
-        bool hasCards = _deck.Count > 0;
-        if (deckVisual != null) deckVisual.gameObject.SetActive(hasCards);
-        if (deckCountText != null) deckCountText.text = hasCards ? $"×{_deck.Count}" : "";
+        if (deckCountText != null)
+            deckCountText.text = _deck.Count > 0 ? $"×{_deck.Count}" : "";
     }
 
     private static void ShuffleList<T>(List<T> list)
@@ -141,40 +207,16 @@ public class CardDeckUI : MonoBehaviour
             (list[i], list[j]) = (list[j], list[i]);
         }
     }
-
-#if UNITY_EDITOR
-    [Header("— Тест (Play Mode) —")]
-    [SerializeField] private ScriptableObject[] testCards;
-
-    private void Update()
-    {
-        var keyboard = UnityEngine.InputSystem.Keyboard.current;
-        if (keyboard == null) return;
-
-        if (keyboard.dKey.wasPressedThisFrame)
-        {
-            foreach (var so in testCards)
-            {
-                if (so is ICard card) AddCard(card);
-            }
-            DrawAndShowTopCard();
-        }
-        if (keyboard.hKey.wasPressedThisFrame) HideCurrentCard();
-        if (keyboard.rKey.wasPressedThisFrame) { ShuffleDeck(); }
-    }
-#endif
 }
+
+// ── CancelledCardWrapper ──────────────────────────────────────────────────────
 
 public class CancelledCardWrapper : ICard
 {
     private readonly ICard _original;
-    
-    public CancelledCardWrapper(ICard original)
-    {
-        _original = original;
-    }
+    public CancelledCardWrapper(ICard original) => _original = original;
 
-    public string CardName       => $"[Отменено] {_original.CardName}";
-    public string Description    => _original.Description;
+    public string CardName   => $"[Отменено] {_original.CardName}";
+    public string Description => _original.Description;
     public CardDeckType DeckType => _original.DeckType;
 }

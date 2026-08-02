@@ -1,154 +1,144 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// Визуальный компонент карты события.
+/// Префаб не содержит рубашку и анимацию — только лицевую сторону.
+/// Появление мгновенное через SetActive.
+/// Располагается внутри EventPanelUI поверх Image-колоды.
+/// </summary>
 public class CardDisplay : MonoBehaviour
 {
-    [Header("Визуальные компоненты")]
-    [SerializeField] private Image cardBackImage;
-    [SerializeField] private GameObject cardFaceRoot;
-    [SerializeField] private Image cardFaceImage;
+    [Header("Текстовые поля карты")]
     [SerializeField] private TextMeshProUGUI titleText;
-    [SerializeField] private TextMeshProUGUI descriptionText;
-    [SerializeField] private Image typeIcon;
 
-    [Header("Спрайты (единые для всех карт)")]
-    [SerializeField] private Sprite cardFaceSprite;
-    [SerializeField] private Sprite cardBackSprite;
+    [Header("Характеристики — Shadow-карта")]
+    [SerializeField] private GameObject shadowStatsRoot;
+    [SerializeField] private TextMeshProUGUI shadowEffectTypeText;
+    [SerializeField] private TextMeshProUGUI shadowValueText;
 
-    [Header("Анимация флипа")]
-    [SerializeField] private float flipDuration = 0.5f;
-    [SerializeField] private AnimationCurve flipCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    [Header("Лёгкое появление (scale)")]
-    [SerializeField] private float appearDuration = 0.25f;
+    [Header("Характеристики — Battle-карта")]
+    [SerializeField] private GameObject battleStatsRoot;
+    [SerializeField] private TextMeshProUGUI battleRequiredAttackText;
+    [SerializeField] private TextMeshProUGUI battleRewardText;
 
     private ICard _currentCard;
-    private bool _isFlipped = false;
-    private Coroutine _flipCoroutine;
 
     public event Action OnCardRevealed;
 
-    public void Setup(ICard data)
+    // ── Публичный API ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Заполнить карту данными и показать мгновенно.
+    /// </summary>
+    public void ShowCard(ICard data)
     {
         _currentCard = data;
-        _isFlipped = false;
+        FillContent(data);
+        gameObject.SetActive(true);
+        OnCardRevealed?.Invoke();
+    }
 
-        if (cardBackImage != null)
-            cardBackImage.sprite = cardBackSprite;
-
-        if (cardFaceImage != null)
-            cardFaceImage.sprite = cardFaceSprite;
-
-        FillFaceContent(data);
-        SetFaceVisible(false);
-
-        transform.localScale = Vector3.zero;
+    /// <summary>
+    /// Скрыть карту.
+    /// </summary>
+    public void HideCard()
+    {
+        gameObject.SetActive(false);
+        _currentCard = null;
     }
 
     public ICard GetCurrentCard() => _currentCard;
 
-    public void ShowCard()
-    {
-        gameObject.SetActive(true);
-        if (_flipCoroutine != null) StopCoroutine(_flipCoroutine);
-        _flipCoroutine = StartCoroutine(AppearThenFlip());
-    }
+    // ── Наполнение ────────────────────────────────────────────────────────
 
-    public void FlipToFace()
+    private void FillContent(ICard data)
     {
-        if (_isFlipped) return;
-        if (_flipCoroutine != null) StopCoroutine(_flipCoroutine);
-        _flipCoroutine = StartCoroutine(FlipCoroutine());
-    }
+        if (titleText != null)
+            titleText.text = data.CardName;
 
-    public void HideCard(bool immediate = false)
-    {
-        if (_flipCoroutine != null) StopCoroutine(_flipCoroutine);
-
-        if (immediate)
+        switch (data)
         {
-            gameObject.SetActive(false);
-            _isFlipped = false;
-            return;
+            case ShadowCardData shadow:
+                ShowShadowStats(shadow);
+                break;
+            case BattleCardData battle:
+                ShowBattleStats(battle);
+                break;
+            default:
+                HideAllStats();
+                break;
         }
-
-        StartCoroutine(HideCoroutine());
     }
 
-    private IEnumerator AppearThenFlip()
+    private void ShowShadowStats(ShadowCardData card)
     {
-        yield return StartCoroutine(ScaleTo(Vector3.one, appearDuration));
-        yield return new WaitForSeconds(0.2f);
-        yield return StartCoroutine(FlipCoroutine());
+        if (shadowStatsRoot != null) shadowStatsRoot.SetActive(true);
+        if (battleStatsRoot  != null) battleStatsRoot.SetActive(false);
+
+        if (shadowEffectTypeText != null)
+            shadowEffectTypeText.text = FormatEffectType(card.effectType);
+
+        if (shadowValueText != null)
+            shadowValueText.text = FormatValue(card.effectType, card.value);
     }
 
-    private IEnumerator FlipCoroutine()
+    private void ShowBattleStats(BattleCardData card)
     {
-        float halfDuration = flipDuration * 0.5f;
-        yield return StartCoroutine(ScaleXTo(0f, halfDuration));
-        SetFaceVisible(true);
-        yield return StartCoroutine(ScaleXTo(1f, halfDuration));
+        if (shadowStatsRoot != null) shadowStatsRoot.SetActive(false);
+        if (battleStatsRoot  != null) battleStatsRoot.SetActive(true);
 
-        _isFlipped = true;
-        OnCardRevealed?.Invoke();
+        if (battleRequiredAttackText != null)
+            battleRequiredAttackText.text = $"Атака: {card.requiredAttack}";
+
+        if (battleRewardText != null)
+            battleRewardText.text = $"+{card.rewardMoney} / {card.penaltyMoney}";
     }
 
-    private IEnumerator HideCoroutine()
+    private void HideAllStats()
     {
-        yield return StartCoroutine(ScaleTo(Vector3.zero, appearDuration));
-        gameObject.SetActive(false);
-        _isFlipped = false;
-        SetFaceVisible(false);
+        if (shadowStatsRoot != null) shadowStatsRoot.SetActive(false);
+        if (battleStatsRoot  != null) battleStatsRoot.SetActive(false);
     }
 
-    private IEnumerator ScaleTo(Vector3 target, float duration)
-    {
-        Vector3 startScale = transform.localScale;
-        float elapsed = 0f;
+    // ── Форматирование ────────────────────────────────────────────────────
 
-        while (elapsed < duration)
+    private static string FormatEffectType(ShadowEffectType type) => type switch
+    {
+        ShadowEffectType.Money          => "Деньги",
+        ShadowEffectType.Attack         => "Атака",
+        ShadowEffectType.Capacity       => "Грузоподъёмность",
+        ShadowEffectType.Bargain        => "Торговля",
+        ShadowEffectType.AddGoods       => "Добавить товар",
+        ShadowEffectType.RemoveGoods    => "Потеря товара",
+        ShadowEffectType.FireCrewMember => "Команда",
+        ShadowEffectType.WagePenalty    => "Жалованье",
+        ShadowEffectType.Confiscation   => "Конфискация",
+        ShadowEffectType.TeamStats      => "Характеристики команды",
+        ShadowEffectType.BonusTrade     => "Цены товаров",
+        _                               => type.ToString()
+    };
+
+    private static string FormatValue(ShadowEffectType type, int value)
+    {
+        string prefix = value >= 0 ? "<color=green>+" : "<color=red>";
+        const string suffix = "</color>";
+
+        return type switch
         {
-            elapsed += Time.deltaTime;
-            float t = flipCurve.Evaluate(Mathf.Clamp01(elapsed / duration));
-            transform.localScale = Vector3.LerpUnclamped(startScale, target, t);
-            yield return null;
-        }
+            ShadowEffectType.Money or
+            ShadowEffectType.BonusTrade or
+            ShadowEffectType.Capacity or
+            ShadowEffectType.TeamStats      => $"{prefix}{value}%{suffix}",
 
-        transform.localScale = target;
-    }
+            ShadowEffectType.AddGoods or
+            ShadowEffectType.RemoveGoods    => value == 1 ? "Частично" : "Полностью",
 
-    private IEnumerator ScaleXTo(float targetX, float duration)
-    {
-        float startX = transform.localScale.x;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.deltaTime;
-            float t = flipCurve.Evaluate(Mathf.Clamp01(elapsed / duration));
-            Vector3 s = transform.localScale;
-            s.x = Mathf.LerpUnclamped(startX, targetX, t);
-            transform.localScale = s;
-            yield return null;
-        }
-
-        Vector3 final = transform.localScale;
-        final.x = targetX;
-        transform.localScale = final;
-    }
-
-    private void FillFaceContent(ICard data)
-    {
-        if (titleText != null) titleText.text = data.CardName;
-        if (descriptionText != null) descriptionText.text = data.Description;
-    }
-
-    private void SetFaceVisible(bool visible)
-    {
-        if (cardFaceRoot != null) cardFaceRoot.SetActive(visible);
-        if (cardBackImage != null) cardBackImage.enabled = !visible;
+            ShadowEffectType.FireCrewMember => "1 человек",
+            ShadowEffectType.Confiscation   => $"Штраф: {value}",
+            _                               => $"{prefix}{value}{suffix}"
+        };
     }
 }

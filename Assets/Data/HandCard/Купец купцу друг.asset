@@ -19,7 +19,7 @@ MonoBehaviour:
     \u2014 \u0440\u0435\u0446\u0435\u043F\u0442 \u0441\u043A\u0438\u0434\u043A\u0438,
     \u0438\u0437\u0432\u0435\u0441\u0442\u043D\u044B\u0439 \u043D\u0435 \u043F\u0435\u0440\u0432\u044B\u0439
     \u0432\u0435\u043A."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: a5a9a4619761c064e9bff0c70606c0d8, type: 3}
   category: 2
   effectType: 11
   value: 20
