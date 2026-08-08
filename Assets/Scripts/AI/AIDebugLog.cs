@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 /// <summary>
 /// Статическая шина событий для дебажного оверлея ИИ.
@@ -150,6 +151,7 @@ public static class AIDebugLog
 
     private static void AddEntry(string line)
     {
+        Debug.Log($"[AIDebugLog] AddEntry: '{line}' | подписчиков: {OnEntryAdded?.GetInvocationList().Length ?? 0}");
         _entries.Add(line);
         OnEntryAdded?.Invoke(line);
     }

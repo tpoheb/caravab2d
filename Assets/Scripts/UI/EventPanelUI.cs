@@ -122,7 +122,7 @@ public class EventPanelUI : MonoBehaviour
         // Награда и штраф
         SetText(durationText,
             $"<color=green>Победа: +{card.rewardMoney} фелсов</color>  " +
-            $"<color=red>Поражение: -{card.penaltyMoney} фелсов</color>");
+            $"<color=red>Поражение: {card.penaltyMoney} фелсов</color>");
 
         // Итог — заполнится после броска кубика
         SetText(resultText, "");
@@ -150,7 +150,7 @@ public class EventPanelUI : MonoBehaviour
 
         resultText.text = victory
             ? $"<color=green><b>ПОБЕДА!</b></color>  +{rewardOrPenalty} фелсов"
-            : $"<color=red><b>ПОРАЖЕНИЕ!</b></color>  -{rewardOrPenalty} фелсов";
+            : $"<color=red><b>ПОРАЖЕНИЕ!</b></color>  {rewardOrPenalty} фелсов";
     }
 
     /// <summary>

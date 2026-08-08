@@ -5,287 +5,202 @@ using UnityEngine.InputSystem;
 using TMPro;
 
 /// <summary>
-/// Canvas Overlay поверх игры — показывает лог ИИ-операций текущего хода.
-///
-/// Настройка (один раз):
-/// 1. Создай пустой GameObject "AIDebugOverlay" в сцене.
-/// 2. Добавь этот компонент.
-/// 3. Запусти игру — Canvas и UI создадутся автоматически.
-/// 4. Клавиша Tab по умолчанию переключает видимость.
-///
-/// Зависимости: TextMeshPro, Unity Input System.
+/// Простой дебажный оверлей для ИИ-операций.
+/// Фиксированная панель, TextMeshPro без ScrollRect — максимально надёжно.
+/// Клавиша Tab — показать/скрыть.
 /// </summary>
 public class AIDebugOverlay : MonoBehaviour
 {
-    // ------------------------------------------------------------------
-    // Inspector
-    // ------------------------------------------------------------------
-
     [Header("Видимость")]
-    [Tooltip("Горячая клавиша показа/скрытия оверлея")]
-    [SerializeField] private KeyCode _toggleKey = KeyCode.Tab;
+    [SerializeField] private KeyCode _toggleKey      = KeyCode.Tab;
+    [SerializeField] private bool    _visibleOnStart = true;
 
-    [Tooltip("Показывать оверлей при старте игры")]
-    [SerializeField] private bool _visibleOnStart = true;
-
-    [Header("Позиция и размер панели")]
-    [Tooltip("Отступ от угла экрана в пикселях")]
+    [Header("Панель")]
+    [SerializeField] private Vector2 _panelSize   = new Vector2(420f, 500f);
     [SerializeField] private Vector2 _panelOffset = new Vector2(16f, 16f);
-    [SerializeField] private Vector2 _panelSize   = new Vector2(400f, 520f);
 
-    [Header("Визуал")]
-    [SerializeField] private Color _bgColor      = new Color(0f, 0f, 0f, 0.72f);
+    [Header("Цвета")]
+    [SerializeField] private Color _bgColor      = new Color(0f,   0f,   0f,   0.80f);
     [SerializeField] private Color _headerColor  = new Color(0.9f, 0.75f, 0.3f, 1f);
-    [SerializeField] private Color _textColor    = new Color(0.9f, 0.9f, 0.9f, 1f);
     [SerializeField] private Color _buyColor     = new Color(0.4f, 0.9f, 0.4f, 1f);
     [SerializeField] private Color _sellColor    = new Color(0.9f, 0.5f, 0.3f, 1f);
-    [SerializeField] private Color _moveColor    = new Color(0.5f, 0.8f, 1f,  1f);
+    [SerializeField] private Color _moveColor    = new Color(0.5f, 0.8f, 1f,   1f);
     [SerializeField] private Color _financeColor = new Color(1f,   0.9f, 0.4f, 1f);
+    [SerializeField] private Color _textColor    = new Color(0.9f, 0.9f, 0.9f, 1f);
 
-    [SerializeField] private int _headerFontSize  = 14;
-    [SerializeField] private int _entryFontSize   = 12;
+    [Header("Шрифт")]
+    [SerializeField] private int _headerSize = 13;
+    [SerializeField] private int _lineSize   = 11;
 
-    [Tooltip("Максимум строк в скролле (старые обрезаются при превышении)")]
-    [SerializeField] private int _maxVisibleLines = 30;
+    [Tooltip("Сколько последних строк держать")]
+    [SerializeField] private int _maxLines = 25;
 
-    // ------------------------------------------------------------------
-    // Runtime refs
-    // ------------------------------------------------------------------
+    // ── runtime ──────────────────────────────────────────────────────
+    private GameObject      _root;
+    private TextMeshProUGUI _headerTMP;
+    private TextMeshProUGUI _bodyTMP;
 
-    private Canvas          _canvas;
-    private GameObject      _panel;
-    private TextMeshProUGUI _headerText;
-    private TextMeshProUGUI _contentText;
-    private ScrollRect      _scrollRect;
+    private readonly List<string> _lines = new List<string>();
 
-    private readonly List<string> _displayLines = new List<string>();
-    private bool _isDirty;
+    // ── lifecycle ────────────────────────────────────────────────────
 
-    // ------------------------------------------------------------------
-    // Unity lifecycle
-    // ------------------------------------------------------------------
-
-    private void Awake()
-    {
-        BuildUI();
-        SetVisible(_visibleOnStart);
-    }
-
-    private void OnEnable()
-    {
-        AIDebugLog.OnNewTurn    += HandleNewTurn;
-        AIDebugLog.OnEntryAdded += HandleEntryAdded;
-    }
-
-    private void OnDisable()
-    {
-        AIDebugLog.OnNewTurn    -= HandleNewTurn;
-        AIDebugLog.OnEntryAdded -= HandleEntryAdded;
-    }
+    private void Awake()       => Build();
+    private void OnEnable()    { AIDebugLog.OnNewTurn += OnNewTurn; AIDebugLog.OnEntryAdded += OnEntry; }
+    private void OnDisable()   { AIDebugLog.OnNewTurn -= OnNewTurn; AIDebugLog.OnEntryAdded -= OnEntry; }
 
     private void Update()
     {
-        if (Keyboard.current != null &&
-            Keyboard.current[ToKey(_toggleKey)].wasPressedThisFrame)
-            SetVisible(!_panel.activeSelf);
+        if (Keyboard.current != null && Keyboard.current[ToKey(_toggleKey)].wasPressedThisFrame)
+            _root.SetActive(!_root.activeSelf);
+    }
 
-        if (_isDirty)
+    // ── handlers ─────────────────────────────────────────────────────
+
+    private void OnNewTurn(int turn)
+    {
+        _lines.Clear();
+        _headerTMP.text = $"⚙  ИИ-лог  |  Ход {turn}  |  {_toggleKey} — скрыть";
+        Repaint();
+    }
+
+    private void OnEntry(string line)
+    {
+        _lines.Add(Colorize(line));
+        while (_lines.Count > _maxLines)
+            _lines.RemoveAt(0);
+        Repaint();
+    }
+
+    private void Repaint()
+    {
+    if (_bodyTMP == null)
         {
-            RefreshContent();
-            _isDirty = false;
+        Debug.LogError("[AIDebugOverlay] _bodyTMP == null при Repaint!");
+        return;
         }
+        _bodyTMP.text = _lines.Count > 0
+        ? string.Join("\n", _lines)
+        : "<color=#555555><i>нет событий</i></color>";
     }
 
-    // ------------------------------------------------------------------
-    // Handlers
-    // ------------------------------------------------------------------
+    // ── colorize ─────────────────────────────────────────────────────
 
-    private void HandleNewTurn(int turn)
+    private string Colorize(string line)
     {
-        _displayLines.Clear();
-        UpdateHeader(turn);
-        _isDirty = true;
-    }
-
-    private void HandleEntryAdded(string line)
-    {
-        _displayLines.Add(ColorLine(line));
-
-        while (_displayLines.Count > _maxVisibleLines)
-            _displayLines.RemoveAt(0);
-
-        _isDirty = true;
-    }
-
-    // ------------------------------------------------------------------
-    // Логика
-    // ------------------------------------------------------------------
-
-    private string ColorLine(string line)
-    {
-        if (line.StartsWith("[Куп]"))    return Colorize(line, _buyColor);
-        if (line.StartsWith("[Прод]"))   return Colorize(line, _sellColor);
-        if (line.StartsWith("[Ход]"))    return Colorize(line, _moveColor);
-        if (line.StartsWith("[Золото]")) return Colorize(line, _financeColor);
+        if (line.StartsWith("[Куп]"))    return Wrap(line, _buyColor);
+        if (line.StartsWith("[Прод]"))   return Wrap(line, _sellColor);
+        if (line.StartsWith("[Ход]"))    return Wrap(line, _moveColor);
+        if (line.StartsWith("[Золото]")) return Wrap(line, _financeColor);
         return line;
     }
 
-    private static string Colorize(string text, Color c)
+    private static string Wrap(string s, Color c) =>
+        $"<color=#{ColorUtility.ToHtmlStringRGB(c)}>{s}</color>";
+
+    // ── build UI ─────────────────────────────────────────────────────
+
+    private void Build()
     {
-        return $"<color=#{ColorUtility.ToHtmlStringRGB(c)}>{text}</color>";
-    }
+        // Canvas на этом же GameObject
+        var canvas = gameObject.GetComponent<Canvas>() ?? gameObject.AddComponent<Canvas>();
+        canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 999;
 
-    private void UpdateHeader(int turn)
-    {
-        if (_headerText != null)
-            _headerText.text = $"⚙ ИИ-лог  |  Ход {turn}  |  [{_toggleKey} — скрыть]";
-    }
-
-    private void RefreshContent()
-    {
-        if (_contentText == null) return;
-        _contentText.text = string.Join("\n", _displayLines);
-
-        Canvas.ForceUpdateCanvases();
-        if (_scrollRect != null)
-            _scrollRect.verticalNormalizedPosition = 0f;
-    }
-
-    private void SetVisible(bool visible)
-    {
-        if (_panel != null)
-            _panel.SetActive(visible);
-    }
-
-    // ------------------------------------------------------------------
-    // Конвертация KeyCode → Key (без extension method)
-    // ------------------------------------------------------------------
-
-    private static Key ToKey(KeyCode kc) => kc switch
-    {
-        KeyCode.Tab        => Key.Tab,
-        KeyCode.Space      => Key.Space,
-        KeyCode.BackQuote  => Key.Backquote,
-        KeyCode.F1         => Key.F1,
-        KeyCode.F2         => Key.F2,
-        KeyCode.F3         => Key.F3,
-        KeyCode.F4         => Key.F4,
-        KeyCode.F5         => Key.F5,
-        KeyCode.F6         => Key.F6,
-        KeyCode.F7         => Key.F7,
-        KeyCode.F8         => Key.F8,
-        KeyCode.Alpha1     => Key.Digit1,
-        KeyCode.Alpha2     => Key.Digit2,
-        KeyCode.Alpha3     => Key.Digit3,
-        KeyCode.Alpha4     => Key.Digit4,
-        KeyCode.Alpha5     => Key.Digit5,
-        _                  => Key.Tab
-    };
-
-    // ------------------------------------------------------------------
-    // Построение UI программно
-    // ------------------------------------------------------------------
-
-    private void BuildUI()
-    {
-        // Canvas
-        _canvas = gameObject.GetComponent<Canvas>();
-        if (_canvas == null)
-            _canvas = gameObject.AddComponent<Canvas>();
-
-        _canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-        _canvas.sortingOrder = 999;
-
-        var scaler = gameObject.GetComponent<CanvasScaler>();
-        if (scaler == null)
-            scaler = gameObject.AddComponent<CanvasScaler>();
+        var scaler = gameObject.GetComponent<CanvasScaler>() ?? gameObject.AddComponent<CanvasScaler>();
         scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
 
-        if (gameObject.GetComponent<GraphicRaycaster>() == null)
+        if (!gameObject.GetComponent<GraphicRaycaster>())
             gameObject.AddComponent<GraphicRaycaster>();
 
-        // Панель
-        _panel = new GameObject("Panel");
-        _panel.transform.SetParent(_canvas.transform, false);
+        // Корневая панель (правый верхний угол)
+        _root = MakeGO("DebugPanel", gameObject.transform);
+        var rootRect = _root.AddComponent<RectTransform>();
+        rootRect.anchorMin        = new Vector2(1, 1);
+        rootRect.anchorMax        = new Vector2(1, 1);
+        rootRect.pivot            = new Vector2(1, 1);
+        rootRect.anchoredPosition = new Vector2(-_panelOffset.x, -_panelOffset.y);
+        rootRect.sizeDelta        = _panelSize;
 
-        var panelRect = _panel.AddComponent<RectTransform>();
-        panelRect.anchorMin        = new Vector2(1f, 1f);
-        panelRect.anchorMax        = new Vector2(1f, 1f);
-        panelRect.pivot            = new Vector2(1f, 1f);
-        panelRect.anchoredPosition = new Vector2(-_panelOffset.x, -_panelOffset.y);
-        panelRect.sizeDelta        = _panelSize;
-
-        var panelImg = _panel.AddComponent<Image>();
-        panelImg.color = _bgColor;
-
-        var layout = _panel.AddComponent<VerticalLayoutGroup>();
-        layout.padding               = new RectOffset(8, 8, 6, 6);
-        layout.spacing               = 4f;
-        layout.childControlWidth     = true;
-        layout.childForceExpandWidth  = true;
-        layout.childForceExpandHeight = false;
+        var bg = _root.AddComponent<Image>();
+        bg.color = _bgColor;
 
         // Заголовок
-        var headerGO = new GameObject("Header");
-        headerGO.transform.SetParent(_panel.transform, false);
-        _headerText           = headerGO.AddComponent<TextMeshProUGUI>();
-        _headerText.text      = $"⚙ ИИ-лог  |  Ход 0  |  [{_toggleKey} — скрыть]";
-        _headerText.fontSize  = _headerFontSize;
-        _headerText.color     = _headerColor;
-        _headerText.fontStyle = FontStyles.Bold;
-        headerGO.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 22f);
+        var headerGO = MakeGO("Header", _root.transform);
+        var headerRect = headerGO.AddComponent<RectTransform>();
+        headerRect.anchorMin = new Vector2(0, 1);
+        headerRect.anchorMax = new Vector2(1, 1);
+        headerRect.pivot     = new Vector2(0, 1);
+        headerRect.offsetMin = new Vector2(8,  0);
+        headerRect.offsetMax = new Vector2(-8, 0);
+        headerRect.sizeDelta = new Vector2(0, 26);
+
+        _headerTMP           = headerGO.AddComponent<TextMeshProUGUI>();
+        _headerTMP.text      = $"⚙  ИИ-лог  |  {_toggleKey} — скрыть";
+        _headerTMP.fontSize  = _headerSize;
+        _headerTMP.color     = _headerColor;
+        _headerTMP.fontStyle = FontStyles.Bold;
+        _headerTMP.overflowMode = TextOverflowModes.Ellipsis;
 
         // Разделитель
-        var dividerGO = new GameObject("Divider");
-        dividerGO.transform.SetParent(_panel.transform, false);
-        dividerGO.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.15f);
-        dividerGO.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 1f);
+        var divGO   = MakeGO("Divider", _root.transform);
+        var divRect = divGO.AddComponent<RectTransform>();
+        divRect.anchorMin = new Vector2(0, 1);
+        divRect.anchorMax = new Vector2(1, 1);
+        divRect.pivot     = new Vector2(0, 1);
+        divRect.offsetMin = new Vector2(6,  0);
+        divRect.offsetMax = new Vector2(-6, 0);
+        divRect.anchoredPosition = new Vector2(0, -28);
+        divRect.sizeDelta        = new Vector2(0, 1);
+        divGO.AddComponent<Image>().color = new Color(1, 1, 1, 0.2f);
 
-        // ScrollView
-        var scrollGO = new GameObject("ScrollView");
-        scrollGO.transform.SetParent(_panel.transform, false);
-        scrollGO.AddComponent<RectTransform>();
-        scrollGO.AddComponent<LayoutElement>().flexibleHeight = 1f;
+        // Тело лога
+        var bodyGO   = MakeGO("Body", _root.transform);
+        var bodyRect = bodyGO.AddComponent<RectTransform>();
+        bodyRect.anchorMin = new Vector2(0, 0);
+        bodyRect.anchorMax = new Vector2(1, 1);
+        bodyRect.offsetMin = new Vector2(8,  6);
+        bodyRect.offsetMax = new Vector2(-8, -32);
 
-        _scrollRect                   = scrollGO.AddComponent<ScrollRect>();
-        _scrollRect.horizontal        = false;
-        _scrollRect.vertical          = true;
-        _scrollRect.scrollSensitivity = 20f;
+        _bodyTMP = bodyGO.AddComponent<TextMeshProUGUI>();
+        _bodyTMP.text            = "<color=#555555><i>Ожидание хода...</i></color>";
+        _bodyTMP.fontSize        = _lineSize;
+        _bodyTMP.color           = _textColor;
+        _bodyTMP.richText        = true;
+        _bodyTMP.enableWordWrapping  = true;
+        _bodyTMP.overflowMode        = TextOverflowModes.Truncate;
+        _bodyTMP.verticalAlignment   = VerticalAlignmentOptions.Top;
 
-        // Viewport
-        var viewportGO = new GameObject("Viewport");
-        viewportGO.transform.SetParent(scrollGO.transform, false);
-        var vpRect        = viewportGO.AddComponent<RectTransform>();
-        vpRect.anchorMin  = Vector2.zero;
-        vpRect.anchorMax  = Vector2.one;
-        vpRect.offsetMin  = Vector2.zero;
-        vpRect.offsetMax  = Vector2.zero;
-        var vpMask        = viewportGO.AddComponent<Mask>();
-        vpMask.showMaskGraphic = false;
-        viewportGO.AddComponent<Image>().color = Color.clear;
-        _scrollRect.viewport = vpRect;
-
-        // Content
-        var contentGO = new GameObject("Content");
-        contentGO.transform.SetParent(viewportGO.transform, false);
-        var contentRect       = contentGO.AddComponent<RectTransform>();
-        contentRect.anchorMin = new Vector2(0f, 1f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.pivot     = new Vector2(0f, 1f);
-        contentRect.offsetMin = Vector2.zero;
-        contentRect.offsetMax = Vector2.zero;
-
-        contentGO.AddComponent<ContentSizeFitter>().verticalFit =
-            ContentSizeFitter.FitMode.PreferredSize;
-
-        _contentText                    = contentGO.AddComponent<TextMeshProUGUI>();
-        _contentText.fontSize           = _entryFontSize;
-        _contentText.color              = _textColor;
-        _contentText.richText           = true;
-        _contentText.enableWordWrapping = true;
-        _contentText.text               = "<color=#888888><i>Ожидание хода...</i></color>";
-
-        _scrollRect.content = contentRect;
+        _root.SetActive(_visibleOnStart);
     }
+
+    private static GameObject MakeGO(string name, Transform parent)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        return go;
+    }
+
+    // ── KeyCode → Key ────────────────────────────────────────────────
+
+    private static Key ToKey(KeyCode kc) => kc switch
+    {
+        KeyCode.Tab       => Key.Tab,
+        KeyCode.Space     => Key.Space,
+        KeyCode.BackQuote => Key.Backquote,
+        KeyCode.F1        => Key.F1,
+        KeyCode.F2        => Key.F2,
+        KeyCode.F3        => Key.F3,
+        KeyCode.F4        => Key.F4,
+        KeyCode.F5        => Key.F5,
+        KeyCode.F6        => Key.F6,
+        KeyCode.F7        => Key.F7,
+        KeyCode.F8        => Key.F8,
+        KeyCode.Alpha1    => Key.Digit1,
+        KeyCode.Alpha2    => Key.Digit2,
+        KeyCode.Alpha3    => Key.Digit3,
+        KeyCode.Alpha4    => Key.Digit4,
+        KeyCode.Alpha5    => Key.Digit5,
+        _                 => Key.Tab
+    };
 }
