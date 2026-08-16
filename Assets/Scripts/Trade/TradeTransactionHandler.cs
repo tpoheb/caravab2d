@@ -69,7 +69,7 @@ public static class TradeTransactionHandler
 
     
     // --- ОБНОВЛЕННЫЕ ИСПОЛНИТЕЛИ ---
-    private static void ExecuteBuyTransaction(CityData.CityItem cityItem, int quantity, 
+    private static void ExecuteBuyTransaction(CityData.CityItem cityItem, int quantity,
         int totalCost, CityData city, PlayerInventory playerInventory)
     {
         playerInventory.Money -= totalCost;
@@ -83,6 +83,8 @@ public static class TradeTransactionHandler
             cityItem.currentBuyPrice = Mathf.Min(cityItem.maxBuyPrice, cityItem.currentBuyPrice * (1f + cityItem.volatility));
             cityItem.currentSellPrice = Mathf.Min(cityItem.maxSellPrice, cityItem.currentSellPrice * (1f + cityItem.volatility));
         }
+
+        cityItem.UpdateDemand();
         
         Debug.Log($"Bought {quantity}. New Buy: {cityItem.currentBuyPrice}, Sell: {cityItem.currentSellPrice}");
     }
@@ -104,6 +106,8 @@ public static class TradeTransactionHandler
         cityItem.currentBuyPrice  = Mathf.Max(cityItem.minBuyPrice,  cityItem.currentBuyPrice  * (1f - cityItem.volatility));
         cityItem.currentSellPrice = Mathf.Max(cityItem.minSellPrice, cityItem.currentSellPrice * (1f - cityItem.volatility));
     }
+
+    cityItem.UpdateDemand();
 
     Debug.Log($"Sold {quantity} for {finalValue} (base {totalValue} + bonus {saleBonus}). " +
               $"New Buy: {cityItem.currentBuyPrice}, Sell: {cityItem.currentSellPrice}");

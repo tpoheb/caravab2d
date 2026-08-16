@@ -24,10 +24,14 @@ public class CityData : ScriptableObject
         public int stock;
         
         [Header("Dynamic Buy Pricing (Город продает игроку)")]
-        public float baseBuyPrice;      
-        public float currentBuyPrice;   
-        public float minBuyPrice;       
-        public float maxBuyPrice;  
+        public float baseBuyPrice;
+        public float currentBuyPrice;
+        public float minBuyPrice;
+        public float maxBuyPrice;
+
+        // Спрос теперь вычисляется автоматически через UpdateDemand(),
+        // поэтому скрываем поле от ручного редактирования в Inspector.
+        [HideInInspector]
         public DemandLevel demand = DemandLevel.Normal;
 
         [Header("Dynamic Sell Pricing (Город покупает у игрока)")]
@@ -37,8 +41,13 @@ public class CityData : ScriptableObject
         public float maxSellPrice;
 
         [Header("Settings")]
-        public float volatility = 0.02f; 
-        public float regenRate = 0.10f;  
+        public float volatility = 0.02f;
+        public float regenRate = 0.10f;
+
+        /// <summary>
+        /// Порог отклонения цены от базовой, при котором появляется стрелка спроса.
+        /// </summary>
+        public const float DemandThreshold = 0.25f;
 
         // Свойства для UI, чтобы ничего не сломалось в ItemUI
         public int buyPrice => Mathf.RoundToInt(currentBuyPrice);
@@ -49,6 +58,29 @@ public class CityData : ScriptableObject
             return item != null && stock >= 0 && baseBuyPrice > 0;
         }
 
+        /// <summary>
+        /// Автоматически пересчитывает уровень спроса на основе отклонения
+        /// текущей цены покупки от базовой. Если цена выросла/упала более чем
+        /// на DemandThreshold, выставляется High/Low, иначе Normal.
+        /// </summary>
+        public void UpdateDemand()
+        {
+            if (baseBuyPrice <= 0f)
+            {
+                demand = DemandLevel.Normal;
+                return;
+            }
+
+            float deviation = (currentBuyPrice - baseBuyPrice) / baseBuyPrice;
+
+            if (deviation >= DemandThreshold)
+                demand = DemandLevel.High;
+            else if (deviation <= -DemandThreshold)
+                demand = DemandLevel.Low;
+            else
+                demand = DemandLevel.Normal;
+        }
+
         public void RegeneratePrice()
         {
             // Восстанавливаем обе цены
@@ -57,6 +89,9 @@ public class CityData : ScriptableObject
 
             currentSellPrice = currentSellPrice + (baseSellPrice - currentSellPrice) * regenRate;
             currentSellPrice = Mathf.Clamp(currentSellPrice, minSellPrice, maxSellPrice);
+
+            // Спрос мог вернуться к норме после регенерации цены
+            UpdateDemand();
         }
     }
 

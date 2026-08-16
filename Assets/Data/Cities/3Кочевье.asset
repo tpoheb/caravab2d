@@ -249,3 +249,8 @@ MonoBehaviour:
     maxSellPrice: 214
     volatility: 0.02
     regenRate: 0.1
+  info: 
+  rumors: []
+  availableUnits:
+  - {fileID: 11400000, guid: e8de9d8b7ea01c3418297d56542e6006, type: 2}
+  - {fileID: 11400000, guid: 76678fddff353b54e9c0ef258de7feea, type: 2}

@@ -40,7 +40,17 @@ public class City : MonoBehaviour
         if (sourceData != null)
         {
             RuntimeData = Instantiate(sourceData);
-            RuntimeData.name = sourceData.name + "_RuntimeCopy"; 
+            RuntimeData.name = sourceData.name + "_RuntimeCopy";
+
+            // Спрос пересчитывается автоматически на основе цен,
+            // ручные значения из ассета не должны влиять на стрелки.
+            if (RuntimeData.items != null)
+            {
+                foreach (var item in RuntimeData.items)
+                {
+                    item?.UpdateDemand();
+                }
+            }
         }
         else
         {

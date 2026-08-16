@@ -93,6 +93,8 @@ public class WorldEconomy : MonoBehaviour
                 cityItem.currentSellPrice * (1f + cityItem.volatility));
         }
 
+        cityItem.UpdateDemand();
+
         // Добавляем в инвентарь ИИ и записываем среднюю цену
         if (trader is AITrader aiTrader)
         {
@@ -165,6 +167,8 @@ public class WorldEconomy : MonoBehaviour
             cityItem.currentSellPrice = Mathf.Max(cityItem.minSellPrice,
                 cityItem.currentSellPrice * (1f - cityItem.volatility));
         }
+
+        cityItem.UpdateDemand();
 
         AIDebugLog.RecordTrade(
             traderName: aiTrader.DisplayName,

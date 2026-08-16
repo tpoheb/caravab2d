@@ -253,3 +253,7 @@ MonoBehaviour:
   rumors:
   - "\u043F\u0448\u0435\u043D\u0438\u0446\u0430 \u0434\u043E\u0440\u043E\u0436\u0430\u0435\u0442"
   - "\u043F\u0448\u0435\u043D\u0438\u0446\u0430 \u0434\u0435\u0448\u0435\u0432\u0435\u0435\u0442"
+  availableUnits:
+  - {fileID: 11400000, guid: 7b346975308c28844b752f188c19069c, type: 2}
+  - {fileID: 11400000, guid: 17dbe2efe8d50ac45b2e3a5501c2f0d3, type: 2}
+  - {fileID: 11400000, guid: f23e41b7087f2c64d8136ef78196b958, type: 2}
