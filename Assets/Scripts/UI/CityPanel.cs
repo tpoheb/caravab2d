@@ -14,6 +14,8 @@ public class CityPanel : MonoBehaviour
     [SerializeField] private Button hireTeamButton;
     [SerializeField] private Button buyGoodsButton;
     [SerializeField] private TMP_Text cityNameText;
+    [SerializeField] private TMP_Text cityInfoText;
+    [SerializeField] private TMP_Text cityRumorsText;
 
     [Header("Системы")]
     [SerializeField] private TeamSystem teamSystem;
@@ -33,6 +35,7 @@ public class CityPanel : MonoBehaviour
         BuildPathButtons();
         SetupActionButtons();
         UpdateCityNameUI(city.CityName);
+        UpdateCityInfoUI(city);
 
         gameObject.SetActive(true);
         Debug.Log($"[CityPanel] Открыта для: {_currentCity.CityName}");
@@ -42,6 +45,36 @@ public class CityPanel : MonoBehaviour
     {
         if (cityNameText != null)
             cityNameText.text = cityName ?? "Неизвестный город";
+    }
+
+    private void UpdateCityInfoUI(City city)
+    {
+        if (cityInfoText != null)
+        {
+            string info = city.Info;
+            cityInfoText.text = string.IsNullOrWhiteSpace(info)
+                ? "Информация о городе отсутствует."
+                : info;
+        }
+
+        if (cityRumorsText != null)
+        {
+            var rumors = city.Rumors;
+            if (rumors == null || rumors.Count == 0)
+            {
+                cityRumorsText.text = "Слухи отсутствуют.";
+            }
+            else
+            {
+                var builder = new System.Text.StringBuilder();
+                for (int i = 0; i < rumors.Count; i++)
+                {
+                    if (i > 0) builder.AppendLine();
+                    builder.Append("• ").Append(rumors[i]);
+                }
+                cityRumorsText.text = builder.ToString();
+            }
+        }
     }
 
     private void BuildPathButtons()

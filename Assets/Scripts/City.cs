@@ -19,6 +19,18 @@ public class City : MonoBehaviour
     // Свойство для получения имени
     public string CityName => RuntimeData != null ? RuntimeData.cityName : (sourceData != null ? sourceData.cityName : "Unknown City");
 
+    /// <summary>Актуальные данные города (runtime-копия, если есть, иначе исходный ассет).</summary>
+    public CityData Data => RuntimeData != null ? RuntimeData : sourceData;
+
+    /// <summary>Информация о городе.</summary>
+    public string Info => Data != null ? Data.info : string.Empty;
+
+    /// <summary>Список слухов в городе (никогда не null).</summary>
+    public List<string> Rumors => Data != null && Data.rumors != null ? Data.rumors : new List<string>();
+
+    /// <summary>Список юнитов, доступных для найма в этом городе (никогда не null).</summary>
+    public List<UnitData> AvailableUnits => Data != null && Data.availableUnits != null ? Data.availableUnits : new List<UnitData>();
+
     /// <summary>
     /// Создает независимую копию CityData для использования в PlayMode.
     /// Вызывается из CityManager при старте игры.

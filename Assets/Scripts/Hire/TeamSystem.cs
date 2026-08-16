@@ -7,11 +7,7 @@ public class TeamSystem : MonoBehaviour
     [SerializeField] private PlayerInventory playerInventory;
     [SerializeField] private PlayerStats playerStats;
 
-    [Header("Unit Data")]
-    [SerializeField] private List<UnitData> availableUnits = new List<UnitData>();
-
     public List<TeamMember> CurrentTeam { get; private set; } = new List<TeamMember>();
-    public List<UnitData> AvailableUnits => availableUnits;
     public int CurrentMoney => playerInventory.Money;
 
     private void Awake()

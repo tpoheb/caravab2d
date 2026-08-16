@@ -18,6 +18,7 @@ public class HirePanelUI : MonoBehaviour
     [SerializeField] private GameObject unitCardPrefab; // должен иметь компонент UnitCardUI
 
     private TeamSystem teamSystem;
+    private City _currentCity;
 
     // ─────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ public class HirePanelUI : MonoBehaviour
     public void OpenPanel(City city, TeamSystem system)
     {
         teamSystem = system;
+        _currentCity = city;
 
         if (teamSystem == null)
         {
@@ -54,8 +56,12 @@ public class HirePanelUI : MonoBehaviour
         ClearContainer(availableUnitsContainer);
         ClearContainer(currentTeamContainer);
 
-        // Доступные юниты — клик = Нанять
-        foreach (UnitData unit in teamSystem.AvailableUnits)
+        // Доступные юниты — клик = Нанять (список берётся из текущего города)
+        List<UnitData> unitsToShow = _currentCity != null
+            ? _currentCity.AvailableUnits
+            : new List<UnitData>();
+
+        foreach (UnitData unit in unitsToShow)
         {
             bool alreadyHired   = teamSystem.CurrentTeam.Exists(m => m.unitData == unit);
             if (alreadyHired) continue;

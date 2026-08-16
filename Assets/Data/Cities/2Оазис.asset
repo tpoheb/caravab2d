@@ -21,7 +21,7 @@ MonoBehaviour:
     currentBuyPrice: 344
     minBuyPrice: 172
     maxBuyPrice: 688
-    demand: 0
+    demand: -1
     baseSellPrice: 264
     currentSellPrice: 264
     minSellPrice: 132
@@ -34,7 +34,7 @@ MonoBehaviour:
     currentBuyPrice: 10
     minBuyPrice: 5
     maxBuyPrice: 20
-    demand: 0
+    demand: 1
     baseSellPrice: 6
     currentSellPrice: 6
     minSellPrice: 3
@@ -249,3 +249,7 @@ MonoBehaviour:
     maxSellPrice: 180
     volatility: 0.02
     regenRate: 0.1
+  info: "\u043F\u0435\u0440\u0432\u044B\u0439 \u0433\u043E\u0440\u043E\u0434"
+  rumors:
+  - "\u043F\u0448\u0435\u043D\u0438\u0446\u0430 \u0434\u043E\u0440\u043E\u0436\u0430\u0435\u0442"
+  - "\u043F\u0448\u0435\u043D\u0438\u0446\u0430 \u0434\u0435\u0448\u0435\u0432\u0435\u0435\u0442"

@@ -2,11 +2,20 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
+[CreateAssetMenu(fileName = "New City", menuName = "Trade/City Data")]
 public class CityData : ScriptableObject
 {
     public string cityName;
     public int cityGold;
     public List<CityItem> items = new List<CityItem>();
+
+    [TextArea(3, 10)]
+    public string info;
+
+    public List<string> rumors = new List<string>();
+
+    [Header("Найм юнитов")]
+    public List<UnitData> availableUnits = new List<UnitData>();
 
     [System.Serializable]
     public class CityItem
@@ -61,5 +70,7 @@ public class CityData : ScriptableObject
     private void OnValidate()
     {
         if (items == null) items = new List<CityItem>();
+        if (rumors == null) rumors = new List<string>();
+        if (availableUnits == null) availableUnits = new List<UnitData>();
     }
 }
