@@ -116,10 +116,10 @@ public class AIDebugOverlay : MonoBehaviour
         // Корневая панель (правый верхний угол)
         _root = MakeGO("DebugPanel", gameObject.transform);
         var rootRect = _root.AddComponent<RectTransform>();
-        rootRect.anchorMin        = new Vector2(1, 1);
-        rootRect.anchorMax        = new Vector2(1, 1);
-        rootRect.pivot            = new Vector2(1, 1);
-        rootRect.anchoredPosition = new Vector2(-_panelOffset.x, -_panelOffset.y);
+        rootRect.anchorMin        = new Vector2(0, 1);
+        rootRect.anchorMax        = new Vector2(0, 1);
+        rootRect.pivot            = new Vector2(0, 1);
+        rootRect.anchoredPosition = new Vector2(_panelOffset.x, -_panelOffset.y);
         rootRect.sizeDelta        = _panelSize;
 
         var bg = _root.AddComponent<Image>();
