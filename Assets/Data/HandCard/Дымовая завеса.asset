@@ -16,7 +16,7 @@ MonoBehaviour:
   description: "\u041A\u043B\u0443\u0431\u044B \u0434\u044B\u043C\u0430 \u0441\u043A\u0440\u044B\u0432\u0430\u044E\u0442
     \u043A\u0430\u0440\u0430\u0432\u0430\u043D. \u0420\u0430\u0437\u0431\u043E\u0439\u043D\u0438\u043A\u0438
     \u0442\u0435\u0440\u044F\u044E\u0442 \u0441\u043B\u0435\u0434."
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 4a9b1c1476735684c9144297d3274063, type: 3}
   category: 0
   effectType: 5
   value: 0

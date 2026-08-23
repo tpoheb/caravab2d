@@ -1,0 +1,202 @@
+[
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Алмазы",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "180",
+    "SellPrice": "120",
+    "MinBuyPrice": "270",
+    "MaxBuyPrice": "60"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Золотые финики",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "20",
+    "SellPrice": "15",
+    "MinBuyPrice": "30",
+    "MaxBuyPrice": "7,5"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Каменная соль",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "28",
+    "SellPrice": "21",
+    "MinBuyPrice": "42",
+    "MaxBuyPrice": "10,5"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Верблюжья шерсть",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "36",
+    "SellPrice": "27",
+    "MinBuyPrice": "54",
+    "MaxBuyPrice": "13,5"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Амулеты попутного самума",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "94",
+    "SellPrice": "72",
+    "MinBuyPrice": "141",
+    "MaxBuyPrice": "36"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Прах тлеющих ифритов",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "163",
+    "SellPrice": "125",
+    "MinBuyPrice": "244,5",
+    "MaxBuyPrice": "62,5"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Медная и оловянная руда",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "26",
+    "SellPrice": "20",
+    "MinBuyPrice": "39",
+    "MaxBuyPrice": "10"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Серебро (слитки)",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "68",
+    "SellPrice": "52",
+    "MinBuyPrice": "102",
+    "MaxBuyPrice": "26"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Вечный лёд горы Каф",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "81",
+    "SellPrice": "62",
+    "MinBuyPrice": "121,5",
+    "MaxBuyPrice": "31"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Джамбия Падающей Звезды",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "107",
+    "SellPrice": "82",
+    "MinBuyPrice": "160,5",
+    "MaxBuyPrice": "41"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Драгоценные камни (изумруды/рубины)",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "169",
+    "SellPrice": "130",
+    "MinBuyPrice": "253,5",
+    "MaxBuyPrice": "65"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Пшеница (зерно)",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "16",
+    "SellPrice": "12",
+    "MinBuyPrice": "24",
+    "MaxBuyPrice": "6"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Глазурованная керамика",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "64",
+    "SellPrice": "49",
+    "MinBuyPrice": "96",
+    "MaxBuyPrice": "24,5"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Индиго (синий краситель)",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "42",
+    "SellPrice": "32",
+    "MinBuyPrice": "63",
+    "MaxBuyPrice": "16"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Лунный лотос",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "201",
+    "SellPrice": "154",
+    "MinBuyPrice": "301,5",
+    "MaxBuyPrice": "77"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Папирус",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "30",
+    "SellPrice": "23",
+    "MinBuyPrice": "45",
+    "MaxBuyPrice": "11,5"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Заморские пряности",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "49",
+    "SellPrice": "37",
+    "MinBuyPrice": "73,5",
+    "MaxBuyPrice": "18,5"
+  },
+  {
+    "City": "1Аль-Марказия",
+    "ProductName": "Морской жемчуг",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "95",
+    "SellPrice": "73",
+    "MinBuyPrice": "142,5",
+    "MaxBuyPrice": "36,5"
+  },
+  {
+    "City": "2Оазис",
+    "ProductName": "Алмазы",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "344",
+    "SellPrice": "264",
+    "MinBuyPrice": "516",
+    "MaxBuyPrice": "132"
+  },
+  {
+    "City": "2Оазис",
+    "ProductName": "Золотые финики",
+    "Weight": "1",
+    "Stock": "30",
+    "BuyPrice": "10",
+    "SellPrice": "6",
+    "MinBuyPrice": "15",
+    "MaxBuyPrice": "3"
+  }
+]

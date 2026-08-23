@@ -164,8 +164,8 @@ public class EventPanelUI : MonoBehaviour
         bool wouldWin   = totalAttack >= enemyAttack;
 
         SetText(effectTypeText,
-            $"Ваша атака: <b>{baseAttack}</b> + <color=yellow>{diceResult}</color> = <b>{totalAttack}</b>\n" +
-            $"Атака врага: <b>{enemyAttack}</b>");
+            $"Ваша атака ({baseAttack}) + кубик ({diceResult}) (<size=150%>{totalAttack}</size>)\n" +
+            $"Атака врага: ({enemyAttack})");
 
         SetText(valueText, wouldWin
             ? "<color=green>Сил достаточно!</color>"
