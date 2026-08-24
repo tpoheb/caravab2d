@@ -4,10 +4,6 @@ using UnityEngine;
 
 namespace Editor
 {
-    /// <summary>
-    /// Кастомный Inspector для CityData.
-    /// Позволяет удобно редактировать информацию о городе и список слухов.
-    /// </summary>
     [CustomEditor(typeof(CityData), true)]
     public class CityDataEditor : UnityEditor.Editor
     {
@@ -17,11 +13,12 @@ namespace Editor
         {
             serializedObject.Update();
 
-            SerializedProperty cityName = serializedObject.FindProperty("cityName");
-            SerializedProperty cityGold = serializedObject.FindProperty("cityGold");
-            SerializedProperty items = serializedObject.FindProperty("items");
-            SerializedProperty info = serializedObject.FindProperty("info");
-            SerializedProperty rumors = serializedObject.FindProperty("rumors");
+            SerializedProperty cityName     = serializedObject.FindProperty("cityName");
+            SerializedProperty cityGold     = serializedObject.FindProperty("cityGold");
+            SerializedProperty items        = serializedObject.FindProperty("items");
+            SerializedProperty info         = serializedObject.FindProperty("info");
+            SerializedProperty rumors       = serializedObject.FindProperty("rumors");
+            SerializedProperty isCapital    = serializedObject.FindProperty("isCapital");
             SerializedProperty availableUnits = serializedObject.FindProperty("availableUnits");
 
             EditorGUILayout.PropertyField(cityName);
@@ -34,7 +31,11 @@ namespace Editor
 
             // ─── Информация о городе ───────────────────────────────────────
             EditorGUILayout.LabelField("Информация о городе", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(info, GUIContent.none);
+            float inspectorWidth = EditorGUIUtility.currentViewWidth - 20f;
+            EditorGUILayout.PropertyField(
+                info, GUIContent.none,
+                GUILayout.MaxWidth(inspectorWidth),
+                GUILayout.MinHeight(60));
             EditorGUILayout.Space();
 
             // ─── Слухи ──────────────────────────────────────────────────────
@@ -48,7 +49,10 @@ namespace Editor
                 {
                     EditorGUILayout.BeginHorizontal();
                     SerializedProperty rumor = rumors.GetArrayElementAtIndex(i);
-                    EditorGUILayout.PropertyField(rumor, GUIContent.none);
+                    EditorGUILayout.PropertyField(
+                        rumor, GUIContent.none,
+                        GUILayout.MaxWidth(inspectorWidth - 30f),
+                        GUILayout.MinHeight(40));
                     if (GUILayout.Button("✕", GUILayout.Width(22)))
                         removeAt = i;
                     EditorGUILayout.EndHorizontal();
@@ -63,6 +67,11 @@ namespace Editor
                 EditorGUI.indentLevel--;
             }
 
+            // ─── Столица ────────────────────────────────────────────────────
+            EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(isCapital);
+
+            // ─── Найм юнитов ────────────────────────────────────────────────
             EditorGUILayout.Space();
             EditorGUILayout.PropertyField(availableUnits, true);
 
@@ -70,22 +79,23 @@ namespace Editor
         }
     }
 
-    /// <summary>
-    /// Окно для массового редактирования информации и слухов всех городов.
-    /// Открывается через меню Tools/1000 Roads/City Info & Rumors Editor.
-    /// </summary>
     public class CityInfoEditorWindow : EditorWindow
     {
+        private const float SidebarWidth   = 200f;
+        private const float ContentMaxWidth = 700f;
+        private const float InfoHeight      = 140f;
+        private const float RumorHeight     = 60f;
+
         private List<CityData> _cities = new List<CityData>();
         private Vector2 _cityScroll;
-        private CityData _selected;
         private Vector2 _editorScroll;
+        private CityData _selected;
 
         [MenuItem("Tools/1000 Roads/City Info & Rumors Editor")]
         public static void ShowWindow()
         {
             var window = GetWindow<CityInfoEditorWindow>("Города: инфо и слухи");
-            window.minSize = new Vector2(500, 400);
+            window.minSize = new Vector2(600, 400);
             window.LoadCities();
             window.Show();
         }
@@ -106,10 +116,16 @@ namespace Editor
 
         private void OnGUI()
         {
+            // Ширина контентной панели — не больше ContentMaxWidth и не больше того,
+            // что влезает в окно рядом с сайдбаром
+            float availableWidth = Mathf.Min(
+                ContentMaxWidth,
+                position.width - SidebarWidth - 16f);
+
             EditorGUILayout.BeginHorizontal();
 
             // ─── Список городов ────────────────────────────────────────────
-            EditorGUILayout.BeginVertical(GUILayout.Width(200));
+            EditorGUILayout.BeginVertical(GUILayout.Width(SidebarWidth));
             if (GUILayout.Button("↻ Обновить список"))
                 LoadCities();
 
@@ -129,25 +145,37 @@ namespace Editor
             EditorGUILayout.EndVertical();
 
             // ─── Редактор выбранного города ────────────────────────────────
-            EditorGUILayout.BeginVertical();
+            EditorGUILayout.BeginVertical(GUILayout.Width(availableWidth));
+            _editorScroll = EditorGUILayout.BeginScrollView(_editorScroll);
+
             if (_selected == null)
             {
-                EditorGUILayout.HelpBox("Выберите город слева, чтобы отредактировать его информацию и слухи.",
+                EditorGUILayout.HelpBox(
+                    "Выберите город слева, чтобы отредактировать его информацию и слухи.",
                     MessageType.Info);
             }
             else
             {
                 EditorGUI.BeginChangeCheck();
 
+                // Название
                 EditorGUILayout.LabelField("Название", EditorStyles.boldLabel);
-                _selected.cityName = EditorGUILayout.TextField(_selected.cityName);
+                _selected.cityName = EditorGUILayout.TextField(
+                    _selected.cityName, GUILayout.MaxWidth(availableWidth));
 
+                // Столица
+                EditorGUILayout.Space();
+                _selected.isCapital = EditorGUILayout.Toggle("Столица", _selected.isCapital);
+
+                // Информация
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Информация о городе", EditorStyles.boldLabel);
-                _editorScroll = EditorGUILayout.BeginScrollView(_editorScroll, GUILayout.Height(140));
-                _selected.info = EditorGUILayout.TextArea(_selected.info, GUILayout.ExpandHeight(true));
-                EditorGUILayout.EndScrollView();
+                _selected.info = EditorGUILayout.TextArea(
+                    _selected.info,
+                    GUILayout.MaxWidth(availableWidth),
+                    GUILayout.Height(InfoHeight));
 
+                // Слухи
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Слухи в городе", EditorStyles.boldLabel);
 
@@ -158,9 +186,11 @@ namespace Editor
                 for (int i = 0; i < _selected.rumors.Count; i++)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    _selected.rumors[i] = EditorGUILayout.TextArea(_selected.rumors[i],
-                        GUILayout.Height(40));
-                    if (GUILayout.Button("✕", GUILayout.Width(22), GUILayout.Height(40)))
+                    _selected.rumors[i] = EditorGUILayout.TextArea(
+                        _selected.rumors[i],
+                        GUILayout.MaxWidth(availableWidth - 30f),
+                        GUILayout.Height(RumorHeight));
+                    if (GUILayout.Button("✕", GUILayout.Width(22), GUILayout.Height(RumorHeight)))
                         removeAt = i;
                     EditorGUILayout.EndHorizontal();
                 }
@@ -168,9 +198,10 @@ namespace Editor
                 if (removeAt >= 0)
                     _selected.rumors.RemoveAt(removeAt);
 
-                if (GUILayout.Button("+ Добавить слух"))
+                if (GUILayout.Button("+ Добавить слух", GUILayout.MaxWidth(availableWidth)))
                     _selected.rumors.Add(string.Empty);
 
+                // Юниты
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Юниты для найма", EditorStyles.boldLabel);
 
@@ -182,7 +213,8 @@ namespace Editor
                 {
                     EditorGUILayout.BeginHorizontal();
                     _selected.availableUnits[i] = (UnitData)EditorGUILayout.ObjectField(
-                        _selected.availableUnits[i], typeof(UnitData), false);
+                        _selected.availableUnits[i], typeof(UnitData), false,
+                        GUILayout.MaxWidth(availableWidth - 30f));
                     if (GUILayout.Button("✕", GUILayout.Width(22)))
                         removeUnitAt = i;
                     EditorGUILayout.EndHorizontal();
@@ -191,20 +223,21 @@ namespace Editor
                 if (removeUnitAt >= 0)
                     _selected.availableUnits.RemoveAt(removeUnitAt);
 
-                if (GUILayout.Button("+ Добавить юнита"))
+                if (GUILayout.Button("+ Добавить юнита", GUILayout.MaxWidth(availableWidth)))
                     _selected.availableUnits.Add(null);
 
                 if (EditorGUI.EndChangeCheck())
-                {
                     EditorUtility.SetDirty(_selected);
-                }
 
-                if (GUILayout.Button("Сохранить", GUILayout.Height(30)))
+                EditorGUILayout.Space();
+                if (GUILayout.Button("Сохранить", GUILayout.Height(30), GUILayout.MaxWidth(availableWidth)))
                 {
                     AssetDatabase.SaveAssets();
                     EditorUtility.DisplayDialog("Готово", "Изменения сохранены.", "OK");
                 }
             }
+
+            EditorGUILayout.EndScrollView();
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.EndHorizontal();

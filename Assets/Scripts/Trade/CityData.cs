@@ -14,6 +14,10 @@ public class CityData : ScriptableObject
 
     public List<string> rumors = new List<string>();
 
+    [Header("Столица")]
+    [Tooltip("Отметьте, если это столица. Только в столице можно вступать в гильдии.")]
+    public bool isCapital;
+
     [Header("Найм юнитов")]
     public List<UnitData> availableUnits = new List<UnitData>();
 

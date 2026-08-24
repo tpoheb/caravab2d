@@ -249,3 +249,7 @@ MonoBehaviour:
     maxSellPrice: 202
     volatility: 0.02
     regenRate: 0.1
+  info: 
+  rumors: []
+  isCapital: 0
+  availableUnits: []

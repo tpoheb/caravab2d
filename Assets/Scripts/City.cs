@@ -22,6 +22,9 @@ public class City : MonoBehaviour
     /// <summary>Актуальные данные города (runtime-копия, если есть, иначе исходный ассет).</summary>
     public CityData Data => RuntimeData != null ? RuntimeData : sourceData;
 
+    /// <summary>Является ли город столицей.</summary>
+    public bool IsCapital => Data != null && Data.isCapital;
+
     /// <summary>Информация о городе.</summary>
     public string Info => Data != null ? Data.info : string.Empty;
 

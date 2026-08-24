@@ -13,6 +13,7 @@ public class CityPanel : MonoBehaviour
     [SerializeField] private Transform pathButtonsContainer;
     [SerializeField] private Button hireTeamButton;
     [SerializeField] private Button buyGoodsButton;
+    [SerializeField] private Button guildButton;
     [SerializeField] private TMP_Text cityNameText;
     [SerializeField] private TMP_Text cityInfoText;
     [SerializeField] private TMP_Text cityRumorsText;
@@ -20,6 +21,8 @@ public class CityPanel : MonoBehaviour
     [Header("Системы")]
     [SerializeField] private TeamSystem teamSystem;
     [SerializeField] private HirePanelUI hirePanelUI;
+    [SerializeField] private GuildSystem guildSystem;
+    [SerializeField] private GuildPanelUI guildPanelUI;
 
     private City _currentCity;
     private readonly List<Button> _pathButtons = new List<Button>();
@@ -121,6 +124,16 @@ public class CityPanel : MonoBehaviour
 
         hireTeamButton.onClick.AddListener(OnHireTeamClicked);
         buyGoodsButton.onClick.AddListener(OnBuyGoodsClicked);
+
+        // Кнопка гильдии — только в столице
+        if (guildButton != null)
+        {
+            guildButton.onClick.RemoveAllListeners();
+            bool isCapital = _currentCity != null && _currentCity.IsCapital;
+            guildButton.gameObject.SetActive(isCapital);
+            if (isCapital)
+                guildButton.onClick.AddListener(OnGuildClicked);
+        }
     }
 
     private void OnHireTeamClicked()
@@ -140,6 +153,17 @@ public class CityPanel : MonoBehaviour
         if (_currentCity == null) return;
         TradeSystem.RequestTrade(_currentCity);
         ClosePanel();
+    }
+
+    private void OnGuildClicked()
+    {
+        if (guildSystem == null || guildPanelUI == null)
+        {
+            Debug.LogError("[CityPanel] GuildSystem или GuildPanelUI не назначены в Inspector!", this);
+            return;
+        }
+
+        guildPanelUI.OpenPanel(guildSystem);
     }
 
     private void ClearPathButtons()
@@ -163,5 +187,7 @@ public class CityPanel : MonoBehaviour
         if (pathButtonPrefab == null) Debug.LogError("[CityPanel] pathButtonPrefab не назначен!");
         if (teamSystem == null) Debug.LogError("[CityPanel] TeamSystem не назначен!");
         if (hirePanelUI == null) Debug.LogError("[CityPanel] HirePanelUI не назначен!");
+        if (guildSystem == null) Debug.LogError("[CityPanel] GuildSystem не назначен!");
+        if (guildPanelUI == null) Debug.LogError("[CityPanel] GuildPanelUI не назначен!");
     }
 }

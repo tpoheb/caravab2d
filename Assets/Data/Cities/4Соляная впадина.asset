@@ -251,5 +251,6 @@ MonoBehaviour:
     regenRate: 0.1
   info: 
   rumors: []
+  isCapital: 0
   availableUnits:
   - {fileID: 0}
