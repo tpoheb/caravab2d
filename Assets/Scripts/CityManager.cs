@@ -11,6 +11,17 @@ public class CityManager : MonoBehaviour
     [SerializeField] private List<City> allCities;
 
     private City lastArrivedCity;
+    private Dictionary<City, Vector3> _cityPositions = new();
+
+    /// <summary>Текущий город, в котором находится игрок.</summary>
+    public City PlayerCurrentCity => lastArrivedCity;
+
+    /// <summary>Список всех городов на сцене (только для чтения).</summary>
+    public IReadOnlyList<City> AllCities => allCities;
+
+    /// <summary>Возвращает сохранённую при старте мировую позицию города.</summary>
+    public Vector3 GetCityPosition(City city)
+        => _cityPositions.TryGetValue(city, out var pos) ? pos : city.transform.position;
 
     // --------------------
     // ЖИЗНЕННЫЙ ЦИКЛ
@@ -18,10 +29,7 @@ public class CityManager : MonoBehaviour
 
     private void Awake()
     {
-        // ВАЖНО: Сначала клонируем данные городов, 
-        // чтобы к моменту старта игры у всех городов была RuntimeData
         InitializeCities();
-        
         ValidateReferences();
     }
 
@@ -50,10 +58,9 @@ public class CityManager : MonoBehaviour
                 city.InitRuntimeData();
             }
         }
-        
+
         Debug.Log("CityManager: Все данные городов успешно скопированы для PlayMode (Runtime).");
     }
-
     // --------------------
     // ПОДПИСКИ
     // --------------------
@@ -62,7 +69,6 @@ public class CityManager : MonoBehaviour
     {
         if (playerToken != null)
             playerToken.OnArrivedAtCity += HandlePlayerArrivedAtCity;
-
         TradeUIManager.OnTradeClosedRequest += HandleTradeClosed;
     }
 
@@ -70,7 +76,6 @@ public class CityManager : MonoBehaviour
     {
         if (playerToken != null)
             playerToken.OnArrivedAtCity -= HandlePlayerArrivedAtCity;
-
         TradeUIManager.OnTradeClosedRequest -= HandleTradeClosed;
     }
 
@@ -85,11 +90,8 @@ public class CityManager : MonoBehaviour
             Debug.LogWarning("CityManager: Получен null-город");
             return;
         }
-
         lastArrivedCity = city;
-
         Debug.Log($"CityManager: Игрок прибыл в город {city.CityName}");
-
         OpenCityPanel(city);
     }
 
@@ -100,7 +102,6 @@ public class CityManager : MonoBehaviour
             Debug.LogWarning("CityManager: Нечего переоткрывать — город не сохранён");
             return;
         }
-
         Debug.Log($"CityManager: Возврат к панели города {lastArrivedCity.CityName}");
         OpenCityPanel(lastArrivedCity);
     }
@@ -112,7 +113,6 @@ public class CityManager : MonoBehaviour
             Debug.LogError("CityManager: CityPanel не назначен");
             return;
         }
-
         cityPanel.OpenPanel(city);
     }
 
@@ -124,10 +124,8 @@ public class CityManager : MonoBehaviour
     {
         if (cityPanel == null)
             Debug.LogError("CityManager: CityPanel не назначен");
-
         if (playerToken == null)
             Debug.LogError("CityManager: PlayerToken не назначен");
-
         if (allCities == null || allCities.Count == 0)
             Debug.LogWarning("CityManager: Список городов пуст или не задан");
     }

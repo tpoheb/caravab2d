@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class TopBarUI : MonoBehaviour
@@ -6,19 +7,27 @@ public class TopBarUI : MonoBehaviour
     [Header("UI Elements")]
     [SerializeField] private GameObject panel;
     [SerializeField] private TextMeshProUGUI moneyText;
-    
+
+    [Header("Кнопка карты")]
+    [SerializeField] private Button mapButton;
+
     [Header("Stats Fields")]
     [SerializeField] private TextMeshProUGUI attackText;
-    [SerializeField] private TextMeshProUGUI capacityText; 
-    [SerializeField] private TextMeshProUGUI bargainText;  
-    
+    [SerializeField] private TextMeshProUGUI capacityText;
+    [SerializeField] private TextMeshProUGUI bargainText;
+
     [Header("References")]
     [SerializeField] private PlayerInventory playerInventory;
     [SerializeField] private PlayerStats playerStats;
     [SerializeField] private TeamSystem teamSystem;
+    [SerializeField] private MapPanelUI mapPanel;
 
     private void Start()
     {
+        // Кнопка открытия карты
+        if (mapButton != null)
+            mapButton.onClick.AddListener(OpenMap);
+
         // Включаем панель и обновляем данные в первый раз
         OpenPanel();
     }
@@ -52,6 +61,12 @@ public class TopBarUI : MonoBehaviour
         {
             playerStats.OnStatsChanged -= UpdateUI;
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (mapButton != null)
+            mapButton.onClick.RemoveListener(OpenMap);
     }
 
     public void OpenPanel()
@@ -88,5 +103,17 @@ public class TopBarUI : MonoBehaviour
             bargainText.text = (playerStats.Bargain >= 0 ? "+" : "") + playerStats.Bargain.ToString();
         
         Debug.Log("[UI] Верхняя панель обновлена актуальными данными.");
+    }
+
+    // ------------------------------------------------------------------
+    // Карта
+    // ------------------------------------------------------------------
+
+    private void OpenMap()
+    {
+        if (mapPanel != null)
+            mapPanel.OpenMap();
+        else
+            Debug.LogError("[TopBarUI] MapPanelUI не назначен — карта не может быть открыта");
     }
 }
