@@ -11,6 +11,10 @@ public class TopBarUI : MonoBehaviour
     [Header("Кнопка карты")]
     [SerializeField] private Button mapButton;
 
+    [Header("Кнопка журнала")]
+    [SerializeField] private Button journalButton;
+    [SerializeField] private GameJournal gameJournal;
+
     [Header("Stats Fields")]
     [SerializeField] private TextMeshProUGUI attackText;
     [SerializeField] private TextMeshProUGUI capacityText;
@@ -27,6 +31,10 @@ public class TopBarUI : MonoBehaviour
         // Кнопка открытия карты
         if (mapButton != null)
             mapButton.onClick.AddListener(OpenMap);
+
+        // Кнопка открытия журнала
+        if (journalButton != null)
+            journalButton.onClick.AddListener(OpenJournal);
 
         // Включаем панель и обновляем данные в первый раз
         OpenPanel();
@@ -67,6 +75,8 @@ public class TopBarUI : MonoBehaviour
     {
         if (mapButton != null)
             mapButton.onClick.RemoveListener(OpenMap);
+        if (journalButton != null)
+            journalButton.onClick.RemoveListener(OpenJournal);
     }
 
     public void OpenPanel()
@@ -115,5 +125,17 @@ public class TopBarUI : MonoBehaviour
             mapPanel.OpenMap();
         else
             Debug.LogError("[TopBarUI] MapPanelUI не назначен — карта не может быть открыта");
+    }
+
+    // ------------------------------------------------------------------
+    // Журнал
+    // ------------------------------------------------------------------
+
+    private void OpenJournal()
+    {
+        if (gameJournal != null)
+            gameJournal.Toggle();
+        else
+            Debug.LogError("[TopBarUI] GameJournal не назначен — журнал не может быть открыт");
     }
 }

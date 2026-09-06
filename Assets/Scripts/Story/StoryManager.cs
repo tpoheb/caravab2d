@@ -162,6 +162,10 @@ namespace StorySystem
 
             storyWindowUI.Show(beat, OnWindowClosed);
             questJournal.AddEntry(beat);
+
+            // Дублируем запись в единый журнал игры (вкладка «Квесты»)
+            if (!string.IsNullOrEmpty(beat.journalEntry))
+                GameEvents.QuestJournalEntry(beat.journalTitle, beat.journalEntry);
         }
 
         private void OnWindowClosed()

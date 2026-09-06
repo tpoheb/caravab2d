@@ -29,6 +29,9 @@ public class GameManager : MonoBehaviour
 
     public GameState State { get; private set; } = GameState.Idle;
 
+    /// <summary>Текущий номер хода. Инкрементируется при завершении хода.</summary>
+    public int TurnNumber { get; private set; }
+
     private bool _pendingBattle = false;
 
     // ─────────────────────────────────────────────────────────────────────
@@ -88,6 +91,7 @@ public class GameManager : MonoBehaviour
 
     private void StartTurn()
     {
+        TurnNumber++;
         _pendingBattle = false;
         SetState(GameState.InCity);
     }

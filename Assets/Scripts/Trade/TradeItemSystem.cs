@@ -77,11 +77,12 @@ public class TradeItemSystem : MonoBehaviour
     {
         // ИЗМЕНЕНО: Обращаемся напрямую к статическому классу TradeTransactionHandler
         TradeTransactionHandler.ProcessBuyTransaction(
-            cityItem, 
-            quantity, 
-            currentCity, 
-            playerInventory, 
-            playerStats
+            cityItem,
+            quantity,
+            currentCity,
+            playerInventory,
+            playerStats,
+            out _ // стоимость транзакции не нужна здесь
         );
         
         UpdateAfterTrade();
@@ -91,11 +92,12 @@ public class TradeItemSystem : MonoBehaviour
     {
         // ИЗМЕНЕНО: Обращаемся напрямую к статическому классу TradeTransactionHandler
         TradeTransactionHandler.ProcessSellTransaction(
-            cityItem, 
-            quantity, 
-            currentCity, 
-            playerInventory, 
-            playerStats
+            cityItem,
+            quantity,
+            currentCity,
+            playerInventory,
+            playerStats,
+            out _ // выручка транзакции не нужна здесь
         );
         
         UpdateAfterTrade();

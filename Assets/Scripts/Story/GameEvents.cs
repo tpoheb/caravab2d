@@ -3,7 +3,7 @@ using System;
 namespace StorySystem
 {
     /// <summary>
-    /// Статический шина событий. Другие системы вызывают события здесь,
+    /// Статическая шина событий. Другие системы вызывают события здесь,
     /// StoryManager подписывается и реагирует — без прямых зависимостей.
     ///
     /// Вызов из игровых систем:
@@ -26,6 +26,19 @@ namespace StorySystem
         // Нанят член команды (передаём unitType)
         public static event Action<string> OnUnitHired;
 
+        // ── Журнал: торговля ──────────────────────────────
+
+        /// <summary>Игрок купил товар. (itemName, quantity, totalCost, cityName)</summary>
+        public static event Action<string, int, int, string> OnItemBought;
+
+        /// <summary>Игрок продал товар. (itemName, quantity, totalValue, cityName)</summary>
+        public static event Action<string, int, int, string> OnItemSold;
+
+        // ── Журнал: квесты ────────────────────────────────
+
+        /// <summary>Нарративная запись для журнала квестов. (title, body)</summary>
+        public static event Action<string, string> OnQuestJournalEntry;
+
         // ──────────────────────────────────────────────
         // Вспомогательные методы для безопасного вызова
         // ──────────────────────────────────────────────
@@ -41,5 +54,14 @@ namespace StorySystem
 
         public static void UnitHired(string unitType)
             => OnUnitHired?.Invoke(unitType);
+
+        public static void ItemBought(string itemName, int quantity, int totalCost, string cityName)
+            => OnItemBought?.Invoke(itemName, quantity, totalCost, cityName);
+
+        public static void ItemSold(string itemName, int quantity, int totalValue, string cityName)
+            => OnItemSold?.Invoke(itemName, quantity, totalValue, cityName);
+
+        public static void QuestJournalEntry(string title, string body)
+            => OnQuestJournalEntry?.Invoke(title, body);
     }
 }

@@ -2,31 +2,39 @@ using UnityEngine;
 
 public static class TradeTransactionHandler
 {
-    public static void ProcessBuyTransaction(CityData.CityItem cityItem, int quantity, 
-                                    CityData city, PlayerInventory playerInventory, 
-                                    PlayerStats playerStats)
+    public static bool ProcessBuyTransaction(CityData.CityItem cityItem, int quantity,
+                                    CityData city, PlayerInventory playerInventory,
+                                    PlayerStats playerStats, out int totalCost)
     {
         // 1. Вычисляем динамическую стоимость чека
-        int totalCost = CalculateTransactionCost(cityItem, quantity, true, playerStats);
+        totalCost = CalculateTransactionCost(cityItem, quantity, true, playerStats);
         int totalWeight = cityItem.item.weight * quantity;
 
-        if (!CanBuy(cityItem, quantity, totalCost, totalWeight, city, playerInventory)) 
-            return;
+        if (!CanBuy(cityItem, quantity, totalCost, totalWeight, city, playerInventory))
+        {
+            totalCost = 0;
+            return false;
+        }
 
-        ExecuteBuyTransaction(cityItem, quantity, totalCost, city, playerInventory); 
+        ExecuteBuyTransaction(cityItem, quantity, totalCost, city, playerInventory);
+        return true;
     }
 
-    public static void ProcessSellTransaction(CityData.CityItem cityItem, int quantity, 
-                                     CityData city, PlayerInventory playerInventory, 
-                                     PlayerStats playerStats)
+    public static bool ProcessSellTransaction(CityData.CityItem cityItem, int quantity,
+                                     CityData city, PlayerInventory playerInventory,
+                                     PlayerStats playerStats, out int totalValue)
     {
         // 1. Вычисляем динамическую выручку с чека
-        int totalValue = CalculateTransactionCost(cityItem, quantity, false, playerStats);
+        totalValue = CalculateTransactionCost(cityItem, quantity, false, playerStats);
 
-        if (!CanSell(cityItem, quantity, totalValue, city, playerInventory)) 
-            return;
+        if (!CanSell(cityItem, quantity, totalValue, city, playerInventory))
+        {
+            totalValue = 0;
+            return false;
+        }
 
-        ExecuteSellTransaction(cityItem, quantity, totalValue, city, playerInventory); 
+        ExecuteSellTransaction(cityItem, quantity, totalValue, city, playerInventory);
+        return true;
     }
 
     // --- НОВАЯ ЛОГИКА КАЛЬКУЛЯТОРА ---

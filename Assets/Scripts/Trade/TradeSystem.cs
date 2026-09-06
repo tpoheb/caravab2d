@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using StorySystem;
 
 public class TradeSystem : MonoBehaviour
 {
@@ -69,9 +70,14 @@ public class TradeSystem : MonoBehaviour
     {
         // ИСПРАВЛЕНИЕ: Используем RuntimeData
         if (_currentCity?.RuntimeData == null) return;
-        
-        TradeTransactionHandler.ProcessBuyTransaction(cityItem, quantity, 
-            _currentCity.RuntimeData, playerInventory, playerStats);
+
+        bool success = TradeTransactionHandler.ProcessBuyTransaction(cityItem, quantity,
+            _currentCity.RuntimeData, playerInventory, playerStats, out int totalCost);
+
+        if (success && cityItem?.item != null)
+        {
+            GameEvents.ItemBought(cityItem.item.itemName, quantity, totalCost, _currentCity.CityName);
+        }
 
         UpdateTradeUI();
     }
@@ -81,9 +87,14 @@ public class TradeSystem : MonoBehaviour
         // ИСПРАВЛЕНИЕ: Используем RuntimeData
         if (_currentCity?.RuntimeData == null) return;
 
-        TradeTransactionHandler.ProcessSellTransaction(cityItem, quantity, 
-            _currentCity.RuntimeData, playerInventory, playerStats);
+        bool success = TradeTransactionHandler.ProcessSellTransaction(cityItem, quantity,
+            _currentCity.RuntimeData, playerInventory, playerStats, out int totalValue);
     
+        if (success && cityItem?.item != null)
+        {
+            GameEvents.ItemSold(cityItem.item.itemName, quantity, totalValue, _currentCity.CityName);
+        }
+
         UpdateTradeUI();
     }
 
