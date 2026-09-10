@@ -3,13 +3,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// UI-отображение одной записи журнала. Используется на префабе записи
-/// для обеих вкладок (торговля и квесты).
+/// UI-отображение одной записи журнала квестов.
 ///
 /// Структура префаба:
-///   Icon (Image)
-///   MessageText (TMP_Text)
-///   TurnText (TMP_Text)
+///   Icon (Image)        — необязательно
+///   MessageText (TMP)
+///   TurnText (TMP)
 /// </summary>
 public class JournalEntryUI : MonoBehaviour
 {
@@ -18,13 +17,9 @@ public class JournalEntryUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI messageText;
     [SerializeField] private TextMeshProUGUI turnText;
 
-    // Иконки по типу (назначаются в инспекторе, раздельно для торговли и квестов)
-    [Header("Иконки типов")]
-    [SerializeField] private Sprite buyIcon;
-    [SerializeField] private Sprite sellIcon;
+    [Header("Иконка")]
     [SerializeField] private Sprite questIcon;
 
-    /// <summary>Заполняет запись данными из журнала.</summary>
     public void Setup(JournalEntryData data)
     {
         if (messageText != null)
@@ -34,23 +29,11 @@ public class JournalEntryUI : MonoBehaviour
             turnText.text = $"Ход {data.turnNumber}";
 
         if (iconImage != null)
-            iconImage.sprite = ResolveIcon(data.type);
-    }
-
-    private Sprite ResolveIcon(JournalEntryType type)
-    {
-        switch (type)
-        {
-            case JournalEntryType.TradeBuy:  return buyIcon;
-            case JournalEntryType.TradeSell: return sellIcon;
-            case JournalEntryType.Quest:     return questIcon;
-            default:                         return null;
-        }
+            iconImage.sprite = questIcon;
     }
 
     private void OnValidate()
     {
-        // Лёгкая проверка в редакторе
         if (messageText == null)
             Debug.LogWarning("[JournalEntryUI] MessageText не назначен", this);
         if (turnText == null)
