@@ -7,7 +7,7 @@ using UnityEngine;
 /// ИИ-торговец. Зеркало PlayerToken:
 ///   - В городе: выбирает путь, торгует
 ///   - В пути: делает один шаг за ход
-///   - Прибыл: торгует, ждёт следующего хода для выбора пути
+///   - Последняя клетка: в следующем ходе входит в город, торгует и выходит на новый путь
 /// </summary>
 public class AITrader : MonoBehaviour, ITrader
 {
@@ -65,6 +65,12 @@ public class AITrader : MonoBehaviour, ITrader
     // Вызывается из Task.Run() в начале каждого хода
     // ------------------------------------------------------------------
 
+    /// <summary>Бесплатный вход в город перед планированием очередного шага.</summary>
+    public void PrepareTurn()
+    {
+        if (_state == TraderState.OnPath && _pathController.IsReadyToArrive)
+            ArriveAtDestination(_pathController.CurrentPath);
+    }
     public TurnIntent PlanTurn(GameSnapshot snapshot)
     {
         var intent = new TurnIntent { Trader = this };
@@ -77,7 +83,7 @@ public class AITrader : MonoBehaviour, ITrader
             intent.BuyOrders    = fullIntent.BuyOrders;
             intent.SellOrders   = fullIntent.SellOrders;
 
-            _chosenPath = intent.SelectedPath;
+            // Путь фиксируется при исполнении, после проверки занятости.
         }
         else
         {
@@ -121,6 +127,7 @@ public class AITrader : MonoBehaviour, ITrader
         {
             _pathController.SetPath(intent.SelectedPath);
             _state = TraderState.OnPath;
+            _chosenPath = intent.SelectedPath;
             Debug.Log($"[AITrader] {DisplayName}: выходит из {CurrentCity?.CityName} " +
                       $"по пути '{intent.SelectedPath.name}'.");
         }
@@ -165,7 +172,7 @@ public class AITrader : MonoBehaviour, ITrader
     public void NotifyPathBlocked(PathCellInitializer path)
     {
         Debug.Log($"[AITrader] {DisplayName}: путь '{path?.name}' занят — стоим.");
-        _chosenPath = null;
+        if (_state == TraderState.InCity) _chosenPath = null;
         OnPathBlocked?.Invoke(this, path);
     }
 

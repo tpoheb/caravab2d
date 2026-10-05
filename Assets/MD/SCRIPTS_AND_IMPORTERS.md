@@ -1,333 +1,139 @@
-# Скрипты и импортёры — детальный разбор
+# Скрипты и импортёры — текущая реализация
 
-Этот документ фокусируется на **механике работы каждого скрипта**: входные/выходные данные, побочные эффекты, порядок выполнения и известные особенности/риски. Отдельный акцент — на двух Editor-импортёрах, которые превращают CSV/TSV в игровые данные.
+Сверено с `.cs` файлами 2026-10-05. API систем: [SYSTEMS.md](SYSTEMS.md); последовательность фаз: [ARCHITECTURE.md](ARCHITECTURE.md).
 
----
+## Импортёры
 
-## 1. Импортёры (Editor Tools)
+Editor-инструменты находятся в `Assets/Editor/` и создают исходные ассеты. Импорт не добавляет новые карты в списки `CardManager` автоматически: ссылки надо назначить в Inspector.
 
-В проекте два независимых импортёра, оба — `EditorWindow`/static класс в `Assets/Editor/`, оба не входят в билд игры (работают только в Unity Editor).
-
-### 1.1 BattleCardImporter
-
-**Файл:** `Assets/Editor/BattleCardImporter.cs`
-**Тип:** `EditorWindow`
-**Меню:** `Tools → Battle Cards → Import from CSV`
-
-#### Назначение
-Импортирует данные боевых карт (врагов) из CSV-файла в `ScriptableObject`-ассеты `BattleCardData`.
-
-#### Поля окна
-
-```csharp
-private string csvFilePath = "Assets/Data/BattleCards.csv";  // путь к CSV (редактируется в окне)
-private string soSavePath  = "Assets/Data/BattleCards/";     // куда сохранять .asset
-```
-
-#### Ожидаемый формат CSV
-
-Разделитель — **запятая** (`,`). Первая строка — заголовок, **пропускается** (`for i = 1; i < lines.Length`).
-
-```
-id,name,requiredAttack,rewardMoney,penaltyMoney
-101,Песчаные разбойники,3,60,-50
-102,Горные бандиты,4,70,-60
-```
-
-| Колонка (индекс) | Поле в BattleCardData | Тип |
+| Инструмент | Меню Unity | Источник / результат |
 |---|---|---|
-| 0 | `cardID` | int |
-| 1 | `enemyName` | string |
-| 2 | `requiredAttack` | int |
-| 3 | `rewardMoney` | int |
-| 4 | `penaltyMoney` | int |
+| `BattleCardImporter` | Tools → Battle Cards → Import from CSV | Выбранный CSV/TSV → `Assets/Data/BattleCards/` по умолчанию |
+| `ShadowCardCSVImporter` | Tools → Cards → Import Shadow Cards from CSV | `Assets/Data/ShadowCards.csv` → `Assets/Data/ShadowEvent/` |
+| `ShadowCardImporter` | Tools → Cards → Create Shadow Cards | Встроенные определения событий → ассеты |
+| `HandCardImporter` | Tools → 1000 Roads → Import Hand Cards | Встроенные определения руки → `Assets/Data/HandCards/` |
+| `Editor.TradeDataImporter` | Tools → Trade → Import Trade Data | Выбранный CSV → `Assets/Data/Items/` и `Assets/Data/Cities/` |
 
-#### Алгоритм `ImportData()`
+### BattleCardImporter
 
-```
-1. Проверить File.Exists(csvFilePath), иначе Debug.LogError + выход
-2. Прочитать все строки File.ReadAllLines()
-3. Для каждой строки (начиная со 2-й):
-   a. line.Split(',')
-   b. если values.Length < 5 → Debug.LogWarning, пропустить строку
-   c. id = int.Parse(values[0])
-   d. enemyName = values[1]
-   e. card = FindOrCreateAsset(id, enemyName)
-   f. card.requiredAttack = int.Parse(values[2])
-      card.rewardMoney    = int.Parse(values[3])
-      card.penaltyMoney   = int.Parse(values[4])
-   g. EditorUtility.SetDirty(card)
-4. AssetDatabase.SaveAssets()
-5. AssetDatabase.Refresh()
+Файл: `Assets/Editor/BattleCardImporter.cs`. Требует восемь позиционных колонок; заголовок пропускается.
+
+```csv
+ID,EnemyName,Description,RequiredAttack,RewardMoney,PenaltyMoney,CrewLoss,RewardHandCardID
+101,Песчаные разбойники,"Разбойники перекрыли дорогу.",5,100,50,0,0
 ```
 
-#### Логика `FindOrCreateAsset(id, name)`
+Разделитель определяется по заголовку: табуляция при наличии таба, иначе запятая. Для CSV поддерживаются кавычки и экранированные двойные кавычки; TSV разбивается по табам. Числовые поля проверяются через `TryParse`, ошибки выводятся в Console.
 
-```csharp
-string assetName = $"Card_{id}_{name}.asset";   // например Card_101_Песчаные разбойники.asset
-string fullPath  = Path.Combine(soSavePath, assetName);
+Ассет ищется по ожидаемому имени `Card_<ID>_<Name>.asset`, а не через реестр ID. Переименование при том же ID может создать второй ассет. Старые карты не удаляются автоматически. Ошибка числового поля может оставить частично обновлённый ассет.
 
-existingCard = AssetDatabase.LoadAssetAtPath<BattleCardData>(fullPath);
-if (existingCard != null) return existingCard;       // обновление существующего
+Поля `minDifficulty`, `maxDifficulty` и `weight` этим форматом не импортируются: их надо настроить в Inspector. `crewLoss` и `rewardHandCardID` импортируются в данные, но текущая боевая логика их не применяет.
 
-// иначе создание нового
-newCard = ScriptableObject.CreateInstance<BattleCardData>();
-newCard.cardID = id;
-newCard.enemyName = name;
-if (!Directory.Exists(soSavePath)) Directory.CreateDirectory(soSavePath);
-AssetDatabase.CreateAsset(newCard, fullPath);
-return newCard;
+### ShadowCardCSVImporter
+
+Файл: `Assets/Editor/ShadowCardCSVImporter.cs`. Читает заголовки без учёта регистра, по ним сопоставляет колонки; обязательны `ID`, `Name`, `Description`, `EffectType`.
+
+```csv
+ID,Name,Description,EffectType,Value,IsTemporary,Duration,MinDifficulty,MaxDifficulty,Weight,PenaltyValue
+1,Найденный кошель,"На дороге лежит забытый кошель.",Money,10,0,1,0,10,15,0
+2,Песчаная слепота,"Пыль мешает бойцам видеть.",Attack,-2,1,2,0,10,10,0
 ```
 
-**Ключевая особенность:** идентификация ассета на диске идёт **по имени файла**, собранному из `id` и `name` — то есть если в новом запуске импорта изменится `name` при том же `id`, импортёр **не найдёт** старый ассет и создаст новый файл-дубликат (со старым именем оставшийся «осиротевшим»).
+Парсер принимает запятую или табуляцию вне кавычек. Необязательные числовые поля получают значения по умолчанию. `IsTemporary` распознаёт `1`, `true`, `yes`.
 
-#### Известные риски / ограничения
+Ассеты именуются `Shadow_<ID:000>_<Name>.asset`; переименование также может создать дубликат. Неизвестный `EffectType` сейчас преобразуется в `Money`, поэтому названия эффектов следует проверять. Колонки `System`, `Intensity`, `Tone` зарезервированы и не влияют на розыгрыш.
 
-| Риск | Описание |
-|---|---|
-| Нет обработки запятых в названии | `Split(',')` сломается, если `enemyName` содержит запятую |
-| Нет try/catch при `int.Parse` | Невалидное число в CSV вызовет необработанное исключение и остановит импорт |
-| Нет удаления устаревших карт | Если строку убрать из CSV, старый `.asset` останется на диске |
-| Путь к CSV — относительный | `"Assets/Data/BattleCards.csv"` должен существовать в файловой системе проекта (не выбирается через диалог) |
+### TradeDataImporter
 
----
+Файл: `Assets/Editor/TradeDataImporter.cs`, namespace `Editor`. Текущий разделитель — **запятая**, TSV этим импортёром не читается.
 
-### 1.2 TradeDataImporter (TradeDataIO.cs)
-
-**Файл:** `Assets/Editor/TradeDataIO.cs`
-**Namespace:** `Editor`
-**Тип:** `static class TradeDataImporter`
-**Меню:** `Trade → Import Trade Data`
-
-#### Назначение
-Импортирует **товары** (`Item`) и **города с ценами** (`CityData`) из единого TSV-файла, выбираемого через диалог.
-
-#### Константы путей
-
-```csharp
-private const string BaseDataPath = "Assets/Data";
-private const string ItemsPath    = BaseDataPath + "/Items";
-private const string CitiesPath   = BaseDataPath + "/Cities";
+```csv
+cityName,itemName,weight,stock,buyPrice,sellPrice
+Кочевье,Финики,1,100,7,4
 ```
 
-#### Ожидаемый формат файла
+Расширенный формат имеет десять колонок и необязательную одиннадцатую:
 
-Разделитель — **табуляция** (`\t`), не запятая. Первая строка — заголовок (пропускается).
-
-```
-cityName	itemName	weight	stock	buyPrice	sellPrice
-Мадинат аль-Ахлам	Звёздный песок	1	100	7	4
-Мадинат аль-Ахлам	Жемчуг желаний	2	100	26	16
-Вади аль-Сараб	Звёздный песок	1	80	9	5
+```csv
+cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volatility,regenRate,demand
+Кочевье,Финики,1,100,7,4,3.5,14,0.02,0.10,normal
 ```
 
-| Колонка (индекс) | Назначение | Используется для |
-|---|---|---|
-| 0 | `cityName` | поиск/создание `CityData` |
-| 1 | `itemName` | поиск/создание `Item` |
-| 2 | `weight` | только при создании нового `Item` |
-| 3 | `stock` | `CityData.CityItem.stock` |
-| 4 | `buyPrice` | `CityData.CityItem.buyPrice` |
-| 5 | `sellPrice` | `CityData.CityItem.sellPrice` |
+Первая строка пропускается. Парсер использует простой `Split(',')`, поэтому поля с запятыми в названии не поддерживаются, а десятичные числа в CSV надо записывать с точкой.
 
-#### Алгоритм `ImportTradeData()`
+Импорт идёт двумя проходами: товары, затем города. Существующий `Item.weight` обновляется. При первом упоминании существующего города его `items` очищается и заново заполняется строками текущего файла; записи, отсутствующие в файле для этого города, не сохраняются.
 
-```
-1. Открыть диалог выбора файла (EditorUtility.OpenFilePanel, фильтр "csv")
-   — если отменено → выход
-2. Создать папки Assets/Data, Assets/Data/Items, Assets/Data/Cities (если их нет)
-3. Загрузить ВСЕ существующие CityData из Cities/ и Item из Items/
-   (через AssetDatabase.FindAssets + LoadAssetAtPath)
-4. Прочитать строки файла, пропустить пустые
-5. Для каждой строки (начиная со 2-й):
-   a. parts = line.Split('\t')
-   b. если parts.Length < 6 → Debug.LogWarning, пропустить
-   c. cityName = parts[0].Trim(), itemName = parts[1].Trim()
-   d. найти City по cityName в allCities (FirstOrDefault)
-      — если не найден: создать новый CityData.asset, добавить в allCities
-   e. найти Item по itemName в allItems (FirstOrDefault)
-      — если не найден: создать новый Item.asset (weight = parts[2]), 
-        добавить в allItems, createdItems++
-   f. найти CityItem внутри city.items по ссылке на item
-      — если не найден: создать новый CityData.CityItem { item = item }, добавить в city.items
-   g. перезаписать cityItem.stock / buyPrice / sellPrice из строки (TryParseInt)
-   h. EditorUtility.SetDirty(city), updatedCities++
-6. AssetDatabase.SaveAssets()
-7. AssetDatabase.Refresh()
-8. Лог итогов: создано items, обновлено cities
-```
+Идентификация идёт по пути ассета с очищенным именем. Диапазоны цен продажи выводятся из диапазона покупки и соотношения базовых цен. Значения `demand` из файла не следует считать постоянной настройкой: спрос пересчитывается игровыми методами.
 
-#### Вспомогательные методы
+### HandCardImporter и ShadowCardImporter
 
-```csharp
-LoadAllAssets<T>(folder)   // AssetDatabase.FindAssets($"t:{typeof(T).Name}", ...) + загрузка
-EnsureDirectoryExists(path) // AssetDatabase.IsValidFolder + CreateFolder при отсутствии
-TryParseInt(value, default) // int.TryParse с безопасным fallback
-TryParseFloat(value, default) // объявлен, но не используется в текущем коде
-```
+Создают карты из определений в исходниках, а не читают внешний CSV. Существующие ассеты обновляются по ожидаемым путям. Иконки карт руки назначаются вручную. Для изменения правил фаз требуется код: категория карты сама по себе не ограничивает момент применения.
 
-#### Важные отличия от BattleCardImporter
+## Порядок выполнения игровых скриптов
 
-| | BattleCardImporter | TradeDataImporter |
-|---|---|---|
-| Разделитель | `,` (запятая) | `\t` (табуляция) |
-| Идентификация существующего ассета | по имени файла на диске | по полю объекта (`cityName`/`itemName`) среди уже загруженных в память |
-| Выбор файла | вручную вписывается путь в окне | системный диалог выбора файла |
-| Поддержка дозаписи цен в существующий город | — (нет городов вообще) | да: `cityItem` ищется и обновляется, а не пересоздаётся |
-| Удаление старых записей | нет | нет |
+### GameManager
 
-#### Известные риски / ограничения
+`Awake()` регистрирует Singleton и проверяет зависимости. `OnEnable()` подписывается на экземпляры кубика и фишки, добавляет обработчик кнопки вытягивания. `Start()` инициализирует характеристики и первый личный ход в городе.
 
-| Риск | Описание |
-|---|---|
-| `weight` товара обновляется только при создании | Если `Item` уже существует, новое значение `weight` из файла **игнорируется** |
-| Поиск по `Trim()`-имени | Лишние пробелы в середине названия города/товара создадут дубликат |
-| `TryParseFloat` не используется | Мёртвый код, оставлен для возможного будущего использования (например, модификаторов цены) |
-| Нет валидации количества колонок > 6 | Дополнительные колонки в файле просто игнорируются (не ошибка) |
-| Диалог `OpenFilePanel` фильтрует `"csv"` | Хотя реальный формат — TSV; расширение файла не проверяется построчно, только в диалоге выбора |
+При выборе пути `OnPathSelected()` делает шаг. Кнопка вытягивания доступна в `DrawingCard`: она переводит FSM в `ResolvingEvent` и вызывает `CardManager.DrawCard()` со сложностью 0.
 
----
+После события/боевого броска `RequestEndTurn()` сначала устанавливает `EndingTurn`. Повторный запрос в этом состоянии отклоняется. Для боя применяется результат и выдерживается задержка 1,5 секунды. Затем тикают эффекты, текущая карта отправляется в сброс и начинается `WaitingForAI`.
 
-## 2. Игровые скрипты — построчный разбор ключевой логики
+`WaitForAIAndBeginPlayerTurn()` ожидает всю очередь ИИ. После неё увеличивает личный номер хода и продолжает движение либо вводит игрока в город. `CompleteEventPhase()` делегирует этому обычному циклу завершения.
 
-### 2.1 GameManager.cs
+### PlayerToken и PathController
 
-```csharp
-public static GameManager Instance { get; private set; }
-```
-Классический Singleton без `DontDestroyOnLoad` — подразумевается, что `GameManager` живёт на той же сцене всю игру (нет смены сцен в текущей реализации).
+`StartPath()` устанавливает путь, но сам не делает шаг. `AdvanceToken()` вызывает `Step()`, а затем либо перемещает фишку на клетку с зарплатой и `OnStepCompleted`, либо сбрасывает путь и публикует `OnArrivedAtCity`.
 
-**Awake():** если `Instance` уже занят другим экземпляром — `Destroy(gameObject)` текущего. Иначе регистрирует себя, подписывается на `DiceSystem.OnDiceEvent`, вызывает `ValidateReferences()`.
+`PathCellInitializer` инициализирует только детей с тегом `Cell`; `PathController` кэширует всех прямых детей и ожидает у каждого компонент `Cell`. Тип `CellType` сейчас не определяет карту или её вес.
 
-**Start():** вызывает `StartNewTurn()`.
+### CardManager и UI
 
-**HandleEndTurnRequest()** — ключевая точка входа из UI:
-```csharp
-if (_isEventPhaseActive) { /* блокирует повторный End Turn во время события */ return; }
+Два сериализованных каталога объединяются в один `CardDeck` при запуске. `Draw()` расходует карту; менеджер хранит её как текущую до конца личного хода. Сброс принадлежит менеджеру, UI получает только счётчики.
 
-bool hasActivePath = playerToken.PathController.HasActivePath();
-if (hasActivePath)
-{
-    playerToken.AdvanceToken();
-    if (playerToken.PathController.HasActivePath())  // путь ещё не завершён
-        diceSystem.RollDice();
-    // если путь завершился — AdvanceToken() сам вызвал ArriveAtDestination(),
-    // а та — CompleteMovementPhase(); кубик не бросается
-}
-```
-Это означает: **кубик бросается только если после шага остался путь**. Последний шаг маршрута не сопровождается броском кубика — вместо этого сразу открывается город.
+Если флаг отмены руки активен, выбранная карта показывается отменённой и не применяет эффект. Иначе событие вызывает `ApplyCard()`, а битва — `PrepareBattle()`. При `true` из подготовки GameManager автоматически бросает кубик; при `false` позволяет завершить ход без боя.
 
-**HandleDiceEvent(type)** — реагирует на `OnDiceEvent`, выставляет `_isEventPhaseActive = true`, диспетчеризует на `BattleManager` или `CardManager` через `?.` (null-safe — если ссылка не назначена, событие просто проглатывается без ошибки).
+`ShowCard()` показывает лицевую сторону синхронно и вызывает callback. Если префаб отображения не назначен, логируется ошибка, но callback всё равно исполняется. Искусственного ожидания анимации и отдельной очереди UI нет.
 
-### 2.2 PlayerToken.cs
+### AI и WorldEconomy
 
-**AdvanceToken()** — порядок операций важен:
-```csharp
-1. pathController.Advance()              // currentCellIndex++
-2. OnPlayerMoved?.Invoke()
-3. if IsPathCompleted() → ArriveAtDestination()
-   else:
-     a. pathController.MoveCurrent()      // визуально переместить токен
-     b. teamSystem.PaySalaries()          // зарплата списывается КАЖДЫЙ шаг, не каждый ход
-     // c. HandleCurrentCellEffect — ЗАКОММЕНТИРОВАНО, эффект клетки сейчас не применяется напрямую
-```
-**Важно:** строка с `pathController.HandleCurrentCellEffect(...)` закомментирована — обработка эффекта клетки (Battle/Event) теперь идёт через `DiceSystem`, а не через тип клетки (`CellType`). Это значит, что enum `CellType` в `Archive/Cell.cs` сейчас не определяет события — они полностью случайны через кубик.
+`AITrader.PrepareTurn()` входит в город с последней клетки до создания снимка. `WorldEconomy.TakeSnapshot()` копирует runtime-цены покупки/продажи, запасы и пути. `PlanTurn()` через `Task.Run` возвращает намерение, не фиксируя маршрут и не меняя мир.
 
-**ArriveAtDestination()**:
-```csharp
-finishCity = pathController.CurrentPath?.FinishCity;
-if (finishCity == null) { LogWarning; return; }  // защита от незаполненного City на маршруте
-pathController.ResetToken();
-OnPlayerArrivedAtCity?.Invoke(finishCity);
-GameManager.Instance?.CompleteMovementPhase();
-```
+`TurnQueue` ждёт все планы и исполняет в порядке списка: проверка занятости пути, торговля, корутина движения до конца. Инициатива не используется. На занятый путь не выходит второй ИИ в том же цикле; ИИ, уже находящийся в пути, сохраняет выбранный маршрут.
 
-### 2.3 TradeSystem.cs — самоподписка
+`WorldEconomy.GetCityData()` каждый раз получает `City.RuntimeData`, поэтому порядок `Awake()` не закрепляет ссылку на исходный ассет. AI и игрок торгуют с одним запасом и городским кошельком. При исполнении устаревшее намерение может не пройти проверку текущего рынка.
 
-```csharp
-private void Awake()
-{
-    OnTradeRequest += OpenTrade;   // подписывается на СВОЁ СОБСТВЕННОЕ статическое событие
-    ValidateReferences();
-}
-```
-Это нетипичный, но рабочий паттерн: `RequestTrade(city)` — статический метод, вызываемый откуда угодно (например, из `CityPanel`) без прямой ссылки на экземпляр `TradeSystem`. Экземпляр подписывается на собственное событие в `Awake()`, поэтому фактическая обработка всё равно происходит в контексте конкретного `MonoBehaviour` с доступом к `playerInventory`/`tradeUIManager`.
+### TradeSystem и экономика
 
-⚠️ Если в сцене окажется **два** объекта `TradeSystem`, оба подпишутся на `OnTradeRequest`, и `OpenTrade` сработает дважды.
+`TradeSystem` подписывается на своё статическое `OnTradeRequest` в `Awake()` и отписывается в `OnDestroy()`. Несколько экземпляров обработают один запрос несколько раз.
 
-### 2.4 TradeTransactionHandler.cs — чистая статическая логика
+Игровой шаг `PlayerToken.OnStepCompleted` запускает `RegenerateGlobalEconomy()` для runtime-городов из списка `TradeSystem`. Вход в город, сделки и ходы ИИ сами по себе этот обработчик не вызывают.
 
-Не наследует `MonoBehaviour` — это набор чистых функций, принимающих все зависимости параметрами. Удобно для unit-тестирования (хотя тестов в проекте сейчас нет, judging by `find` результатов).
+`TradeTransactionHandler` получает зависимости параметрами, возвращает `bool` и сумму через `out`. Методы мутируют переданные runtime-данные, инвентарь и деньги. Цена партии игрока считается по единицам с динамическим изменением цены; AI пока считает сумму по исходной цене партии и затем сдвигает цены.
 
-```csharp
-CalculateFinalPrice(basePrice, isBuying, playerStats)
-// bargainEffect = Bargain * 0.01
-// buy:  basePrice * (1 - bargainEffect)
-// sell: basePrice * (1 + bargainEffect)
-// итог: Mathf.Max(1, ...) — цена никогда не опускается ниже 1
-```
+## Основные события
 
-`ExecuteBuyTransaction` / `ExecuteSellTransaction` напрямую мутируют переданные объекты (`playerInventory.Money -=`, `city.cityGold +=`, `cityItem.stock -=`) — побочные эффекты внутри статических методов, нет возврата нового состояния.
-
-### 2.5 PathCellInitializer.cs / Cell.cs (Archive)
-
-```csharp
-foreach (Transform child in transform)
-    if (child.CompareTag("Cell"))
-    {
-        cell = child.GetComponent<Cell>() ?? child.gameObject.AddComponent<Cell>();
-        cell.cellNumber = cellIndex++;
-        cell.name = $"Cell_{cellIndex}";
-    }
-```
-Требует, чтобы дочерние объекты маршрута имели **Unity Tag = "Cell"**, иначе они не учитываются в пути и `PathController.InitializePathCells()` получит укороченный/неверный массив.
-
-### 2.6 CardManager.cs / BattleManager.cs — единый контракт завершения
-
-Оба сервиса обязаны вызвать `gameManager.CompleteEventPhase()` по завершении своей работы — это контракт, на котором держится весь цикл фаз. `CardManager.DrawCard()` делает это через `Invoke(nameof(...), 0.5f)` (искусственная задержка для ощущения «анимации»), `BattleManager` — синхронно сразу после `ProcessBattleResult()`.
-
-⚠️ **Риск:** если оба `gameManager` не назначены в инспекторе (`null`), `gameManager.CompleteEventPhase()` упадёт с `NullReferenceException`, и `_isEventPhaseActive` останется `true` навсегда — игра «зависнет», блокируя `HandleEndTurnRequest()`.
-
-### 2.7 PlayerInventory.cs — Persistence через PlayerPrefs
-
-```csharp
-SaveInventory():
-  PlayerPrefs.SetInt("PlayerMoney", Money)
-  PlayerPrefs.SetInt("InventoryCount", items.Count)
-  for i in items: SetString($"InventoryItem_{i}", item.name), SetInt($"InventoryQuantity_{i}", qty)
-
-LoadInventory():
-  Money = GetInt("PlayerMoney", startMoney)
-  items.Clear()
-  for i in 0..count: 
-    name = GetString($"InventoryItem_{i}")
-    item = Resources.Load<Item>($"Items/{name}")   // ⚠️ требует Items/ внутри папки Resources!
-```
-**Критическое ограничение:** `Resources.Load<Item>("Items/...")` работает только если ассеты `Item` физически лежат в `Assets/Resources/Items/`. В текущей структуре проекта товары лежат в `Assets/Data/Items/` — **не** в `Resources`. Это значит, что `LoadInventory()` в текущем виде **не найдёт** предметы и метод фактически не функционален без переноса/дублирования ассетов в `Resources`.
-
----
-
-## 3. Сводная таблица событийных контрактов
-
-| Издатель | Событие | Сигнатура | Подписчики |
+| Издатель | Событие | Тип | Связь |
 |---|---|---|---|
-| `DiceSystem` | `OnDiceEvent` | `Action<DiceEventType>` | `GameManager` |
-| `PlayerToken` | `OnPlayerArrivedAtCity` | `Action<City>` | `CityManager` |
-| `PlayerToken` | `OnPlayerMoved` | `Action` | *(нет подписчиков в текущем коде)* |
-| `CityPanel` | `OnPathSelected` | `Action<PathCellInitializer>` | `PlayerToken` |
-| `TradeSystem` | `OnTradeRequest` | `Action<City>` | `TradeSystem` (сам на себя) |
-| `TradeUIManager` | `OnTradeClosedRequest` | `Action` | `CityManager` |
-| `PlayerInventory` | `OnInventoryChanged` | `Action` | *(нет подписчиков в текущем коде)* |
-| `PlayerInventory` | `OnMoneyChanged` | `Action` | *(нет подписчиков в текущем коде)* |
+| `DiceSystem` | `OnDiceRolled` | экземпляр, `Action<int>` | GameManager → боевой бросок |
+| `PlayerToken` | `OnArrivedAtCity` | экземпляр, `Action<City>` | GameManager и CityManager |
+| `PlayerToken` | `OnStepCompleted` | экземпляр, `Action` | TradeSystem → обновление экономики |
+| `CityPanel` | `OnPathSelectedEvent` | статическое, `Action<PathCellInitializer>` | Уведомление после прямого вызова GameManager |
+| `TradeSystem` | `OnTradeRequest` | статическое, `Action<City>` | Самоподписка TradeSystem |
+| `TradeUIManager` | `OnTradeClosedRequest` | статическое, `Action` | CityManager → возврат в город |
+| `CardDeckUI` | `OnCardDrawn`, `OnCardRevealed`, `OnCardDiscarded` | экземпляр, `Action<ICard>` | Уведомления отображения |
+| `PlayerInventory` | `OnInventoryChanged`, `OnMoneyChanged` | экземпляр, `Action` | В том числе TopBarUI |
+| `PlayerStats` | `OnStatsChanged` | экземпляр, `Action` | В том числе TopBarUI |
 
-> ⚠️ Несколько событий (`OnPlayerMoved`, `OnInventoryChanged`, `OnMoneyChanged`) объявлены, но в текущей версии кода никто на них не подписан — вероятно, заготовки для будущего UI (например, анимации монет или индикатора движения).
+## Известные ограничения
 
----
+- Новых интерактивных фаз подготовки и таблицы применения карт руки пока нет. Событие применяется сразу, боевой бросок автоматический.
+- `ProcessTurn()` уменьшает длительность и только что полученного эффекта в конце текущего личного хода. Новое правило длительности ещё не утверждено.
+- `ShadowEffectManager.OnEnterCity()` и `ConsumeBonusTrade()` не подключены к текущему CityManager. Наличие полей и описаний в ассете не гарантирует применение этих эффектов в городе.
+- `HandManager.RefreshUI()` скрывает руку в городе, хотя `UseCard()` допускает состояние `InCity`. Сброс общей колоды не является сбросом руки.
+- `BattleManager` пока не использует `crewLoss` и `rewardHandCardID`; за победу выдаёт случайную карту руки.
+- `PlayerInventory.LoadInventory()` использует `Resources.Load("Items/...")`, а товары находятся в `Assets/Data/Items/`; текущая загрузка не восстанавливает эти ассеты.
 
-## 4. Рекомендации (на основе разбора)
+## Проверки
 
-1. **BattleCardImporter:** добавить try/catch вокруг `int.Parse`, чтобы битая строка не останавливала весь импорт.
-2. **TradeDataImporter:** обновлять `item.weight` не только при создании, но и при повторном импорте — иначе изменения веса в файле не подтянутся.
-3. **PlayerInventory.LoadInventory():** либо перенести `Item`-ассеты в `Assets/Resources/Items/`, либо переписать загрузку через `AssetDatabase`/собственный реестр, иначе сохранение не имеет практического эффекта при загрузке.
-4. **GameManager:** добавить защитные проверки на `null` перед вызовом `CompleteEventPhase()`, чтобы избежать зависания `_isEventPhaseActive`.
-5. **TradeSystem:** задокументировать или защититься от случая нескольких экземпляров в сцене (например, проверкой Singleton в `Awake()`).
+Меню **Tools → Проверки → Фазы хода, колода и общий рынок** запускает `Assets/Editor/Tests/CardSystemChecks.cs`. Проверки используют реальные классы, временные объекты и не изменяют сцену. Покрытие и границы проверки приведены в [REFACTORING.md](REFACTORING.md).

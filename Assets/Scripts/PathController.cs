@@ -13,6 +13,8 @@ public class PathController : MonoBehaviour
 
     public bool HasActivePath => currentPath != null;
     public PathCellInitializer CurrentPath => currentPath;
+    public bool IsReadyToArrive => HasActivePath &&
+        (pathCells == null || currentCellIndex >= pathCells.Length - 1);
 
     // --------------------
     // PATH LIFECYCLE

@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class CardManager : MonoBehaviour
@@ -13,199 +11,137 @@ public class CardManager : MonoBehaviour
     [SerializeField] private BattleManager battleManager;
     [SerializeField] private ShadowEffectManager effectManager;
 
-    [Header("Карты")]
+    // Сохраняем поля каталогов, чтобы не потерять ссылки существующих сцен.
+    // Во время игры оба каталога образуют одну расходуемую колоду.
+    [Header("Карты общей колоды")]
     [SerializeField] private List<ShadowCardData> allShadowCards = new List<ShadowCardData>();
     [SerializeField] private List<BattleCardData> allBattleCards = new List<BattleCardData>();
-
-    [Header("Условия розыгрыша")]
-    [Tooltip("Базовый шанс Battle-карты (0-1). Остальное — Shadow.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float baseBattleChance = 0.3f;
-    [SerializeField] private AnimationCurve difficultyToBattleChance;
 
     [Header("UI")]
     [SerializeField] private CardDeckUI deckUI;
 
     private readonly CardDeck _deck = new CardDeck();
-    private int _currentDifficulty;
+    private readonly List<ICard> _discard = new List<ICard>();
+    private ICard _currentCard;
 
     public int RemainingCards => _deck.Count;
+    public int DiscardCount => _discard.Count;
+    public ICard CurrentCard => _currentCard;
 
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        RebuildDeck();
     }
 
-    private void Start() => RebuildDeck();
-
-    // ── Публичный API ─────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Вытянуть карту с условиями (вызывается каждый ход).
-    /// </summary>
-    public void DrawCard(int difficulty, System.Func<bool> extraConditions = null)
+    public void DrawCard(int difficulty, Func<bool> extraConditions = null)
     {
-        _currentDifficulty = difficulty;
-
-        if (_deck.IsEmpty)
+        if (_currentCard != null)
         {
-            Debug.Log("[CardManager] Колода кончилась — пересобираем.");
-            RebuildDeck();
+            Debug.LogWarning("[CardManager] Текущая карта ещё не завершена.");
+            return;
         }
 
-        // Отмена карты
-        if (HandManager.Instance != null && HandManager.Instance.ConsumeCancelCard())
+        if (_deck.IsEmpty && _discard.Count > 0)
         {
-            ICard cancelled = DrawWithConditions(difficulty, extraConditions);
-            Debug.Log($"[CardManager] CancelCard: карта '{cancelled?.CardName}' отменена.");
-            deckUI?.ShowCancelledCard(cancelled);
+            _deck.AddRange(_discard);
+            _discard.Clear();
+            Debug.Log("[CardManager] Сброс возвращён в общую колоду.");
+        }
+
+        if (extraConditions != null && !extraConditions())
+        {
+            UpdateDeckCounts();
             gameManager.OnCardCancelled();
             return;
         }
 
-        ICard card = DrawWithConditions(difficulty, extraConditions);
-        if (card == null)
+        // Битвы и события участвуют в одном выборе: отдельного шанса битвы нет.
+        _currentCard = _deck.Draw(card => IsAllowedAtDifficulty(card, difficulty));
+        UpdateDeckCounts();
+        if (_currentCard == null)
         {
-            Debug.LogWarning("[CardManager] Нет подходящих карт!");
+            Debug.LogWarning("[CardManager] Нет подходящих карт в общей колоде.");
+            gameManager.OnCardCancelled();
             return;
         }
 
-        RouteCard(card);
+        if (HandManager.Instance != null && HandManager.Instance.ConsumeCancelCard())
+        {
+            deckUI?.ShowCancelledCard(_currentCard);
+            gameManager.OnCardCancelled();
+            return;
+        }
+
+        RouteCard(_currentCard);
     }
 
-    /// <summary>Старый метод без условий (для совместимости).</summary>
     public void DrawCard() => DrawCard(difficulty: 0);
 
-    public void HideEventCard() => deckUI?.HideCurrentCard();
-
-    // ── Приватные методы ──────────────────────────────────────────────────
-
-    private ICard DrawWithConditions(int difficulty, System.Func<bool> extraConditions)
+    /// <summary>Завершённая или отменённая карта уходит в сброс ровно один раз.</summary>
+    public void HideEventCard()
     {
-        bool drawBattle = ResolveDeckType(difficulty, extraConditions);
-
-        if (drawBattle)
+        if (_currentCard != null)
         {
-            var valid = allBattleCards
-                .Where(c => c.minDifficulty <= difficulty && c.maxDifficulty >= difficulty)
-                .ToList();
-            return valid.Count > 0 ? WeightedRandom(valid) : null;
+            _discard.Add(_currentCard);
+            _currentCard = null;
+            deckUI?.DiscardCurrentCard();
         }
         else
         {
-            var valid = allShadowCards
-                .Where(c => c.minDifficulty <= difficulty && c.maxDifficulty >= difficulty)
-                .ToList();
-            return valid.Count > 0 ? WeightedRandom(valid) : null;
+            deckUI?.HideCurrentCard();
         }
+        UpdateDeckCounts();
     }
-
-    private bool ResolveDeckType(int difficulty, System.Func<bool> extraConditions)
-    {
-        float chance = baseBattleChance;
-        
-        if (difficultyToBattleChance != null && difficultyToBattleChance.length > 0)
-            chance = difficultyToBattleChance.Evaluate(difficulty);
-
-        if (extraConditions != null && !extraConditions.Invoke())
-            chance *= 0.5f;
-
-        return UnityEngine.Random.value < chance;
-    }
-
-    private T WeightedRandom<T>(List<T> cards) where T : ICard
-    {
-        int totalWeight = 0;
-        foreach (var c in cards)
-        {
-            totalWeight += GetWeight(c);
-        }
-
-        int roll = UnityEngine.Random.Range(0, totalWeight);
-        int current = 0;
-
-        foreach (var c in cards)
-        {
-            current += GetWeight(c);
-            if (roll < current) return c;
-        }
-        return cards[0];
-    }
-
-    private int GetWeight(ICard card) => card switch
-    {
-        ShadowCardData s => s.weight,
-        BattleCardData b => b.weight,
-        _ => 10
-    };
 
     private void RebuildDeck()
     {
         _deck.Clear();
-        foreach (var c in allShadowCards) _deck.Add(c);
-        foreach (var c in allBattleCards) _deck.Add(c);
-        _deck.Shuffle();
-        Debug.Log($"[CardManager] Колода собрана: {_deck.Count} карт.");
+        _discard.Clear();
+        _currentCard = null;
+        foreach (var card in allShadowCards) _deck.Add(card);
+        foreach (var card in allBattleCards) _deck.Add(card);
+        UpdateDeckCounts();
     }
+
+    private static bool IsAllowedAtDifficulty(ICard card, int difficulty) => card switch
+    {
+        ShadowCardData shadow => shadow.minDifficulty <= difficulty && shadow.maxDifficulty >= difficulty,
+        BattleCardData battle => battle.minDifficulty <= difficulty && battle.maxDifficulty >= difficulty,
+        _ => false
+    };
+
+    private void UpdateDeckCounts() => deckUI?.SetDeckCounts(_deck.Count, _discard.Count);
 
     private void RouteCard(ICard card)
     {
+        Action onRevealed;
         switch (card)
         {
             case ShadowCardData shadow:
-                HandleShadowCard(shadow);
+                onRevealed = () =>
+                {
+                    effectManager.ApplyCard(shadow);
+                    gameManager.OnShadowCardRevealed();
+                };
                 break;
             case BattleCardData battle:
-                HandleBattleCard(battle);
+                onRevealed = () =>
+                {
+                    if (battleManager.PrepareBattle(battle))
+                        gameManager.OnBattleCardRevealed();
+                    else
+                        gameManager.OnBattleForceEnded();
+                };
                 break;
             default:
                 Debug.LogError($"[CardManager] Неизвестный тип карты: {card?.GetType()}");
-                break;
+                gameManager.OnCardCancelled();
+                return;
         }
-    }
 
-    private void HandleShadowCard(ShadowCardData card)
-    {
-        if (deckUI != null)
-        {
-            deckUI.AddCard(card);
-            StartCoroutine(PlayCardWithAnimation(() =>
-            {
-                effectManager.ApplyCard(card);
-                gameManager.OnShadowCardRevealed();
-            }));
-        }
-        else
-        {
-            effectManager.ApplyCard(card);
-            gameManager.OnShadowCardRevealed();
-        }
-    }
-
-    private void HandleBattleCard(BattleCardData card)
-    {
-        if (deckUI != null)
-        {
-            deckUI.AddCard(card);
-            StartCoroutine(PlayCardWithAnimation(() =>
-            {
-                battleManager.PrepareBattle(card);
-                gameManager.OnBattleCardRevealed();
-            }));
-        }
-        else
-        {
-            battleManager.PrepareBattle(card);
-            gameManager.OnBattleCardRevealed();
-        }
-    }
-
-    private IEnumerator PlayCardWithAnimation(System.Action onRevealed)
-    {
-        bool flipDone = false;
-        deckUI.DrawAndShowTopCard(() => flipDone = true);
-        yield return new WaitUntil(() => flipDone);
-        onRevealed?.Invoke();
+        if (deckUI != null) deckUI.ShowCard(card, onRevealed);
+        else onRevealed();
     }
 }

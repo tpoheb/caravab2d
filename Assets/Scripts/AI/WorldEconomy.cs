@@ -34,12 +34,12 @@ public class WorldEconomy : MonoBehaviour
         _cityDataMap = new Dictionary<City, CityData>();
         foreach (var b in cityBindings)
         {
-            if (b.city == null || b.cityData == null)
+            if (b.city == null)
             {
                 Debug.LogWarning("[WorldEconomy] Пропущена пустая связь City → CityData");
                 continue;
             }
-            _cityDataMap[b.city] = b.cityData;
+            _cityDataMap[b.city] = b.city.RuntimeData;
         }
         Debug.Log($"[WorldEconomy] Готово: {_cityDataMap.Count} городов.");
     }
@@ -198,12 +198,13 @@ public class WorldEconomy : MonoBehaviour
 
         foreach (var b in cityBindings)
         {
-            if (b.city == null || b.cityData == null) continue;
+            if (b.city == null) continue;
 
             var prices = new Dictionary<string, float>();
+            var sellPrices = new Dictionary<string, float>();
             var stocks = new Dictionary<string, int>();
 
-            foreach (var cityItem in b.cityData.items)
+            foreach (var cityItem in GetCityData(b.city)?.items ?? new List<CityData.CityItem>())
             {
                 if (cityItem?.item == null) continue;
                 string id = cityItem.item.itemName;
@@ -213,10 +214,11 @@ public class WorldEconomy : MonoBehaviour
                 // Для арбитража: покупаем там где buyPrice низкий,
                 //                продаём там где sellPrice высокий
                 prices[id] = cityItem.currentBuyPrice;
+                sellPrices[id] = cityItem.currentSellPrice;
                 stocks[id] = cityItem.stock;
             }
 
-            citySnapshots.Add(new CitySnapshot(b.city, prices, stocks));
+            citySnapshots.Add(new CitySnapshot(b.city, prices, stocks, sellPrices, b.city.Paths));
         }
 
         return new GameSnapshot(
@@ -244,12 +246,17 @@ public class WorldEconomy : MonoBehaviour
 
     public CityData GetCityData(City city)
     {
+        if (city == null) return null;
         if (_cityDataMap == null) BuildCityMap();
         if (!_cityDataMap.TryGetValue(city, out var data))
         {
             Debug.LogWarning($"[WorldEconomy] CityData не найден для {city?.CityName}. " +
                              $"Проверь CityBindings.");
         }
+        // RuntimeData создаётся CityManager. Исходный ассет никогда не служит рынком.
+        data = city.RuntimeData;
+        if (data == null)
+            Debug.LogError($"[WorldEconomy] RuntimeData не создан для {city.CityName}.");
         return data;
     }
 

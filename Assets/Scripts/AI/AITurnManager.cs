@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Управляет ИИ-торговцами. Не имеет своего цикла —
-/// запускается из GameManager.RequestEndTurn() одновременно с ходом игрока.
+/// GameManager ждёт завершения всех ИИ перед следующим ходом игрока.
 /// </summary>
 public class AITurnManager : MonoBehaviour
 {
@@ -101,42 +101,23 @@ public class AITurnManager : MonoBehaviour
             return;
         }
 
-        StartCoroutine(ProcessAITurnCoroutine());
+        StartCoroutine(ProcessAITurnAndWait());
     }
 
-    private IEnumerator ProcessAITurnCoroutine()
+    public IEnumerator ProcessAITurnAndWait()
     {
+        while (_isProcessing) yield return null;
+        if (_turnQueue == null) yield break;
         _isProcessing = true;
-        yield return _turnQueue.ProcessTurnCoroutine();
-        _isProcessing = false;
+        try
+        {
+            yield return _turnQueue.ProcessTurnCoroutine();
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
     }
-
-    // ------------------------------------------------------------------
-    // Параллельное выполнение корутин (для одновременного движения)
-    // ------------------------------------------------------------------
-
-    /// <summary>
-    /// Запускает список корутин параллельно и ждёт пока все завершатся.
-    /// Используется TurnQueue для одновременного движения всех ИИ.
-    /// </summary>
-    public IEnumerator RunParallel(List<IEnumerator> coroutines)
-    {
-        int remaining = coroutines.Count;
-        if (remaining == 0) yield break;
-
-        foreach (var coroutine in coroutines)
-            StartCoroutine(WrapCoroutine(coroutine, () => remaining--));
-
-        while (remaining > 0)
-            yield return null;
-    }
-
-    private IEnumerator WrapCoroutine(IEnumerator coroutine, System.Action onComplete)
-    {
-        yield return coroutine;
-        onComplete();
-    }
-
     // ------------------------------------------------------------------
     // Доступ
     // ------------------------------------------------------------------

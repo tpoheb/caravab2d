@@ -1,77 +1,67 @@
 using System.Collections.Generic;
 
-/// <summary>
-/// Неизменяемый снимок состояния мира на момент начала хода.
-/// Все торговцы планируют по одному снимку — гарантия честности.
-/// Использует City напрямую — никаких координат.
-/// </summary>
+/// <summary>Копия рынка и доступных путей для планирования без обращения к Unity API.</summary>
 public class GameSnapshot
 {
-    /// <summary>Все города на карте с их текущими ценами и запасами.</summary>
-    public IReadOnlyList<CitySnapshot> Cities { get; private set; }
+    public IReadOnlyList<CitySnapshot> Cities { get; }
+    public IReadOnlyList<TraderSnapshot> Traders { get; }
+    public IReadOnlyList<string> AllGoods { get; }
+    public int TurnNumber { get; }
 
-    /// <summary>Состояния всех торговцев (позиция, золото).</summary>
-    public IReadOnlyList<TraderSnapshot> Traders { get; private set; }
-
-    /// <summary>Все доступные товары.</summary>
-    public IReadOnlyList<string> AllGoods { get; private set; }
-
-    public int TurnNumber { get; private set; }
-
-    public GameSnapshot(
-        IReadOnlyList<CitySnapshot>   cities,
-        IReadOnlyList<TraderSnapshot> traders,
-        IReadOnlyList<string>         allGoods,
-        int                           turnNumber)
+    public GameSnapshot(IReadOnlyList<CitySnapshot> cities, IReadOnlyList<TraderSnapshot> traders,
+        IReadOnlyList<string> allGoods, int turnNumber)
     {
-        Cities     = cities;
-        Traders    = traders;
-        AllGoods   = allGoods;
+        Cities = new List<CitySnapshot>(cities).AsReadOnly();
+        Traders = new List<TraderSnapshot>(traders).AsReadOnly();
+        AllGoods = new List<string>(allGoods).AsReadOnly();
         TurnNumber = turnNumber;
     }
+
+    public CitySnapshot GetCity(City city)
+    {
+        foreach (var snapshot in Cities)
+            if (ReferenceEquals(snapshot.City, city)) return snapshot;
+        return null;
+    }
 }
 
-/// <summary>
-/// Снимок одного города: ссылка на City + цены и запасы товаров.
-/// </summary>
 public class CitySnapshot
 {
-    public City City { get; private set; }
-
+    public City City { get; }
+    public IReadOnlyList<PathCellInitializer> Paths { get; }
     private readonly Dictionary<string, float> _prices;
-    private readonly Dictionary<string, int>   _stocks;
+    private readonly Dictionary<string, float> _sellPrices;
+    private readonly Dictionary<string, int> _stocks;
 
-    public CitySnapshot(City city,
-        Dictionary<string, float> prices,
-        Dictionary<string, int>   stocks)
+    public CitySnapshot(City city, Dictionary<string, float> prices, Dictionary<string, int> stocks,
+        Dictionary<string, float> sellPrices = null, IReadOnlyList<PathCellInitializer> paths = null)
     {
-        City    = city;
-        _prices = prices;
-        _stocks = stocks;
+        City = city;
+        _prices = new Dictionary<string, float>(prices);
+        _stocks = new Dictionary<string, int>(stocks);
+        _sellPrices = sellPrices == null ? new Dictionary<string, float>()
+            : new Dictionary<string, float>(sellPrices);
+        Paths = paths == null ? new List<PathCellInitializer>().AsReadOnly()
+            : new List<PathCellInitializer>(paths).AsReadOnly();
     }
 
-    public float GetPrice(string goodId) =>
-        _prices.TryGetValue(goodId, out var p) ? p : 0f;
-
-    public int GetStock(string goodId) =>
-        _stocks.TryGetValue(goodId, out var s) ? s : 0;
+    public float GetPrice(string goodId) => _prices.TryGetValue(goodId, out var price) ? price : 0f;
+    public float GetSellPrice(string goodId) => _sellPrices.TryGetValue(goodId, out var price) ? price : 0f;
+    public int GetStock(string goodId) => _stocks.TryGetValue(goodId, out var stock) ? stock : 0;
 }
 
-/// <summary>
-/// Снимок одного торговца: в каком городе находится и сколько золота.
-/// </summary>
 public class TraderSnapshot
 {
-    public ITrader Trader      { get; private set; }
-    public City    CurrentCity { get; private set; }
-    public int     Gold        { get; private set; }
-    public int     Initiative  { get; private set; }
+    public ITrader Trader { get; }
+    public City CurrentCity { get; }
+    public int Gold { get; }
+    public int Initiative { get; }
 
     public TraderSnapshot(ITrader trader, City currentCity, int gold, int initiative)
     {
-        Trader      = trader;
+        Trader = trader;
         CurrentCity = currentCity;
-        Gold        = gold;
-        Initiative  = initiative;
+        Gold = gold;
+        Initiative = initiative;
     }
 }

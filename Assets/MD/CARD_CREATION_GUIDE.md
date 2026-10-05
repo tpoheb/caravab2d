@@ -1,198 +1,121 @@
-# Гайд по созданию 18 карт событий в Unity
-# Тысяча Дорог — Event Cards
+# Создание карт для текущей реализации
 
-## Как создавать карты
+Актуально на 2026-10-05. События и битвы входят в одну общую колоду; активные карты руки настраиваются отдельно.
 
-### Карты Тени (Мгновенные)
-ПКМ в Project → Event System → Card → заполнить поля
+## Создание ассетов
 
-### Карты Руки (В РУКУ)
-ПКМ в Project → Game → Cards → HandCard → заполнить поля
+| Данные | Меню Create | Подключение |
+|---|---|---|
+| `ShadowCardData` | ThousandRoads → Cards → Shadow Card | `CardManager.allShadowCards` |
+| `BattleCardData` | ThousandRoads → Cards → Battle Card | `CardManager.allBattleCards` |
+| `HandCardData` | Game → Cards → HandCard | `HandManager.currentHand` / `rewardPool` по назначению |
 
----
+Поля каталогов событий и битв в Inspector остаются раздельными, но при запуске объединяются в одну runtime-колоду. Создание или импорт ассета сам по себе не добавляет его в каталог сцены.
 
-## КАРТЫ ТЕНИ (ShadowCardData)
+## Общие условия событий и битв
 
-### 1. Шёпот Прошлого
-- cardName: Шепот Прошлого
-- effectType: Money
-- value: -50
-- isTemporary: false
-- description: Голоса из Мглы заставляют вас бросать монеты на дорогу, чтобы «откупиться» от призраков.
+- Назначить уникальный `cardID` для управления контентом и понятное имя/описание.
+- Задать `minDifficulty` и `maxDifficulty`. Игровая кнопка сейчас вытягивает со сложностью 0, поэтому карта с `minDifficulty > 0` из этого вызова не выпадет.
+- Задать `weight`: относительный вес среди всех подходящих оставшихся событий **и** битв.
+- Один и тот же ассет не добавляется дважды; разные ассеты с одинаковым ID остаются разными картами.
 
-### 2. Благословенный Оазис
-- cardName: Благословенный Оазис
-- effectType: AddGoods
-- value: 1
-- isTemporary: false
-- description: Вы находите скрытый источник, где караван может отдохнуть.
+Вес не задаёт фиксированную долю типа карты. При вытягивании выбранный ассет расходуется, при завершении уходит в сброс. Сброс возвращается, когда вся колода пуста.
 
-### 3. Песчаная Слепота
-- cardName: Песчаная Слепота
-- effectType: Attack
-- value: -2
-- isTemporary: true
-- duration: 1  ← "до следующего боя" = HandManager/BattleManager сбрасывает после боя
-- description: Глаза воинов воспалены от магической пыли.
+Готовых полей провинции/высокогорья/речной клетки и коэффициентов местности пока нет. Нельзя считать существующий `CellType` источником вероятности.
 
-### 4. Забытая Заначка
-- cardName: Забытая Заначка
-- effectType: Money
-- value: 100
-- isTemporary: false
-- description: Вы находите кошель, потерянный другим караваном в спешке.
+## Карта события
 
-### 5. Зов Мглы
-- cardName: Зов Мглы
-- effectType: FireCrewMember
-- value: 1  ← не используется логикой, но заполни для ясности
-- isTemporary: false
-- description: Один из ваших людей уходит в туман, ведомый галлюцинациями.
+Пример `ShadowCardData`:
 
-### 6. Дар Незнакомца
-- cardName: Дар Незнакомца
-- effectType: AddGoods
-- value: 1
-- isTemporary: false
-- description: Встречный путник отдаёт вам лишний тюк, прежде чем исчезнуть в песках.
-
-### 7. Лишние Рты
-- cardName: Лишние Рты
-- effectType: WagePenalty
-- value: 0  ← не используется (флаг)
-- isTemporary: false
-- applyOnceInCity: true
-- description: Группа паломников прибилась к каравану, съедая ваши запасы.
-
-### 8. Благосклонность Звезд
-- cardName: Благосклонность Звезд
-- effectType: Attack
-- value: 5
-- isTemporary: true
-- duration: 1  ← "на один следующий бой"
-- description: Моральный дух команды на высоте, мечи кажутся легче.
-
-### 9. Гнилая Сбруя
-- cardName: Гнилая Сбруя
-- effectType: Capacity
-- value: -5
-- isTemporary: true
-- duration: 999  ← "до конца пути" = очень долго, или сбрось вручную при достижении цели
-- description: Ремни на верблюдах трещат, часть груза приходится перевязать.
-
-### 10. Тень Инквизитора
-- cardName: Тень Инквизитора
-- effectType: Confiscation
-- value: 0  ← основное значение не нужно
-- penaltyValue: 200
-- isTemporary: false
-- description: Если у вас есть Осколки Прошлого, вы теряете их и платите 200 динар штрафа.
-
-### 11. Эхо Халифата
-- cardName: Эхо Халифата
-- effectType: BonusTrade
-- value: 5
-- isTemporary: false
-- applyOnceInCity: true
-- description: Вы находите древний указ, подтверждающий ваши торговые права.
-
-### 12. Обвал на Тропе
-- cardName: Обвал на Тропе
-- effectType: RemoveGoods
-- value: -2  ← или 2, ShadowEffectManager берёт Abs()
-- isTemporary: false
-- description: Часть поклажи сорвалась в пропасть или утонула в зыбучих песках.
-
-### 13. Лихорадка
-- cardName: Лихорадка
-- effectType: TeamStats
-- value: -50  ← -50% от всех характеристик команды
-- isTemporary: true
-- duration: 3
-- description: Болезнь подкосила всех: воины слабы, погонщики медленны.
-
----
-
-## КАРТЫ РУКИ (HandCardData)
-
-### 14. Старая Карта
-- cardName: Старая Карта
-- category: Logistic
-- effectType: ChooseDice
-- value: 0
-- description: Позволяет выбрать любое число на кубике пути (1–6) вместо броска.
-
-### 15. Дымовая Завеса
-- cardName: Дымовая Завеса
-- category: Tactical
-- effectType: EscapeBattle
-- value: 0
-- description: Позволяет мгновенно завершить бой без штрафов и наград.
-
-### 16. Второй Шанс
-- cardName: Второй Шанс
-- category: Tactical
-- effectType: Reroll
-- value: 0
-- description: Позволяет перебросить любой кубик (пути или битвы).
-
-### 17. Странный Амулет
-- cardName: Странный Амулет
-- category: Tactical
-- effectType: CancelCard
-- value: 0
-- description: Позволяет отменить действие любой вытянутой карты Тени или Битвы.
-
-### 18. Мистический Узел
-- cardName: Мистический Узел
-- category: Economic
-- effectType: DoubleGoods
-- value: 0
-- description: Вы можете удвоить количество одного типа товара в вашем инвентаре.
-
----
-
-## Важные доработки в других скриптах
-
-### PlayerInventory — нужно добавить методы:
-```csharp
-public void AddRandomGoods(int amount) { /* выбрать случайный тип, добавить */ }
-public void RemoveRandomGoods(int amount) { /* удалить случайные товары */ }
-public bool ConfiscateContraband() { /* удалить Осколки Прошлого, вернуть true если были */ }
-public void DoubleGoods(GoodsType type) { /* удвоить кол-во товара */ }
+```text
+cardID: 1
+cardName: Найденный кошель
+description: На дороге лежит забытый кошель.
+minDifficulty: 0
+maxDifficulty: 10
+weight: 15
+effectType: Money
+value: 10
+isTemporary: false
+duration: 1
 ```
 
-### PlayerStats — нужно добавить методы:
-```csharp
-public bool FireRandomCrewMember() { /* уволить случайного, вернуть false если пусто */ }
-public void ApplyTeamStatsMultiplier(int percent) { /* умножить все стат на (100+percent)/100 */ }
-public void RevertTeamStatsMultiplier(int percent) { /* откатить множитель */ }
+Текущий обработчик даёт **10 динаров**, а не 10% капитала. Не переносить процентный дизайн события в `value` без поддержки соответствующей механики.
+
+| Эффект | Значение `value` в текущем коде |
+|---|---|
+| `Money` | Сумма денег, положительная/отрицательная |
+| `Attack`, `Capacity`, `Bargain` | Изменение характеристики в единицах |
+| `TeamStats` | Процентный множитель характеристик через PlayerStats |
+| `AddGoods` / `RemoveGoods` | Параметр добавления/удаления случайных товаров |
+| `FireCrewMember` | Не используется: увольняется один случайный член команды |
+| `WagePenalty` | Не используется: выставляется отложенный флаг |
+| `Confiscation` | Штраф задаётся `penaltyValue` |
+| `BonusTrade` | Накапливаемый процент отложенного бонуса |
+
+Точные ограничения обработчиков приведены в [ShadowCards_Mechanics.md](ShadowCards_Mechanics.md#эффекты-shadoweffectmanager). `WagePenalty` и `BonusTrade` пока не подключены к городскому потоку.
+
+### Временные эффекты
+
+Inspector предлагает `duration` от 1 до 10. У `Attack`, `Capacity`, `Bargain`, `TeamStats` обработчик сейчас регистрирует временный эффект независимо от `isTemporary`.
+
+Счётчик уменьшается в конце текущего личного хода игрока. Значение 1 может истечь уже в ход получения; новое правило отсчёта ещё уточняется. Не использовать 1 как условие «следующий бой» или 999 как условие «до конца пути»: таких условий нет.
+
+Поля `applyOnceInCity` у ShadowCardData нет. Для отложенных городских эффектов существуют отдельные флаги менеджера, но их потребление в текущем CityManager не подключено.
+
+## Карта битвы
+
+Пример `BattleCardData`:
+
+```text
+cardID: 101
+enemyName: Песчаные разбойники
+description: Разбойники перекрыли дорогу.
+minDifficulty: 0
+maxDifficulty: 10
+weight: 10
+requiredAttack: 5
+rewardMoney: 100
+penaltyMoney: 50
+crewLoss: 0
+rewardHandCardID: 0
 ```
 
-### GameManager — нужно добавить методы:
-```csharp
-public void PromptDiceChoice() { /* показать UI выбора числа 1–6 */ }
-public void PromptDoubleGoods() { /* показать UI выбора типа товара */ }
-```
+Карта выбирается общим взвешенным вытягиванием. Победа определяется по атаке команды + бонусу боя + D6 против ослабленной атаки врага. Кубик не выбирает битву.
 
-### BattleManager — нужно добавить:
-```csharp
-public void AddAttackBonus(int value) { /* добавить бонус к текущему броску */ }
-public void ForceEndBattle(bool escaped) { /* завершить бой без результата */ }
-```
+Текущий BattleManager начисляет денежную награду/штраф. За победу вызывает случайную награду из `HandManager.rewardPool`, а не поиск по `rewardHandCardID`. Поле `crewLoss` пока не исполняется.
 
-### CardManager.DrawCard() — добавить проверку CancelCard:
-```csharp
-public void DrawCard()
-{
-    // Проверяем амулет
-    if (HandManager.Instance != null && HandManager.Instance.ConsumeCancelCard())
-    {
-        Debug.Log("[CardManager] Карта отменена амулетом.");
-        _shuffledDeck.RemoveAt(0); // выбрасываем карту без эффекта
-        gameManager.OnCardCancelled();
-        return;
-    }
-    // ... остальная логика
-}
-```
+`PrepareBattle()` инициализирует бой; интерактивная подготовка до броска ещё отсутствует.
+
+## Карта руки
+
+Настроить `cardName`, `description`, `icon`, `category`, `effectType`, `value`. Категории: `Tactical`, `Logistic`, `Economic`. Категория сейчас не задаёт индивидуальные ограничения фаз.
+
+Пример: «Боевой клич», `category = Tactical`, `effectType = AddBonus`, `value = 3`.
+
+`UseCard()` допускает `InCity`, `InBattle`, `ResolvingEvent`, но текущий UI скрывает руку в городе. Использованная карта удаляется из руки; собственного сброса/восстановления руки нет.
+
+Текущий `CancelCard` выставляет флаг следующей вытянутой карты, а не отменяет уже применившееся событие. `Reroll` перебрасывает боевой D6. `ChooseDice` вызывает выбор числа и передаёт его в бой; окончательные правила применения «Старой Карты» ещё не утверждены.
+
+Правила карт до/во время/после событий и битв и интерактивная подготовка находятся в следующем этапе. Не описывать их как уже работающие только на основании текста карты.
+
+## Импорт
+
+| Импортёр | Запуск |
+|---|---|
+| События из CSV | Tools → Cards → Import Shadow Cards from CSV |
+| Битвы из выбранного CSV/TSV | Tools → Battle Cards → Import from CSV |
+| Рука из встроенных определений | Tools → 1000 Roads → Import Hand Cards |
+
+Форматы, пути и ограничения: [SCRIPTS_AND_IMPORTERS.md](SCRIPTS_AND_IMPORTERS.md). Импортёр битв не задаёт `weight` и диапазон сложности; настроить их после импорта.
+
+## Проверка новой карты
+
+1. Убедиться, что ассет включён в нужный каталог CardManager или пул HandManager.
+2. Для события/битвы проверить диапазон сложности и положительный вес.
+3. Запустить Play Mode, выбрать маршрут и нажать «Вытянуть карту».
+4. Проверить показ и реальный эффект обработчика.
+5. Завершить ход: число оставшихся должно уменьшиться, карта должна перейти в сброс.
+6. При проверке всех карт использовать текущие `RemainingCards`, `DiscardCount`, `CurrentCard`; UI не является отдельным источником состояния.
+
+Автоматические проверки: **Tools → Проверки → Фазы хода, колода и общий рынок**. Контентные таблицы в `Design/` сохраняют авторский замысел; неподдержанные эффекты требуют реализации, а не только изменения ассета.

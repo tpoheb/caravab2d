@@ -6,7 +6,7 @@ using System.Collections.Generic;
 ///
 /// Правило: один PathCellInitializer (ребро между городами)
 /// в один ход может занять только один торговец.
-/// Кто первый по инициативе — тот и занял.
+/// Кто первый в очереди — тот и занял.
 /// </summary>
 public class PathClaims
 {

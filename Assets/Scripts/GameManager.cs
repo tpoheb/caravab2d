@@ -19,7 +19,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Button drawCardButton;
 
     [Header("UI выбора кубика (Старая Карта)")]
-    [Tooltip("Панель с кнопками 1–6 для выбора значения кубика пути")]
+    [Tooltip("Панель с кнопками 1–6 для выбора значения кубика атаки")]
     [SerializeField] private GameObject diceChoicePanel;
 
     [Header("UI выбора товара (Мистический Узел)")]
@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
 
     public GameState State { get; private set; } = GameState.Idle;
 
-    /// <summary>Текущий номер хода. Инкрементируется при завершении хода.</summary>
+    /// <summary>Текущий личный ход игрока. Увеличивается после завершения ходов ИИ.</summary>
     public int TurnNumber { get; private set; }
 
     private bool _pendingBattle = false;
@@ -154,6 +154,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        SetState(GameState.EndingTurn);
         GetUIManager().ShowEndTurnButton(false);
 
         if (_pendingBattle)
@@ -181,19 +182,29 @@ public class GameManager : MonoBehaviour
 
         var ui = GetUIManager();
         ui.ClearEventText();
-        ui.ShowDiceButton(true);
+        ui.ShowDiceButton(false);
 
+        SetState(GameState.WaitingForAI);
+        StartCoroutine(WaitForAIAndBeginPlayerTurn());
+    }
+
+    private System.Collections.IEnumerator WaitForAIAndBeginPlayerTurn()
+    {
+        if (AITurnManager.Instance != null)
+            yield return AITurnManager.Instance.ProcessAITurnAndWait();
+
+        // Начинается следующий личный ход. Вход в город не завершает его:
+        // после городских действий OnPathSelected приведёт на первую клетку.
+        TurnNumber++;
         SetState(GameState.Moving);
         ContinueMovement();
-
-        AITurnManager.Instance?.ProcessAITurn();
     }
 
     // ─────────────────────────────────────────────────────────────────────
     // Кубик
     // ─────────────────────────────────────────────────────────────────────
 
-    public void OnDiceRolled(int value, DiceEventType type)
+    public void OnDiceRolled(int value)
     {
         if (State == GameState.InBattle || State == GameState.ResolvingEvent)
         {
@@ -241,7 +252,7 @@ public class GameManager : MonoBehaviour
     private void ApplyDiceChoice(int value)
     {
         Debug.Log($"[GameManager] ChooseDice: выбрано {value}.");
-        // Передаём в BattleManager напрямую (кубик пути — отдельная логика)
+        // Передаём выбранную прибавку к атаке в BattleManager
         battleManager.ExecuteBattle(value);
         SetState(GameState.ResolvingEvent);
         GetUIManager().ShowEndTurnButton(true);
@@ -334,8 +345,7 @@ public class GameManager : MonoBehaviour
     public void CompleteEventPhase()
     {
         if (State != GameState.ResolvingEvent) return;
-        SetState(GameState.Moving);
-        ContinueMovement();
+        RequestEndTurn();
     }
 
     // ─────────────────────────────────────────────────────────────────────

@@ -1,185 +1,107 @@
 # Архитектура систем — 1000 Дорог
 
-## Общие принципы
+Актуально на 2026-10-05. Источник поведения — `.cs` файлы. Состояние рефакторинга описано в [REFACTORING.md](REFACTORING.md).
 
-Проект использует **событийную (Observer) архитектуру** через C# `static event`. Это позволяет системам быть независимыми: `CityPanel` не знает о `PlayerToken`, `TradeSystem` не знает о `CityPanel` — они общаются только через события.
+## Оркестрация и зависимости
 
-Второй ключевой принцип — **ScriptableObject как данные**. Вся игровая конфигурация (характеристики юнитов, предметы, данные городов, боевые карты) хранится в `.asset` файлах и не зависит от сцены.
+`GameManager` — Singleton и оркестратор личного хода игрока. Системы получают зависимости через Inspector и используют прямые вызовы вместе с событиями. `DiceSystem.OnDiceRolled` и события `PlayerToken` принадлежат экземплярам; у торгового UI остаются отдельные статические события.
 
----
+`GameManager` и `CityManager` подписываются и отписываются в `OnEnable()` / `OnDisable()`. `TradeSystem` пока подписывается в `Awake()` и отписывается в `OnDestroy()`. Проверка ссылок предусмотрена у ряда компонентов, но не у всех.
 
-## Граф событий
+```text
+CityPanel.OnPathButtonClicked
+  → GameManager.OnPathSelected
+    → PlayerToken.StartPath / AdvanceToken
+      → PathController.SetPath / Step / MoveCurrent
+      → OnStepCompleted → TradeSystem.RegenerateGlobalEconomy
+      → OnArrivedAtCity → GameManager и CityManager
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                      GAME MANAGER                        │
-│  - Singleton                                             │
-│  - Оркестрирует фазы хода                               │
-└────────────────────────┬─────────────────────────────────┘
-                         │ подписывается на
-                         ▼
-┌──────────────────────────────────────────────────────────┐
-│                    DICE SYSTEM                           │
-│  static event OnDiceEvent(DiceEventType)                 │
-│  Battle | ShadowInfluence | PeacefulPass                 │
-└──────────┬───────────────────────────────────────────────┘
-           │ OnDiceEvent
-     ┌─────┴──────────────────┐
-     ▼                        ▼
-┌──────────────┐    ┌──────────────────┐
-│ BattleManager│    │  CardManager     │
-│ StartRandom  │    │  DrawCard()      │
-│ Battle()     │    │                  │
-└──────┬───────┘    └────────┬─────────┘
-       │ CompleteEventPhase()│
-       └──────────┬──────────┘
-                  ▼
-         GameManager.CompleteEventPhase()
+GameManager: кнопка «Вытянуть карту»
+  → CardManager.DrawCard
+    → CardDeck.Draw → CurrentCard
+    → CardDeckUI.ShowCard
+      → ShadowEffectManager.ApplyCard
+      или BattleManager.PrepareBattle
+        → GameManager.OnBattleCardRevealed
+          → DiceSystem.OnDiceRolled(int) → BattleManager.ExecuteBattle
 
-┌──────────────────────────────────────────────────────────┐
-│                   PLAYER TOKEN                           │
-│  static event OnPlayerArrivedAtCity(City)               │
-│  static event OnPlayerMoved()                           │
-└────────┬───────────────────────────────────────────────  ┘
-         │ OnPlayerArrivedAtCity
-         ▼
-┌──────────────────────────────────────────────────────────┐
-│                   CITY MANAGER                           │
-│  → открывает CityPanel.OpenPanel(city)                   │
-└────────────────────────┬─────────────────────────────────┘
-                         │
-                         ▼
-┌──────────────────────────────────────────────────────────┐
-│                    CITY PANEL                            │
-│  static event OnPathSelected(PathCellInitializer)       │
-│  → TradeSystem.RequestTrade(city) — при нажатии "Купить"│
-└───────────┬──────────────────────────────────────────────┘
-            │ OnPathSelected
-            ▼
-┌──────────────────────────────────────────────────────────┐
-│                  PLAYER TOKEN                            │
-│  SetPath(path) → pathController.SetPath(path)           │
-└──────────────────────────────────────────────────────────┘
-
-┌──────────────────────────────────────────────────────────┐
-│                   TRADE SYSTEM                           │
-│  static event OnTradeRequest(City)                       │
-└────────────────────────┬─────────────────────────────────┘
-                         │ OnTradeRequest (self-subscription)
-                         ▼
-                  OpenTrade(city)
-                         │
-                         ▼
-┌──────────────────────────────────────────────────────────┐
-│                TRADE UI MANAGER                          │
-│  OpenTradePanel(cityData, inventory)                     │
-│  static event OnTradeClosedRequest                       │
-└────────────────────────┬─────────────────────────────────┘
-                         │ OnTradeClosedRequest
-                         ▼
-               CityManager.ReOpenCityPanel()
+GameManager.RequestEndTurn
+  → при активном бое: BattleManager.FinalizeBattle
+  → ShadowEffectManager.ProcessTurn
+  → CardManager.HideEventCard → сброс
+  → AITurnManager.ProcessAITurnAndWait
+    → TurnQueue.ProcessTurnCoroutine
+  → следующий личный ход игрока
 ```
 
----
+## FSM игрока
 
-## Фазы хода
+| Состояние | Текущий смысл |
+|---|---|
+| `Idle` | Начальное значение до запуска |
+| `InCity` | Торговля, наём и выбор пути без завершения личного хода |
+| `Moving` | Выполнение шага либо вход с последней клетки в город |
+| `DrawingCard` | Ожидание кнопки «Вытянуть карту» |
+| `ResolvingEvent` | Эффект события применён либо показан боевой бросок; доступно завершение хода |
+| `InBattle` | Краткий переход для автоматического боевого броска |
+| `EndingTurn` | Ход закрывается; повторный `RequestEndTurn()` отклоняется |
+| `WaitingForAI` | Ожидание последовательных ходов ИИ |
 
-```
-StartNewTurn()
-     │
-     ▼
-[Игрок выбирает маршрут в CityPanel]
-     │ CityPanel.OnPathSelected
-     ▼
-PlayerToken.SetPath()
-     │
-     ▼
-[Игрок нажимает End Turn]
-     │ endTurnButton.onClick → GameManager.HandleEndTurnRequest()
-     ▼
-PlayerToken.AdvanceToken()
-     ├─ pathController.Advance()
-     ├─ teamSystem.PaySalaries()
-     └─ [путь завершён?]
-           ├─ НЕТ → pathController.MoveCurrent() → DiceSystem.RollDice()
-           └─ ДА  → ArriveAtDestination()
-                       ├─ pathController.ResetToken()
-                       ├─ OnPlayerArrivedAtCity → CityPanel открывается
-                       └─ GameManager.CompleteMovementPhase()
+Начальный `StartTurn()` — приватный метод: устанавливает первый номер хода и `InCity`. В дальнейшем `TurnNumber` увеличивается в `WaitForAIAndBeginPlayerTurn()` после ИИ, перед движением игрока. `TurnQueue.TurnNumber` — отдельный счётчик циклов ИИ.
 
-[DiceSystem бросает кубик]
-     │ OnDiceEvent(type)
-     ▼
-GameManager.HandleDiceEvent()
-     ├─ Battle          → BattleManager.StartRandomBattle()
-     ├─ ShadowInfluence → CardManager.DrawCard()
-     └─ PeacefulPass   → GameManager.CompleteEventPhase()
+```text
+InCity → Moving → DrawingCard → ResolvingEvent
+                                   ├─ событие: ApplyCard
+                                   └─ битва: InBattle → бросок → ResolvingEvent
+ResolvingEvent → EndingTurn → WaitingForAI → Moving
+                                               ├─ новая клетка → DrawingCard
+                                               └─ вход в город → InCity
 ```
 
----
+## Личный ход с городом
 
-## Слои архитектуры
+Один ход содержит один шаг на дорожную клетку. После последней клетки игрок завершает карту и ждёт ИИ. В начале следующего личного хода `PathController.Step()` отмечает конец старого пути, `PlayerToken` сбрасывает путь и сообщает о городе.
 
-### Уровень данных (Data Layer)
+В `InCity` игрок совершает свободные торговые действия и наём. Выбор нового пути сразу приводит на его первую клетку без ещё одного увеличения `TurnNumber`. Зарплата и `OnStepCompleted` относятся к успешному шагу на клетку; вход в город сам по себе их не вызывает.
 
-ScriptableObjects — чистые данные без логики (кроме валидации):
+`CompleteEventPhase()` сохранён для совместимости и делегирует `RequestEndTurn()`. Он не обходит сброс и очередь ИИ.
 
-```
-PlayerStats.asset      — Attack, Bargain, Capacity
-UnitData.asset         — имя, иконка, бонусы, найм, зарплата
-Item.asset             — название, иконка, вес
-CityData.asset         — название, cityGold, List<CityItem>
-BattleCardData.asset   — enemyName, requiredAttack, reward, penalty
-```
+## Общая колода
 
-### Уровень логики (Logic Layer)
+`CardManager` владеет `CardDeck`, списком сброса и единственной `CurrentCard`. Списки Inspector `allShadowCards` и `allBattleCards` сохранены для ссылок сцен и объединяются при `Awake()`. Один и тот же ассет не добавляется в колоду дважды.
 
-MonoBehaviour и static классы с бизнес-правилами:
+`CardDeck.Draw(condition, weightSelector)` фильтрует карты, выбирает одну с положительным весом и удаляет её. `CardManager` проверяет диапазон сложности; текущий вызов из `GameManager` передаёт сложность 0. Отдельной вероятности типа карты нет.
 
-```
-GameManager            — оркестратор
-TradeSystem            — открытие/закрытие торговли
-TradeTransactionHandler— валидация и выполнение транзакций (static)
-BattleManager          — разрешение боёв
-TeamSystem             — управление командой
-PlayerInventory        — инвентарь, деньги, вместимость
-PathController         — продвижение по маршруту
-```
+`HideEventCard()` переносит текущую карту в сброс ровно один раз. Отменённая карта также расходуется и остаётся текущей до завершения. Возврат сброса выполняется при следующем вытягивании только когда вся колода пуста.
 
-### Уровень UI (Presentation Layer)
+`CardDeckUI` отвечает за отображение, события UI и счётчики, полученные от менеджера. Он не хранит отдельную игровую очередь или сброс. `CardDisplay` показывает лицевую сторону мгновенно; ожидания flip-анимации в текущем цикле нет.
 
-Только отображение и проброс событий наверх:
+## ИИ: планирование и исполнение
 
-```
-CityPanel              — панель города с маршрутами
-TradeUIManager         — панель торговли
-HirePanelUI            — панель найма
-ItemUI                 — строка товара
-CardHandUI / CardUI    — карты в руке
-TopBarUI               — деньги, атака, ёмкость, торг
-```
+1. На основном потоке `AITrader.PrepareTurn()` бесплатно вводит ИИ с последней клетки в город.
+2. `WorldEconomy.TakeSnapshot()` копирует текущие цены покупки и продажи, запасы и списки путей.
+3. Все ИИ планируют по одному снимку через `Task.Run(() => PlanTurn(snapshot))`.
+4. `TurnQueue` исполняет торговлю и корутину движения каждого участника до перехода к следующему.
+5. После завершения очереди `GameManager` начинает следующий личный ход игрока.
 
----
+Порядок задаёт список участников, создаваемый из `aiProfiles`; сортировки по `Initiative` нет. Планирование остаётся параллельным, но игровые действия и движение последовательны. ИИ не получают карты событий и битв.
 
-## ScriptableObject: PlayerStats
+Фоновая стратегия использует копию рынка, `System.Random` и `System.Math`. Нельзя читать свойства Unity-объектов, вызывать Unity API или менять мир в планировании. Ссылки `City` и `PathCellInitializer` в снимке служат идентификаторами. Управляемые данные самого торговца не изменяются очередью во время планирования.
 
-`PlayerStats` — ScriptableObject, но используется как **runtime-изменяемые данные** через `ModifyAttack()` и т.д. Это создаёт риск сохранения изменённых значений между Play Mode сессиями в редакторе.
+`PathClaims` сохраняет существующее ограничение: один путь за цикл может занять один ИИ, приоритет имеет первый в очереди. Заблокированный ИИ в пути сохраняет маршрут для повторной попытки.
 
-**Текущий подход:** `PlayerInventory.Awake()` и связанные системы обращаются к `PlayerStats` напрямую через `SerializeField`.
+## Общий рынок и данные
 
-**Рекомендация для продакшна:** при инициализации вызывать `Instantiate(playerStats)` для создания runtime-копии, не затрагивающей `.asset` файл.
+`CityManager.Awake()` вызывает `City.InitRuntimeData()` для городов сцены. Исходные `CityData` остаются конфигурацией; `City.RuntimeData` хранит состояние сессии.
 
----
+`TradeSystem` и `WorldEconomy.GetCityData()` используют одну runtime-копию города. Сделка ИИ меняет запас, цены и деньги, которые затем видит игрок. Снимок используется только для планирования: исполнение проверяет фактический рынок. Объединение рынка не унифицировало формулы расчёта сделок игрока и ИИ.
 
-## Dependency Injection через Inspector
+Данные карт, товаров, юнитов и характеристик представлены ScriptableObject. `PlayerStats` по-прежнему назначается системам через Inspector и инициализируется при запуске; этот этап не вводил общую runtime-копию характеристик.
 
-Все зависимости инжектируются через `[SerializeField]` в Unity Inspector:
+## Незавершённые этапы
 
-```csharp
-// TradeSystem
-[SerializeField] private PlayerInventory playerInventory;
-[SerializeField] private PlayerStats playerStats;
-[SerializeField] private TradeUIManager tradeUIManager;
-```
+Интерактивная подготовка до события или броска ещё отсутствует: `PrepareBattle()` инициализирует бой, но не ждёт действий игрока. Правила применения карт руки до/во время/после события и битвы требуют уточнения.
 
-Каждый компонент вызывает `ValidateReferences()` в `Awake()` / `Start()` и логирует ошибки при незаполненных ссылках.
+Сейчас `ProcessTurn()` уменьшает длительность эффектов в конце текущего личного хода, включая только что полученные. Ходы ИИ и отдельные городские действия не вызывают этот тик. Новое правило отсчёта пока не реализовано.
+
+`weightSelector` — точка расширения для будущих весов клетки/провинции. В игровом потоке такие модификаторы пока не подключены.

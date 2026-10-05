@@ -23,7 +23,7 @@ public interface ITrader
 
     /// <summary>
     /// Фаза исполнения: торговля (покупка/продажа).
-    /// Вызывается TurnQueue строго по инициативе.
+    /// Вызывается TurnQueue в порядке списка участников.
     /// </summary>
     void ExecuteTrade(TurnIntent intent, WorldEconomy economy);
 

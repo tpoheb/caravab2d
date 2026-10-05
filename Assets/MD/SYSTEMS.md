@@ -1,399 +1,176 @@
 # Справочник систем — 1000 Дорог
 
-## GameManager
+Актуально на 2026-10-05. Справочник описывает существующие методы, события и ограничения, а не целевую модель из GDD. Общий цикл: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**Файл:** `Assets/Scripts/GameManager.cs`  
-**Паттерн:** Singleton (`GameManager.Instance`)
+## GameManager и GameState
 
-### Публичные методы
+Файлы: `Assets/Scripts/GameManager.cs`, `Assets/Scripts/GameState.cs`. Singleton: `GameManager.Instance`.
 
-| Метод | Описание |
+| API | Назначение |
 |---|---|
-| `StartNewTurn()` | Начинает новый ход, устанавливает `IsPlayerTurnActive = true` |
-| `HandleEndTurnRequest()` | Вызывается UI. Если есть активный путь — двигает токен и бросает кубик |
-| `CompleteEventPhase()` | Вызывается `BattleManager` / `CardManager` по завершении события |
-| `CompleteMovementPhase()` | Вызывается `PlayerToken` при прибытии в город |
-| `EndPlayerTurn()` | Заканчивает ход игрока |
+| `State` | `Idle`, `InCity`, `Moving`, `DrawingCard`, `ResolvingEvent`, `InBattle`, `EndingTurn`, `WaitingForAI` |
+| `TurnNumber` | Номер личного хода игрока; первый задаётся при запуске, следующий — после ИИ |
+| `OnPathSelected(path)` | Только из `InCity`: устанавливает путь и сразу делает первый шаг |
+| `ContinueMovement()` | Только из `Moving`: шаг на клетку либо вход в город |
+| `RequestEndTurn()` | Только из `ResolvingEvent`/`InBattle`: блокирует повторное завершение, финализирует бой, тикает эффекты, сбрасывает карту и ждёт ИИ |
+| `CompleteEventPhase()` | Совместимый вход, делегирующий `RequestEndTurn()` из `ResolvingEvent` |
+| `OnShadowCardRevealed()` | Показывает завершение хода после применения события |
+| `OnBattleCardRevealed()` | Помечает активный бой, устанавливает `InBattle`, автоматически бросает кубик |
+| `OnBattleForceEnded()` / `OnCardCancelled()` | Переводят в `ResolvingEvent`, позволяют завершить ход |
+| `OnDiceRolled(int value)` | Передаёт результат в `ExecuteBattle()`, возвращает в `ResolvingEvent` |
+| `PromptDiceChoice()` / `OnDiceChoiceSelected(int)` | Выбор числа 1–6 и передача его в бой; правила момента применения ещё уточняются |
+| `PromptDoubleGoods()` / `OnDoubleGoodsSelected(Item)` | Удвоение товара; полноценный UI выбора пока заменён заглушками |
 
-### Enum DiceEventType
-
-```csharp
-public enum DiceEventType
-{
-    None = 0,
-    Battle,            // кубик 1–2 → BattleManager
-    ShadowInfluence,   // кубик 3–4 → CardManager
-    PeacefulPass       // кубик 5–6 → CompleteEventPhase()
-}
-```
-
----
+`StartTurn()` и `WaitForAIAndBeginPlayerTurn()` — приватные методы. В конце боя перед сбросом и ИИ остаётся задержка 1,5 секунды. Вход в город и выход на первую клетку следующего маршрута не увеличивают счётчик по отдельности.
 
 ## DiceSystem
 
-**Файл:** `Assets/Scripts/DiceSystem.cs`
-
-### События
+Файл: `Assets/Scripts/DiceSystem.cs`.
 
 ```csharp
-public static event Action<DiceEventType> OnDiceEvent;
+public event Action<int> OnDiceRolled;
+public int LastRollResult { get; private set; }
+public void RollDice();
 ```
 
-### Методы
+Диапазон по умолчанию — 1–6. Кубик используется для атаки, тип карты выбирает общая колода. Файл `DiceEventType.cs` остался в проекте, но текущий игровой поток этот enum не использует.
 
-| Метод | Описание |
+## PlayerToken и путь
+
+Файл: `Assets/Scripts/PlayerToken.cs`.
+
+```csharp
+public event Action<City> OnArrivedAtCity;
+public event Action OnStepCompleted;
+public void StartPath(PathCellInitializer path);
+public bool AdvanceToken();
+```
+
+`AdvanceToken()` вызывает `PathController.Step()`. На клетке перемещает фишку, выплачивает зарплату и публикует `OnStepCompleted`. Если путь завершён — сбрасывает его и публикует прибытие, без зарплаты и события шага. Возвращает `true` при завершении пути.
+
+| API `PathController` | Назначение |
 |---|---|
-| `RollDice()` | Бросает 1d6, публикует `OnDiceEvent` |
+| `HasActivePath`, `CurrentPath` | Состояние текущего пути |
+| `IsReadyToArrive` | Есть путь и достигнута последняя клетка; используется для бесплатного входа ИИ в город |
+| `SetPath(path)` | Кэширует клетки, сбрасывает индекс в −1, активирует фишку |
+| `Step()` | Увеличивает индекс; возвращает `true` после выхода за клетки |
+| `MoveCurrent()` | Перемещает фишку на текущую клетку |
+| `ResetPath()` | Сбрасывает путь и скрывает фишку |
+| `SetTokenObject(token)` | Назначает отображаемую фишку |
 
-### Таблица результатов
+`PathCellInitializer.FinishCity` задаёт город назначения. `InitializeCells()` нумерует только детей с тегом `Cell`, добавляя компонент при необходимости. Сам `PathController` кэширует всех прямых детей и ожидает на каждом `Cell`; посторонние дети могут привести к несовпадению или ошибке.
 
-| Кубик | DiceEventType |
+## CardDeck
+
+Файл: `Assets/Scripts/Card/CardDeck.cs`. Одна типизированная коллекция `ICard`, использующая `UnityEngine.Random`; вызывать на основном потоке.
+
+| API | Назначение |
 |---|---|
-| 1–2 | Battle |
-| 3–4 | ShadowInfluence |
-| 5–6 | PeacefulPass |
+| `Add(card)` / `AddRange(cards)` | Добавление без null и повторной ссылки на один ассет |
+| `Draw(condition = null, weightSelector = null)` | Выбор по положительным весам и удаление выбранной карты |
+| `Count`, `IsEmpty` | Число оставшихся карт и пустота |
+| `Peek()` | Первый элемент списка без расходования; не предсказывает следующий взвешенный выбор |
+| `Clear()` / `Shuffle()` | Очистка / перестановка внутреннего списка |
 
----
+Без `weightSelector` берётся поле `weight` у `ShadowCardData`/`BattleCardData`. Селектор позволяет позднее учитывать клетку, но пока не подключён к игровому менеджеру.
 
-## PlayerToken
+## CardManager и CardDeckUI
 
-**Файл:** `Assets/Scripts/PlayerToken.cs`
+Файлы: `Assets/Scripts/Card/CardManager.cs`, `Assets/Scripts/Card/CardDeckUI.cs`.
 
-### Статические события
+`CardManager` владеет колодой, сбросом и `CurrentCard`. Каталоги `allShadowCards` и `allBattleCards` объединяются при запуске.
 
-```csharp
-public static event Action<City> OnPlayerArrivedAtCity;
-public static event Action OnPlayerMoved;
-```
-
-### Публичные свойства / методы
-
-| Член | Описание |
+| API `CardManager` | Назначение |
 |---|---|
-| `PathController PathController` | Доступ к PathController для GameManager |
-| `SetPath(PathCellInitializer path)` | Устанавливает маршрут, вызывается из CityPanel.OnPathSelected |
-| `AdvanceToken()` | Продвигает на один шаг, вызывается из GameManager |
+| `RemainingCards`, `DiscardCount`, `CurrentCard` | Единственное игровое состояние колоды |
+| `DrawCard()` | Вытягивание со сложностью 0 |
+| `DrawCard(int difficulty, Func<bool> extraConditions = null)` | Фильтр сложности и проверка дополнительного условия |
+| `HideEventCard()` | Сброс текущей карты ровно один раз, скрытие UI и обновление счётчиков |
 
-### Зависимости (Inspector)
+Повторное вытягивание при незавершённой текущей карте отклоняется. Пустая колода восстанавливается из сброса. Если нет подходящих карт или дополнительное условие ложно, менеджер разрешает завершить ход через `OnCardCancelled()`; карта не расходуется. Отмена уже выбранной карты флагом руки расходует эту карту.
 
-- `PathController` — управление позицией
-- `UIHandler` — (legacy, для старых попапов)
-- `TeamSystem` — для `PaySalaries()` при каждом шаге
-- `DiceSystem` — (хранится, но вызов через GameManager)
-- `PlayerInventory`
-- `Button endTurnButton`
-- `City startCity` — начальный город
-
----
-
-## PathController
-
-**Файл:** `Assets/Scripts/PathController.cs`
-
-### Методы
-
-| Метод | Описание |
+| API `CardDeckUI` | Назначение |
 |---|---|
-| `SetPath(PathCellInitializer path)` | Инициализирует путь, показывает токен |
-| `Advance()` | Увеличивает `currentCellIndex` |
-| `MoveCurrent()` | Перемещает токен на текущую ячейку |
-| `HasActivePath()` → bool | Есть ли активный маршрут |
-| `IsPathCompleted()` → bool | Достиг ли конца пути |
-| `ResetToken()` | Сбрасывает путь, скрывает токен |
-
----
-
-## PathCellInitializer
-
-**Файл:** `Assets/Scripts/PathCellInitializer.cs`
-
-Инициализирует дочерние объекты с тегом `"Cell"`, нумерует их и добавляет компонент `Cell` если его нет.
-
-### Свойства
-
-```csharp
-public City FinishCity { get; }   // город назначения маршрута
-```
-
-### Методы
-
-```csharp
-public void InitializeCells()   // вызывается из City.Awake() или Start()
-```
-
----
-
-## City
-
-**Файл:** `Assets/Scripts/City.cs`
-
-### Свойства
-
-```csharp
-public string CityName { get; }
-public CityData CityData { get; }   // ScriptableObject с товарами
-public List<PathCellInitializer> Paths { get; }
-```
-
----
-
-## CityManager
-
-**Файл:** `Assets/Scripts/CityManager.cs`
-
-Слушает `PlayerToken.OnPlayerArrivedAtCity` и `TradeUIManager.OnTradeClosedRequest`.
-
-При прибытии открывает `CityPanel`. При закрытии торговли — повторно открывает панель последнего города.
-
----
-
-## CityPanel
-
-**Файл:** `Assets/Scripts/CityPanel.cs`
-
-### Статические события
-
-```csharp
-public static event Action<PathCellInitializer> OnPathSelected;
-```
-
-### Методы
-
-| Метод | Описание |
-|---|---|
-| `OpenPanel(City city)` | Строит кнопки маршрутов, показывает панель |
-| `ClosePanel()` | `gameObject.SetActive(false)` |
-
-Кнопка «Купить товары» вызывает `TradeSystem.RequestTrade(city)` и закрывает панель.
-
----
-
-## TradeSystem
-
-**Файл:** `Assets/Scripts/Trade/TradeSystem.cs`
-
-### Статические события
-
-```csharp
-public static event Action<City> OnTradeRequest;
-```
-
-### Публичные методы
-
-| Метод | Описание |
-|---|---|
-| `RequestTrade(City city)` (static) | Публикует `OnTradeRequest` |
-| `BuyItem(CityData.CityItem item, int qty)` | Покупка через TransactionHandler + обновление UI |
-| `SellItem(CityData.CityItem item, int qty)` | Продажа через TransactionHandler + обновление UI |
-| `CloseTrade()` | Закрывает UI торговли |
-
----
-
-## TradeTransactionHandler
-
-**Файл:** `Assets/Scripts/Trade/TradeTransactionHandler.cs`  
-**Тип:** `static class` (без MonoBehaviour)
-
-### Методы
-
-```csharp
-static void ProcessBuyTransaction(CityData.CityItem item, int qty,
-    CityData city, PlayerInventory inv, PlayerStats stats)
-
-static void ProcessSellTransaction(CityData.CityItem item, int qty,
-    CityData city, PlayerInventory inv, PlayerStats stats)
-```
-
-### Формула цены
-
-```csharp
-float bargainEffect = playerStats.Bargain * 0.01f;
-// Покупка: цена снижается при положительном Bargain
-int buyPrice = Mathf.RoundToInt(basePrice * (1f - bargainEffect));
-// Продажа: цена растёт при положительном Bargain  
-int sellPrice = Mathf.RoundToInt(basePrice * (1f + bargainEffect));
-finalPrice = Mathf.Max(1, calculatedPrice); // минимум 1
-```
-
-### Условия покупки
-
-- `playerInventory.CanCarryMore(weight * qty)` — есть место
-- `playerInventory.Money >= totalCost` — есть деньги
-- `cityItem.stock >= qty` — есть товар в городе
-
-### Условия продажи
-
-- `playerInventory.GetItemStock(item) >= qty` — есть товар у игрока
-- `city.cityGold >= totalValue` — у города есть золото
-
----
-
-## TradeUIManager
-
-**Файл:** `Assets/Scripts/Trade/TradeUIManager.cs`
-
-### Статические события
-
-```csharp
-public static event System.Action OnTradeClosedRequest;
-```
-
-### Методы
-
-| Метод | Описание |
-|---|---|
-| `OpenTradePanel(CityData, PlayerInventory)` | Открывает панель, строит ItemUI |
-| `CloseTradePanel()` | Скрывает панель, удаляет ItemUI |
-| `RefreshTradeUI(CityData, PlayerInventory)` | Полное перестроение UI |
-| `UpdateMoneyUI(PlayerInventory, CityData)` | Обновляет деньги игрока и города |
-| `RefreshItemStocks(PlayerInventory)` | Обновляет только количества у игрока |
-| `ClearItemUIs()` | Уничтожает все `ItemUI` |
-
----
-
-## PlayerInventory
-
-**Файл:** `Assets/Scripts/Trade/PlayerInventory.cs`
-
-### События
-
-```csharp
-public event System.Action OnInventoryChanged;
-public event System.Action OnMoneyChanged;
-```
-
-### Методы инвентаря
-
-| Метод | Описание |
-|---|---|
-| `AddItem(Item, int)` → bool | Добавляет товар, проверяет вместимость |
-| `RemoveItem(Item, int)` → bool | Удаляет товар |
-| `GetItemStock(Item)` → int | Количество конкретного товара |
-| `HasItem(Item, int)` → bool | Есть ли минимальное количество |
-
-### Методы денег
-
-| Метод | Описание |
-|---|---|
-| `TrySpendMoney(int)` → bool | Списывает деньги, если достаточно |
-| `AddMoney(int)` | Добавляет деньги |
-
-### Методы вместимости
-
-| Метод | Описание |
-|---|---|
-| `CanCarryItem(Item, int)` → bool | Проверка по весу |
-| `GetCurrentWeight()` → int | Текущий суммарный вес |
-| `GetRemainingCapacity()` → int | Остаток вместимости |
-
----
-
-## PlayerStats
-
-**Файл:** `Assets/Scripts/Hire/PlayerStats.cs`  
-**Тип:** ScriptableObject
-
-### Свойства
-
-| Свойство | Диапазон | Описание |
-|---|---|---|
-| `Attack` | 1–100 | Боевая сила (сравнивается с `BattleCardData.requiredAttack`) |
-| `Bargain` | −20..+20 | Влияет на цены торговли (±1% за единицу) |
-| `Capacity` | 10–5000 | Максимальный вес инвентаря |
-
-### Методы
-
-```csharp
-void ModifyAttack(int value)
-void ModifyBargain(int value)
-void ModifyCapacity(int value)
-```
-
----
-
-## TeamSystem
-
-**Файл:** `Assets/Scripts/Hire/TeamSystem.cs`
-
-### Публичные свойства
-
-```csharp
-public List<TeamMember> CurrentTeam { get; }
-```
-
-### Методы
-
-| Метод | Описание |
-|---|---|
-| `OpenHirePanel()` | Инициализирует UI при первом вызове, обновляет и показывает |
-| `TryHireUnit(UnitData)` → bool | Найм: списывает деньги, добавляет в команду, применяет бонусы |
-| `FireUnit(TeamMember)` | Увольнение: убирает бонусы, удаляет из команды |
-| `PaySalaries()` | Списывает суммарную зарплату, вызывается каждый шаг |
-| `CloseHirePanel()` | Закрывает UI найма |
-
----
+| `SetDeckCounts(remaining, discarded)` | Получает счётчики менеджера, обновляет текст числа оставшихся |
+| `ShowCard(card, onRevealed = null)` | Мгновенно показывает карту и вызывает callback |
+| `ShowCancelledCard(card)` | Обёртка отменённой карты и сообщение в `EventPanelUI` |
+| `DiscardCurrentCard()` | Уведомление UI о сбросе и скрытие |
+| `HideCurrentCard()` | Только скрытие отображения |
+| `OnCardDrawn`, `OnCardRevealed`, `OnCardDiscarded` | События экземпляра `Action<ICard>` |
+
+`CardDisplay` показывает название и характеристики без flip-анимации. Полное описание выводит `EventPanelUI`. `CancelledCardWrapper` объявлен в файле `CardDeckUI.cs`.
 
 ## BattleManager
 
-**Файл:** `Assets/Scripts/BattleManager.cs`
+Файл: `Assets/Scripts/Card/BattleManager.cs`.
 
-### Методы
-
-| Метод | Описание |
+| API | Назначение |
 |---|---|
-| `StartRandomBattle()` | Вытягивает случайную `BattleCardData`, обрабатывает результат |
-| `EndBattle()` | Вызывает `GameManager.CompleteEventPhase()` |
+| `PrepareBattle(card)` → `bool` | Проверяет отложенный побег, затем инициализирует бой; `false` означает пропуск |
+| `ExecuteBattle(diceValue)` | Сохраняет бросок, потребляет ослабление врага и показывает значения |
+| `RequestNewRoll()` | Генерирует новый D6 и пересчитывает отображение |
+| `AddAttackBonus(value)` | Добавляет бонус текущего боя |
+| `FinalizeBattle()` | Сравнивает атаки и начисляет результат |
+| `ForceEndBattle(escaped)` | Завершает бой принудительно и уведомляет GameManager |
+| `OnBattleWon`, `OnBattleLost`, `OnBattleEscaped` | События экземпляра `Action` |
 
-### Логика боя
-
-```
-playerStats.Attack >= battleCard.requiredAttack
-    → Победа: playerInventory.Money += rewardMoney
-    → Поражение: playerInventory.Money += penaltyMoney (отрицательное)
-```
-
----
-
-## CardManager
-
-**Файл:** `Assets/Scripts/CardManager.cs`  
-**Паттерн:** Singleton
-
-Получает вызов `DrawCard()` от `GameManager` при событии `ShadowInfluence`. Симулирует вытягивание карты с задержкой 0.5 сек (`Invoke`), затем вызывает `GameManager.CompleteEventPhase()`.
-
----
-
-## IsoCameraFollow
-
-**Файл:** `Assets/Scripts/IsoCameraFollow.cs`
-
-```csharp
-public Transform target;     // цель следования (PlayerToken)
-public float smoothSpeed;    // скорость интерполяции
-public Vector3 offset;       // смещение от цели
+```text
+атака игрока = TeamSystem.GetTotalAttack() + бонус боя + последний бросок
+атака врага = max(0, requiredAttack − ослабление врага)
+победа: атака игрока >= атака врага
 ```
 
-Обновляется в `LateUpdate()` через `Vector3.Lerp`.
+Победа выдаёт деньги и случайную карту из `HandManager.rewardPool`; поражение списывает денежный штраф с учётом снижения. Поля `rewardHandCardID` и `crewLoss` есть в ассете, но текущий `BattleManager` их не применяет. `PrepareBattle()` пока не является интерактивной фазой подготовки.
 
----
+## ShadowEffectManager и HandManager
 
-## TopBarUI
+Файлы: `Assets/Scripts/Card/ShadowEffectManager.cs`, `Assets/Scripts/Card/HandManager.cs`.
 
-**Файл:** `Assets/Scripts/TopBarUI.cs`
+`ShadowEffectManager.ApplyCard()` применяет событие; `ApplyTransientCard()` создаёт временный объект данных для эффекта руки. `ProcessTurn()` уменьшает оставшуюся длительность в конце личного хода игрока. `OnEnterCity()` и `ConsumeBonusTrade()` существуют, но текущий `CityManager` их не вызывает.
 
-Отображает в верхней панели: деньги, атаку, вместимость, торг.
+`HandManager.AddCard()`, `UseCard(index)`, `DiscardCard(index)` и `GiveRandomReward()` управляют рукой. Использование удаляет карту из `currentHand`; отдельный список сброса руки отсутствует.
 
-Использует паттерн «грязный флаг» в `Update()`: сравнивает кэшированные значения с текущими и перерисовывает только изменившиеся поля.
+Сейчас `UseCard()` разрешает состояния `InCity`, `InBattle`, `ResolvingEvent`, без отдельной таблицы допустимых фаз по эффектам. `RefreshUI()` скрывает руку в городе. Отложенные флаги и consume-методы используются для отмены следующей карты, побега, ослабления врага и снижения штрафа. Новые моменты применения ещё не реализованы.
 
----
+## ИИ и общий рынок
 
-## PrefabPlacer (Editor-only)
+Файлы: `Assets/Scripts/AI/`.
 
-**Файл:** `Assets/Scripts/PrefabPlacer.cs`
+| Класс / API | Назначение |
+|---|---|
+| `AITurnManager.ProcessAITurnAndWait()` | Корутина цикла ИИ, которую ждёт GameManager |
+| `AITurnManager.ProcessAITurn()` | Совместимый запуск корутины без ожидания у вызывающего |
+| `TurnQueue.ProcessTurnCoroutine()` | Общий снимок, фоновое планирование, последовательное исполнение |
+| `AITrader.PrepareTurn()` | Бесплатный вход с последней клетки в город перед снимком |
+| `ITrader.PlanTurn(snapshot)` | План без изменения мира и Unity API |
+| `ITrader.ExecuteTrade(intent, economy)` | Торговля при нахождении в городе |
+| `ITrader.ExecuteMovement(intent)` | Корутина одного шага |
+| `PathClaims.TryClaim(path)` | Первый ИИ в очереди занимает путь на цикл |
+| `WorldEconomy.GetCityData(city)` | Текущий `City.RuntimeData`, без подмены исходным ассетом |
+| `WorldEconomy.TakeSnapshot()` | Копии цен, запасов и доступных путей |
+| `WorldEconomy.Buy()` / `Sell()` | AI-сделки на общем runtime-рынке |
 
-Editor-инструмент для расстановки префабов вдоль линии между двумя точками. Вызывается через контекстное меню компонента в Inspector.
+Планирование ИИ параллельное; торговля и движение последовательны в порядке списка. `Initiative` сохранена в данных, но не определяет очередь. ИИ не получают дорожные карты.
 
-```
-[ContextMenu("Place Prefabs")]
-void PlacePrefabs()
-```
+`GameSnapshot` копирует коллекции. `CitySnapshot.GetPrice()`, `GetSellPrice()`, `GetStock()` читают скопированные значения; `Paths` — копия списка ссылок. `GetCity()` сравнивает ссылки без Unity API. Сами Unity-объекты не клонируются и не должны разыменовываться из фонового потока.
+
+## Город, торговля и команда
+
+| Система | Актуальный контракт |
+|---|---|
+| `City` | `InitRuntimeData()`, `RuntimeData`, `Data`, `CityName`, список `Paths` |
+| `CityManager` | Создаёт runtime-рынки, слушает `PlayerToken.OnArrivedAtCity`, открывает город и возвращает его после торговли |
+| `CityPanel` (`Scripts/UI/`) | `OpenPanel(city)`, `ClosePanel()`; путь передаёт прямо в GameManager, затем публикует `OnPathSelectedEvent` |
+| `TradeSystem` (`Scripts/Trade/`) | Статические `RequestTrade(city)` и `OnTradeRequest`; `BuyItem()`, `SellItem()`, `CloseTrade()`; работает с runtime-рынком |
+| `TradeTransactionHandler` | `ProcessBuyTransaction(..., out int totalCost)` / `ProcessSellTransaction(..., out int totalValue)` возвращают `bool` |
+| `TradeUIManager` | `OpenTradePanel()`, `CloseTradePanel()`, `RefreshTradeUI()` и статическое `OnTradeClosedRequest` |
+| `PlayerInventory` | Товары, деньги, вес, средняя цена; события экземпляра `OnInventoryChanged`, `OnMoneyChanged` |
+| `PlayerStats` (`Scripts/Hire/`) | `Initialize()`, изменение характеристик и событие `OnStatsChanged` |
+| `TeamSystem` | `TryHireUnit()`, `FireUnit()`, `PaySalaries()`, `GetTotalAttack()`; зарплата за шаг на клетку |
+| `TopBarUI` (`Scripts/UI/`) | Обновление по событиям инвентаря и характеристик |
+
+Сделки игрока считают динамическую цену каждой единицы с торгом и модификаторами карт; AI-сделки пока считают сумму по начальной цене партии. Обе стороны меняют один запас, деньги и цены города. Торговля и наём не завершают личный ход.
+
+## Editor-проверки
+
+`Assets/Editor/Tests/CardSystemChecks.cs`: меню **Tools → Проверки → Фазы хода, колода и общий рынок**, либо `CardSystemChecks.Run` через `-executeMethod`. Проверки используют реальные игровые классы и временные объекты, удаляемые после выполнения. Это собственные Editor-проверки, не NUnit-тесты.
