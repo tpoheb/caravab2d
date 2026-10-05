@@ -7,11 +7,84 @@ using UnityEditor;
 
 /// <summary>
 /// Импортёр карт тени из CSV.
-/// 
-/// Формат CSV (разделитель — табуляция или запятая):
-/// ID	Name	Description	System	Intensity	Tone	EffectType	Value	IsTemporary	Duration	MinDifficulty	MaxDifficulty	Weight	PenaltyValue
-/// 
+///
 /// Меню: Tools → Cards → Import Shadow Cards from CSV
+///
+/// ─── ФОРМАТ CSV ──────────────────────────────────────────────────────────────
+/// Разделитель: табуляция (\t) или запятая (,). Первая строка — заголовок.
+///
+/// Колонка        Тип      Обяз.  Описание и примеры
+/// ─────────────────────────────────────────────────────────────────────────────
+/// ID             int      ДА     Уникальный числовой идентификатор карты.
+///                                Используется в имени .asset файла.
+///                                Пример: 1, 42, 100
+///
+/// Name           string   ДА     Название карты, отображается игроку.
+///                                Пример: «Ограбление каравана», «Налог на торговлю»
+///
+/// Description    string   ДА     Текст события, показывается в диалоге карты.
+///                                Может содержать запятые — оберни в кавычки.
+///                                Пример: «Бандиты напали на ваш отряд ночью.»
+///
+/// System         string   нет    Зарезервировано. Можно оставить пустым.
+///
+/// Intensity      int      нет    Зарезервировано. Можно оставить пустым.
+///
+/// Tone           string   нет    Зарезервировано. Можно оставить пустым.
+///
+/// EffectType     string   ДА     Тип эффекта карты. Определяет, что произойдёт
+///                                при розыгрыше. Допустимые значения:
+///
+///                                  Money           / Деньги          — изменение золота
+///                                  Attack          / Атака           — изменение атаки каравана
+///                                  Capacity        / Грузоподъемность — изменение вместимости
+///                                  Bargain         / Торговля        — бонус/штраф к торговле
+///                                  AddGoods        / ДобавитьТовар   — добавить товар в инвентарь
+///                                  RemoveGoods     / УдалитьТовар    — удалить товар из инвентаря
+///                                  FireCrewMember  / Уволить         — уволить члена команды
+///                                  WagePenalty     / ШтрафЖалованья — штраф к зарплате команды
+///                                  Confiscation    / Конфискация     — конфисковать случайный товар
+///                                  TeamStats       / ХарактеристикиКоманды — изменить стат команды
+///                                  BonusTrade      / БонусТорговли   — бонус к ценам товаров
+///
+///                                Пример: Money, Attack, AddGoods
+///
+/// Value          int      нет    Числовое значение эффекта. Знак важен:
+///                                  +200  — игрок получает 200 золота
+///                                  -150  — игрок теряет 150 золота
+///                                  +2    — атака увеличивается на 2
+///                                По умолчанию: 0
+///
+/// IsTemporary    bool     нет    Временный ли эффект (снимается через N ходов).
+///                                Допустимые значения: true/false, 1/0, yes/no
+///                                По умолчанию: false
+///
+/// Duration       int      нет    Сколько ходов действует временный эффект.
+///                                Игнорируется если IsTemporary = false.
+///                                По умолчанию: 1
+///                                Пример: 3 (эффект продлится 3 хода)
+///
+/// MinDifficulty  int      нет    Минимальная сложность кампании, при которой
+///                                карта может выпасть. 0 — любая сложность.
+///                                По умолчанию: 0
+///
+/// MaxDifficulty  int      нет    Максимальная сложность кампании, при которой
+///                                карта может выпасть. 10 — любая сложность.
+///                                По умолчанию: 10
+///
+/// Weight         int      нет    Вес карты в пуле розыгрыша. Чем больше —
+///                                тем чаще выпадает относительно других карт.
+///                                По умолчанию: 10
+///                                Пример: 1 (редкая), 10 (обычная), 30 (частая)
+///
+/// PenaltyValue   int      нет    Базовый штраф в золоте для эффектов конфискации
+///                                и подобных. Используется как fallback если
+///                                Value не задан или равен 0.
+///                                По умолчанию: 200
+/// ─────────────────────────────────────────────────────────────────────────────
+///
+/// Пример строки:
+/// 1   Ограбление   Бандиты напали ночью.      Money   -200   false   0   0   10   10   200
 /// </summary>
 public static class ShadowCardCSVImporter
 {
@@ -91,16 +164,16 @@ public static class ShadowCardCSVImporter
                 }
 
                 // Заполняем данные
-                card.cardID = id;
-                card.cardName = GetField(fields, columnMap, "name");
-                card.description = GetField(fields, columnMap, "description");
-                card.effectType = ParseEffectType(GetField(fields, columnMap, "effecttype"));
-                card.value = GetIntField(fields, columnMap, "value", 0);
-                card.isTemporary = GetBoolField(fields, columnMap, "istemporary", false);
-                card.duration = GetIntField(fields, columnMap, "duration", 1);
+                card.cardID       = id;
+                card.cardName     = GetField(fields, columnMap, "name");
+                card.description  = GetField(fields, columnMap, "description");
+                card.effectType   = ParseEffectType(GetField(fields, columnMap, "effecttype"));
+                card.value        = GetIntField(fields, columnMap, "value", 0);
+                card.isTemporary  = GetBoolField(fields, columnMap, "istemporary", false);
+                card.duration     = GetIntField(fields, columnMap, "duration", 1);
                 card.minDifficulty = GetIntField(fields, columnMap, "mindifficulty", 0);
                 card.maxDifficulty = GetIntField(fields, columnMap, "maxdifficulty", 10);
-                card.weight = GetIntField(fields, columnMap, "weight", 10);
+                card.weight       = GetIntField(fields, columnMap, "weight", 10);
                 card.penaltyValue = GetIntField(fields, columnMap, "penaltyvalue", 200);
 
                 EditorUtility.SetDirty(card);
@@ -181,21 +254,24 @@ public static class ShadowCardCSVImporter
     private static ShadowEffectType ParseEffectType(string value)
     {
         value = value.Trim().Replace(" ", "").Replace("_", "");
-        
+
         return value.ToLower() switch
         {
-            "money" or "деньги" => ShadowEffectType.Money,
-            "attack" or "атака" => ShadowEffectType.Attack,
-            "capacity" or "грузоподъемность" or "вместимость" => ShadowEffectType.Capacity,
-            "bargain" or "торговля" => ShadowEffectType.Bargain,
-            "addgoods" or "добавитьтовар" => ShadowEffectType.AddGoods,
-            "removegoods" or "удалитьтовар" => ShadowEffectType.RemoveGoods,
-            "firecrewmember" or "уволить" or "покинутькоманду" => ShadowEffectType.FireCrewMember,
-            "wagepenalty" or "штрафжалованья" => ShadowEffectType.WagePenalty,
-            "confiscation" or "конфискация" => ShadowEffectType.Confiscation,
-            "teamstats" or "характеристикикоманды" => ShadowEffectType.TeamStats,
-            "bonustrade" or "бонусторговли" or "ценытоваров" => ShadowEffectType.BonusTrade,
-            _ => ShadowEffectType.Money
+            "money"          or "деньги"                   => ShadowEffectType.Money,
+            "attack"         or "атака"                    => ShadowEffectType.Attack,
+            "capacity"       or "грузоподъемность"
+                             or "вместимость"              => ShadowEffectType.Capacity,
+            "bargain"        or "торговля"                 => ShadowEffectType.Bargain,
+            "addgoods"       or "добавитьтовар"            => ShadowEffectType.AddGoods,
+            "removegoods"    or "удалитьтовар"             => ShadowEffectType.RemoveGoods,
+            "firecrewmember" or "уволить"
+                             or "покинутькоманду"          => ShadowEffectType.FireCrewMember,
+            "wagepenalty"    or "штрафжалованья"           => ShadowEffectType.WagePenalty,
+            "confiscation"   or "конфискация"              => ShadowEffectType.Confiscation,
+            "teamstats"      or "характеристикикоманды"    => ShadowEffectType.TeamStats,
+            "bonustrade"     or "бонусторговли"
+                             or "ценытоваров"              => ShadowEffectType.BonusTrade,
+            _                                              => ShadowEffectType.Money
         };
     }
 
