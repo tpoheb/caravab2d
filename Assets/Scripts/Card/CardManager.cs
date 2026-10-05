@@ -35,7 +35,7 @@ public class CardManager : MonoBehaviour
         RebuildDeck();
     }
 
-    public void DrawCard(int difficulty, Func<bool> extraConditions = null)
+    public void DrawCard(Func<bool> extraConditions)
     {
         if (_currentCard != null)
         {
@@ -58,7 +58,7 @@ public class CardManager : MonoBehaviour
         }
 
         // Битвы и события участвуют в одном выборе: отдельного шанса битвы нет.
-        _currentCard = _deck.Draw(card => IsAllowedAtDifficulty(card, difficulty));
+        _currentCard = _deck.Draw();
         UpdateDeckCounts();
         if (_currentCard == null)
         {
@@ -77,7 +77,7 @@ public class CardManager : MonoBehaviour
         RouteCard(_currentCard);
     }
 
-    public void DrawCard() => DrawCard(difficulty: 0);
+    public void DrawCard() => DrawCard(extraConditions: null);
 
     /// <summary>Завершённая или отменённая карта уходит в сброс ровно один раз.</summary>
     public void HideEventCard()
@@ -104,13 +104,6 @@ public class CardManager : MonoBehaviour
         foreach (var card in allBattleCards) _deck.Add(card);
         UpdateDeckCounts();
     }
-
-    private static bool IsAllowedAtDifficulty(ICard card, int difficulty) => card switch
-    {
-        ShadowCardData shadow => shadow.minDifficulty <= difficulty && shadow.maxDifficulty >= difficulty,
-        BattleCardData battle => battle.minDifficulty <= difficulty && battle.maxDifficulty >= difficulty,
-        _ => false
-    };
 
     private void UpdateDeckCounts() => deckUI?.SetDeckCounts(_deck.Count, _discard.Count);
 

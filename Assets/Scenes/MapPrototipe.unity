@@ -307569,18 +307569,31 @@ MonoBehaviour:
   battleManager: {fileID: 2041521376}
   effectManager: {fileID: 2041521378}
   allShadowCards:
-  - {fileID: 11400000, guid: c347f0fc5fa1faf44861243274d05a41, type: 2}
-  - {fileID: 11400000, guid: c45c27d4de564c64e91d84d1073a5486, type: 2}
-  - {fileID: 11400000, guid: 12c2892e568e06d4d808aaab6f47b969, type: 2}
-  - {fileID: 11400000, guid: 2072274e620b3aa43b5a2e49533ec347, type: 2}
-  - {fileID: 11400000, guid: a7397b3f26c455947a4d866eaed94a1f, type: 2}
-  - {fileID: 11400000, guid: 2143bec63ad76af4fb8067e2ae67ea24, type: 2}
-  - {fileID: 11400000, guid: 0087c07a56977374998dd98bf22e3286, type: 2}
-  - {fileID: 11400000, guid: 4112cfcc093b6004da5b503b0f3b7863, type: 2}
-  - {fileID: 11400000, guid: 5172b00b36059e94fbae6aafe7c09017, type: 2}
-  - {fileID: 11400000, guid: 5b77632401762434cb3c07278fdf7fca, type: 2}
-  - {fileID: 11400000, guid: f50f4c71eeefb904c932c7f742c6ccce, type: 2}
-  - {fileID: 11400000, guid: a969147c79ecdc04b8e5a0783321ec82, type: 2}
+  - {fileID: 11400000, guid: 6e571ce7208189e418c9034f3069f006, type: 2}
+  - {fileID: 11400000, guid: 15d51efff1109d840b85cfce5f540110, type: 2}
+  - {fileID: 11400000, guid: d213384d36759904291e6ab385a00da1, type: 2}
+  - {fileID: 11400000, guid: 157a13cfba6ee544cb70e22d7420f785, type: 2}
+  - {fileID: 11400000, guid: 6847b7da6b85ab84f876d860e3ebdf2b, type: 2}
+  - {fileID: 11400000, guid: b4f874d8fea114c4da102ee42075631f, type: 2}
+  - {fileID: 11400000, guid: 5498ab2e22d9501489cc76c07723687f, type: 2}
+  - {fileID: 11400000, guid: f89ceac9f6f92904e9f29bb65b12f39a, type: 2}
+  - {fileID: 11400000, guid: 67e88fa3ff38090458e2ae81b0c5e86e, type: 2}
+  - {fileID: 11400000, guid: 34271b05a7f077140b67b84c2fa12156, type: 2}
+  - {fileID: 11400000, guid: 98f786323e6cdb94cadecf235cf14f59, type: 2}
+  - {fileID: 11400000, guid: 6dcd7ec55c9f1b540aa60eb151cbb152, type: 2}
+  - {fileID: 11400000, guid: 53d31d5ac0da92a4e8d138e837cc5d4f, type: 2}
+  - {fileID: 11400000, guid: da3560f5f1464bd49b82c5f954b3160a, type: 2}
+  - {fileID: 11400000, guid: 97ede37bbc79c124d87f13be9c402c94, type: 2}
+  - {fileID: 11400000, guid: c87dbc430945bfe479b10e8b86bf1987, type: 2}
+  - {fileID: 11400000, guid: cc704a677e02b324bb0c1c5f543d699e, type: 2}
+  - {fileID: 11400000, guid: b2c8a1c52c962b2418c3b77b6549a6f2, type: 2}
+  - {fileID: 11400000, guid: 5bb3b286d62034748bdd3fc928287132, type: 2}
+  - {fileID: 11400000, guid: 3127eb323d944614caf3008069265fb5, type: 2}
+  - {fileID: 11400000, guid: 251710fb787e90a43a5a44c4dcdc6bee, type: 2}
+  - {fileID: 11400000, guid: 4e0c11b804abfa04683430c27ddecd3a, type: 2}
+  - {fileID: 11400000, guid: 104b721e9bcf5424f953e7ee94ec17e6, type: 2}
+  - {fileID: 11400000, guid: d3d9e2dbd12f6194793b6c6b4445821d, type: 2}
+  - {fileID: 11400000, guid: 726087bfb5bc8734798e8cd30491fd05, type: 2}
   allBattleCards:
   - {fileID: 11400000, guid: 64c9729e6e99e37468488be175d0c918, type: 2}
   - {fileID: 11400000, guid: e1e8b24ce9338ab4f9973a79bc43bb44, type: 2}

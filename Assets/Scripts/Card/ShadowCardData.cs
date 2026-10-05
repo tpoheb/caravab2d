@@ -14,11 +14,11 @@ public class ShadowCardData : ScriptableObject, ICard
     public string description;
 
     [Header("Условия появления")]
-    [Tooltip("Минимальная сложность хода для появления карты")]
+    [Tooltip("Поле старых данных: не ограничивает вытягивание карты")]
     [Range(0, 10)]
     public int minDifficulty = 0;
 
-    [Tooltip("Максимальная сложность хода для появления карты")]
+    [Tooltip("Поле старых данных: не ограничивает вытягивание карты")]
     [Range(0, 10)]
     public int maxDifficulty = 10;
 

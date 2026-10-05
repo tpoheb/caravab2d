@@ -27,7 +27,7 @@ This file provides guidance to agents working in this repository. Technical docu
 
 ## Cards
 
-- [CardManager](Assets/Scripts/Card/CardManager.cs) owns one CardDeck, one current card and one discard list. Inspector catalogs `allShadowCards` / `allBattleCards` are preserved for scene references and merged at runtime.
+- [CardManager](Assets/Scripts/Card/CardManager.cs) owns one CardDeck, one current card and one discard list. Inspector catalogs `allShadowCards` / `allBattleCards` are preserved for scene references and merged at runtime. MapPrototipe contains 25 new events and 20 battles; draws use weights only, without difficulty filtering. Serialized minDifficulty/maxDifficulty fields remain for data compatibility and do not affect draws.
 - [CardDeck.Draw](Assets/Scripts/Card/CardDeck.cs) selects by positive weight among eligible remaining cards and removes the result. `HideEventCard()` discards completed/cancelled cards once. Refill from discard happens before a draw only when the entire deck is empty.
 - CardDeckUI only displays cards and counts from CardManager. CardDisplay is immediate; there is no awaited flip animation or separate gameplay queue in UI.
 - CardDeck uses UnityEngine.Random and belongs on the main thread. The optional `weightSelector` is an extension point; cell/province modifiers are not wired into gameplay yet.

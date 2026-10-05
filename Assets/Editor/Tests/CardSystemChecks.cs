@@ -72,6 +72,9 @@ public static class CardSystemChecks
         Set(manager, "effectManager", root.AddComponent<ShadowEffectManager>());
         var shadow = Create<ShadowCardData>(objects);
         var battle = Create<BattleCardData>(objects);
+        // Сложность в старых данных не должна исключать ни один тип карты.
+        shadow.minDifficulty = shadow.maxDifficulty = 5;
+        battle.minDifficulty = battle.maxDifficulty = 7;
         Set(manager, "allShadowCards", new List<ShadowCardData> { shadow });
         Set(manager, "allBattleCards", new List<BattleCardData> { battle });
         typeof(CardManager).GetMethod("RebuildDeck", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(manager, null);

@@ -27,7 +27,7 @@ ID,EnemyName,Description,RequiredAttack,RewardMoney,PenaltyMoney,CrewLoss,Reward
 
 Ассет ищется по ожидаемому имени `Card_<ID>_<Name>.asset`, а не через реестр ID. Переименование при том же ID может создать второй ассет. Старые карты не удаляются автоматически. Ошибка числового поля может оставить частично обновлённый ассет.
 
-Поля `minDifficulty`, `maxDifficulty` и `weight` этим форматом не импортируются: их надо настроить в Inspector. `crewLoss` и `rewardHandCardID` импортируются в данные, но текущая боевая логика их не применяет.
+Поле `weight` этим форматом не импортируется: его надо настроить в Inspector. Поля `minDifficulty` и `maxDifficulty` также не импортируются, но больше не ограничивают вытягивание. `crewLoss` и `rewardHandCardID` импортируются в данные, но текущая боевая логика их не применяет.
 
 ### ShadowCardCSVImporter
 
@@ -75,7 +75,7 @@ cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volati
 
 `Awake()` регистрирует Singleton и проверяет зависимости. `OnEnable()` подписывается на экземпляры кубика и фишки, добавляет обработчик кнопки вытягивания. `Start()` инициализирует характеристики и первый личный ход в городе.
 
-При выборе пути `OnPathSelected()` делает шаг. Кнопка вытягивания доступна в `DrawingCard`: она переводит FSM в `ResolvingEvent` и вызывает `CardManager.DrawCard()` со сложностью 0.
+При выборе пути `OnPathSelected()` делает шаг. Кнопка вытягивания доступна в `DrawingCard`: она переводит FSM в `ResolvingEvent` и вызывает `CardManager.DrawCard()` для выбора по весам без фильтра сложности.
 
 После события/боевого броска `RequestEndTurn()` сначала устанавливает `EndingTurn`. Повторный запрос в этом состоянии отклоняется. Для боя применяется результат и выдерживается задержка 1,5 секунды. Затем тикают эффекты, текущая карта отправляется в сброс и начинается `WaitingForAI`.
 
