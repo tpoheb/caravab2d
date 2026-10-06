@@ -6,12 +6,12 @@ using System.IO;
 /// <summary>
 /// Editor-импортёр карт руки.
 /// Меню: Tools → 1000 Roads → Import Hand Cards
-/// Создаёт ScriptableObject-ассеты в Assets/Data/HandCards/
+/// Создаёт ScriptableObject-ассеты в Assets/Data/HandCard/
 /// Иконки назначить вручную в Inspector после импорта.
 /// </summary>
 public static class HandCardImporter
 {
-    private const string OutputPath = "Assets/Data/HandCards";
+    private const string OutputPath = "Assets/Data/HandCard";
 
     // ── Данные карт ───────────────────────────────────────────────────────
 
@@ -79,7 +79,7 @@ public static class HandCardImporter
         new CardDefinition
         {
             Name        = "Странный Амулет",
-            Description = "Древний оберег отводит беду. Следующая карта Тени или Битвы отменяется.",
+            Description = "Древний оберег отводит беду. Раскрытая карта Тени или Битвы отменяется до разрешения.",
             Category    = HandCardData.CardCategory.Tactical,
             EffectType  = HandCardData.CardEffectType.CancelCard,
             Value       = 0,
@@ -193,6 +193,7 @@ public static class HandCardImporter
             asset.category   = def.Category;
             asset.effectType = def.EffectType;
             asset.value      = def.Value;
+            asset.playTiming = HandCardData.GetDefaultTiming(def.EffectType);
 
             AssetDatabase.CreateAsset(asset, assetPath);
             created++;
@@ -217,11 +218,7 @@ public static class HandCardImporter
     {
         if (AssetDatabase.IsValidFolder(OutputPath)) return;
 
-        // Создаём папки по одной — CreateFolder принимает родителя и имя дочерней
-        if (!AssetDatabase.IsValidFolder("Assets/ScriptableObjects"))
-            AssetDatabase.CreateFolder("Assets", "ScriptableObjects");
-
-        AssetDatabase.CreateFolder("Assets/ScriptableObjects", "HandCards");
+        AssetDatabase.CreateFolder("Assets/Data", "HandCard");
     }
 }
 #endif

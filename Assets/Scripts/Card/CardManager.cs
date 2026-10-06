@@ -23,6 +23,7 @@ public class CardManager : MonoBehaviour
     private readonly CardDeck _deck = new CardDeck();
     private readonly List<ICard> _discard = new List<ICard>();
     private ICard _currentCard;
+    private bool _eventResolved;
 
     public int RemainingCards => _deck.Count;
     public int DiscardCount => _discard.Count;
@@ -59,6 +60,7 @@ public class CardManager : MonoBehaviour
 
         // Битвы и события участвуют в одном выборе: отдельного шанса битвы нет.
         _currentCard = _deck.Draw();
+        _eventResolved = false;
         UpdateDeckCounts();
         if (_currentCard == null)
         {
@@ -67,17 +69,27 @@ public class CardManager : MonoBehaviour
             return;
         }
 
-        if (HandManager.Instance != null && HandManager.Instance.ConsumeCancelCard())
-        {
-            deckUI?.ShowCancelledCard(_currentCard);
-            gameManager.OnCardCancelled();
-            return;
-        }
-
         RouteCard(_currentCard);
     }
 
     public void DrawCard() => DrawCard(extraConditions: null);
+
+    /// <summary>Эффект применяется после окна розыгрыша «во время события».</summary>
+    public void ResolveCurrentEvent()
+    {
+        if (_eventResolved || !(_currentCard is ShadowCardData shadow)) return;
+        _eventResolved = true;
+        effectManager.ApplyCard(shadow);
+    }
+
+    public void CancelCurrentCard()
+    {
+        if (_currentCard == null || _eventResolved) return;
+        _eventResolved = true;
+        deckUI?.ShowCancelledCard(_currentCard);
+        if (_currentCard is BattleCardData) battleManager.CancelBattle();
+        gameManager.OnCardCancelled();
+    }
 
     /// <summary>Завершённая или отменённая карта уходит в сброс ровно один раз.</summary>
     public void HideEventCard()
@@ -115,7 +127,6 @@ public class CardManager : MonoBehaviour
             case ShadowCardData shadow:
                 onRevealed = () =>
                 {
-                    effectManager.ApplyCard(shadow);
                     gameManager.OnShadowCardRevealed();
                 };
                 break;

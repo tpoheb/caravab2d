@@ -1,6 +1,6 @@
 # Архитектура систем — 1000 Дорог
 
-Актуально на 2026-10-05. Источник поведения — `.cs` файлы. Состояние рефакторинга описано в [REFACTORING.md](REFACTORING.md).
+Актуально на 2026-10-06. Источник поведения — `.cs` файлы. Состояние рефакторинга описано в [REFACTORING.md](REFACTORING.md).
 
 ## Оркестрация и зависимости
 
@@ -19,14 +19,15 @@ CityPanel.OnPathButtonClicked
 GameManager: кнопка «Вытянуть карту»
   → CardManager.DrawCard
     → CardDeck.Draw → CurrentCard
-    → CardDeckUI.ShowCard
-      → ShadowEffectManager.ApplyCard
-      или BattleManager.PrepareBattle
-        → GameManager.OnBattleCardRevealed
-          → DiceSystem.OnDiceRolled(int) → BattleManager.ExecuteBattle
+    → CardDeckUI.ShowCard → PreparingEncounter
+      → «Начать событие» → ResolvingEvent
+        → «Применить событие» → ShadowEffectManager.ApplyCard → PostEncounter
+      или BattleManager.PrepareBattle → PreparingEncounter
+        → «Начать битву» → InBattle → DiceSystem.OnDiceRolled(int)
+          → «Завершить бой» → BattleManager.FinalizeBattle → PostEncounter
 
 GameManager.RequestEndTurn
-  → при активном бое: BattleManager.FinalizeBattle
+  → PostEncounter: BattleManager.SettleBattle (штраф после карт посткомбата)
   → ShadowEffectManager.ProcessTurn
   → CardManager.HideEventCard → сброс
   → AITurnManager.ProcessAITurnAndWait
@@ -42,20 +43,21 @@ GameManager.RequestEndTurn
 | `InCity` | Торговля, наём и выбор пути без завершения личного хода |
 | `Moving` | Выполнение шага либо вход с последней клетки в город |
 | `DrawingCard` | Ожидание кнопки «Вытянуть карту» |
-| `ResolvingEvent` | Эффект события применён либо показан боевой бросок; доступно завершение хода |
-| `InBattle` | Краткий переход для автоматического боевого броска |
+| `PreparingEncounter` | Карта раскрыта; доступны метки «перед битвой/событием» |
+| `ResolvingEvent` | Доступны метки «во время события»; эффект ждёт подтверждения |
+| `InBattle` | Показан боевой бросок; доступны метки «во время битвы» |
+| `PostEncounter` | Исход известен; доступны метки «после битвы/события» |
 | `EndingTurn` | Ход закрывается; повторный `RequestEndTurn()` отклоняется |
 | `WaitingForAI` | Ожидание последовательных ходов ИИ |
 
 Начальный `StartTurn()` — приватный метод: устанавливает первый номер хода и `InCity`. В дальнейшем `TurnNumber` увеличивается в `WaitForAIAndBeginPlayerTurn()` после ИИ, перед движением игрока. `TurnQueue.TurnNumber` — отдельный счётчик циклов ИИ.
 
 ```text
-InCity → Moving → DrawingCard → ResolvingEvent
-                                   ├─ событие: ApplyCard
-                                   └─ битва: InBattle → бросок → ResolvingEvent
-ResolvingEvent → EndingTurn → WaitingForAI → Moving
-                                               ├─ новая клетка → DrawingCard
-                                               └─ вход в город → InCity
+InCity → Moving → DrawingCard → PreparingEncounter
+  событие: → ResolvingEvent → применить эффект → PostEncounter
+  битва:   → InBattle (бросок) → зафиксировать исход → PostEncounter
+PostEncounter → EndingTurn → WaitingForAI → Moving
+  новая клетка → DrawingCard; вход в город → InCity
 ```
 
 ## Личный ход с городом
@@ -64,7 +66,7 @@ ResolvingEvent → EndingTurn → WaitingForAI → Moving
 
 В `InCity` игрок совершает свободные торговые действия и наём. Выбор нового пути сразу приводит на его первую клетку без ещё одного увеличения `TurnNumber`. Зарплата и `OnStepCompleted` относятся к успешному шагу на клетку; вход в город сам по себе их не вызывает.
 
-`CompleteEventPhase()` сохранён для совместимости и делегирует `RequestEndTurn()`. Он не обходит сброс и очередь ИИ.
+`CompleteEventPhase()` сохранён для совместимости: подтверждает эффект события и открывает `PostEncounter`. Общая кнопка вызывает `RequestEndTurn()` → `AdvancePhase()`; очередь ИИ запускается только после подтверждения постфазы.
 
 ## Общая колода
 
@@ -100,7 +102,7 @@ ResolvingEvent → EndingTurn → WaitingForAI → Moving
 
 ## Незавершённые этапы
 
-Интерактивная подготовка до события или броска ещё отсутствует: `PrepareBattle()` инициализирует бой, но не ждёт действий игрока. Правила применения карт руки до/во время/после события и битвы требуют уточнения.
+Подготовка, встреча и постфаза требуют отдельных подтверждений. Метки `HandCardData.playTiming` задают допустимые окна; `HandManager.CanUseCard()` также проверяет применимость эффекта. «Клятва Пути» разыгрывается после поражения: денежный штраф начисляется в `SettleBattle()` после посткомбата.
 
 Сейчас `ProcessTurn()` уменьшает длительность эффектов в конце текущего личного хода, включая только что полученные. Ходы ИИ и отдельные городские действия не вызывают этот тик. Новое правило отсчёта пока не реализовано.
 

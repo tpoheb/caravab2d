@@ -1,6 +1,6 @@
 # Справочник систем — 1000 Дорог
 
-Актуально на 2026-10-05. Справочник описывает существующие методы, события и ограничения, а не целевую модель из GDD. Общий цикл: [ARCHITECTURE.md](ARCHITECTURE.md).
+Актуально на 2026-10-06. Справочник описывает существующие методы, события и ограничения, а не целевую модель из GDD. Общий цикл: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## GameManager и GameState
 
@@ -8,20 +8,20 @@
 
 | API | Назначение |
 |---|---|
-| `State` | `Idle`, `InCity`, `Moving`, `DrawingCard`, `ResolvingEvent`, `InBattle`, `EndingTurn`, `WaitingForAI` |
+| `State` | `Idle`, `InCity`, `Moving`, `DrawingCard`, `PreparingEncounter`, `ResolvingEvent`, `InBattle`, `PostEncounter`, `EndingTurn`, `WaitingForAI` |
 | `TurnNumber` | Номер личного хода игрока; первый задаётся при запуске, следующий — после ИИ |
 | `OnPathSelected(path)` | Только из `InCity`: устанавливает путь и сразу делает первый шаг |
 | `ContinueMovement()` | Только из `Moving`: шаг на клетку либо вход в город |
-| `RequestEndTurn()` | Только из `ResolvingEvent`/`InBattle`: блокирует повторное завершение, финализирует бой, тикает эффекты, сбрасывает карту и ждёт ИИ |
-| `CompleteEventPhase()` | Совместимый вход, делегирующий `RequestEndTurn()` из `ResolvingEvent` |
-| `OnShadowCardRevealed()` | Показывает завершение хода после применения события |
-| `OnBattleCardRevealed()` | Помечает активный бой, устанавливает `InBattle`, автоматически бросает кубик |
-| `OnBattleForceEnded()` / `OnCardCancelled()` | Переводят в `ResolvingEvent`, позволяют завершить ход |
-| `OnDiceRolled(int value)` | Передаёт результат в `ExecuteBattle()`, возвращает в `ResolvingEvent` |
-| `PromptDiceChoice()` / `OnDiceChoiceSelected(int)` | Выбор числа 1–6 и передача его в бой; правила момента применения ещё уточняются |
+| `RequestEndTurn()` | Делегирует `AdvancePhase()`: подготовка → встреча → постфаза → завершение; эффекты, сброс и ИИ только после постфазы |
+| `CompleteEventPhase()` | Подтверждает событие из `ResolvingEvent`, открывает `PostEncounter` |
+| `OnShadowCardRevealed()` | Открывает `PreparingEncounter` без применения события |
+| `OnBattleCardRevealed()` | Помечает активный бой и открывает `PreparingEncounter` без броска |
+| `OnBattleForceEnded()` / `OnCardCancelled()` | Переводят в `PostEncounter` |
+| `OnDiceRolled(int value)` | Только в `InBattle`: обновляет бросок через `ExecuteBattle()`, оставляет окно боевых карт открытым |
+| `PromptDiceChoice()` / `OnDiceChoiceSelected(int)` | Выбор числа 1–6 в подготовке или во время боя; блокирует переход до ответа |
 | `PromptDoubleGoods()` / `OnDoubleGoodsSelected(Item)` | Удвоение товара; полноценный UI выбора пока заменён заглушками |
 
-`StartTurn()` и `WaitForAIAndBeginPlayerTurn()` — приватные методы. В конце боя перед сбросом и ИИ остаётся задержка 1,5 секунды. Вход в город и выход на первую клетку следующего маршрута не увеличивают счётчик по отдельности.
+`StartTurn()` и `WaitForAIAndBeginPlayerTurn()` — приватные методы. Результат остаётся на экране до подтверждения постфазы; автоматической задержки завершения нет. Вход в город и выход на первую клетку следующего маршрута не увеличивают счётчик по отдельности.
 
 ## DiceSystem
 
@@ -106,11 +106,13 @@ public bool AdvanceToken();
 
 | API | Назначение |
 |---|---|
-| `PrepareBattle(card)` → `bool` | Проверяет отложенный побег, затем инициализирует бой; `false` означает пропуск |
-| `ExecuteBattle(diceValue)` | Сохраняет бросок, потребляет ослабление врага и показывает значения |
+| `PrepareBattle(card)` → `bool` | Инициализирует бой до розыгрыша карт подготовки, без броска |
+| `ExecuteBattle(diceValue)` | Сохраняет бросок и показывает значения с накопленным ослаблением врага |
 | `RequestNewRoll()` | Генерирует новый D6 и пересчитывает отображение |
 | `AddAttackBonus(value)` | Добавляет бонус текущего боя |
-| `FinalizeBattle()` | Сравнивает атаки и начисляет результат |
+| `FinalizeBattle()` | Фиксирует исход и выдаёт победную награду; штраф ждёт `SettleBattle()` после посткомбата |
+| `SettleBattle()` | Списывает штраф с учётом карт посткомбата и очищает состояние боя |
+| `AddEnemyAttackDebuff(value)` | Ослабляет врага до конца текущей битвы, включая перебросы |
 | `ForceEndBattle(escaped)` | Завершает бой принудительно и уведомляет GameManager |
 | `OnBattleWon`, `OnBattleLost`, `OnBattleEscaped` | События экземпляра `Action` |
 
@@ -120,7 +122,7 @@ public bool AdvanceToken();
 победа: атака игрока >= атака врага
 ```
 
-Победа выдаёт деньги и случайную карту из `HandManager.rewardPool`; поражение списывает денежный штраф с учётом снижения. Поля `rewardHandCardID` и `crewLoss` есть в ассете, но текущий `BattleManager` их не применяет. `PrepareBattle()` пока не является интерактивной фазой подготовки.
+Победа выдаёт деньги и случайную карту из `HandManager.rewardPool` при фиксации исхода; поражение списывает денежный штраф после посткомбата с учётом снижения. Поля `rewardHandCardID` и `crewLoss` текущий `BattleManager` не применяет.
 
 ## ShadowEffectManager и HandManager
 
@@ -130,7 +132,7 @@ public bool AdvanceToken();
 
 `HandManager.AddCard()`, `UseCard(index)`, `DiscardCard(index)` и `GiveRandomReward()` управляют рукой. Использование удаляет карту из `currentHand`; отдельный список сброса руки отсутствует.
 
-Сейчас `UseCard()` разрешает состояния `InCity`, `InBattle`, `ResolvingEvent`, без отдельной таблицы допустимых фаз по эффектам. `RefreshUI()` скрывает руку в городе. Отложенные флаги и consume-методы используются для отмены следующей карты, побега, ослабления врага и снижения штрафа. Новые моменты применения ещё не реализованы.
+`CanUseCard(index)` проверяет `HandCardData.playTiming` и применимость эффекта; `UseCard()` повторяет эту проверку перед расходованием. UI руки виден и в городе. Отмена действует на раскрытую карту до разрешения; побег открывает посткомбат; снижение штрафа доступно после поражения.
 
 ## ИИ и общий рынок
 

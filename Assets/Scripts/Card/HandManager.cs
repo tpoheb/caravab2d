@@ -7,8 +7,8 @@ using System.Collections.Generic;
 /// Торговые карты (SaleBonus, IgnoreTax, SalePriceBoost, PurchaseDiscount)
 /// публикуют события через TradeCardEvents → TradeCardModifiers.
 ///
-/// Боевые карты используют Consume-паттерн:
-/// BattleManager опрашивает ConsumeEnemyDebuff() и ConsumePenaltyReduction().
+/// Метки фаз и применимость эффекта проверяются и для UI, и для прямого вызова UseCard.
+/// Снижение штрафа накапливается в посткомбате и расходуется при завершении хода.
 /// </summary>
 public class HandManager : MonoBehaviour
 {
@@ -30,66 +30,51 @@ public class HandManager : MonoBehaviour
     [SerializeField] private Transform  handTransform;
     [SerializeField] private GameObject cardPrefab;
 
-    // ── Флаги отложенных эффектов ────────────────────────────────────────
+    private float _pendingPenaltyReduction;
+    public float PendingPenaltyReduction => Mathf.Clamp01(_pendingPenaltyReduction);
 
-    // Существующие
-    private bool _chooseDiceActive   = false;
-    private bool _cancelNextCard     = false;
-    private bool _escapeBattleActive = false;
-
-    // Новые боевые
-    private int   _pendingEnemyDebuff      = 0;   // Пыль в глаза
-    private float _pendingPenaltyReduction = 0f;  // Клятва Пути (0..1)
-
-    // ── Consume-методы (существующие) ────────────────────────────────────
-
-    public bool ConsumeDiceChoice()
-    {
-        if (!_chooseDiceActive) return false;
-        _chooseDiceActive = false;
-        return true;
-    }
-
-    public bool ConsumeCancelCard()
-    {
-        if (!_cancelNextCard) return false;
-        _cancelNextCard = false;
-        Debug.Log("[HandManager] CancelCard: следующая карта отменена.");
-        return true;
-    }
-
-    public bool ConsumeEscapeBattle()
-    {
-        if (!_escapeBattleActive) return false;
-        _escapeBattleActive = false;
-        Debug.Log("[HandManager] EscapeBattle: бой пропущен без штрафов.");
-        return true;
-    }
-
-    // ── Consume-методы (новые боевые) ────────────────────────────────────
-
-    /// <summary>
-    /// BattleManager опрашивает до сравнения атак.
-    /// Возвращает накопленный дебафф атаки противника и сбрасывает его.
-    /// </summary>
-    public int ConsumeEnemyDebuff()
-    {
-        int v = _pendingEnemyDebuff;
-        _pendingEnemyDebuff = 0;
-        if (v != 0) Debug.Log($"[HandManager] EnemyDebuff применён: -{v} к атаке врага.");
-        return v;
-    }
-
-    /// <summary>
-    /// BattleManager опрашивает после поражения, до начисления штрафа.
-    /// Возвращает множитель снижения (0..1) и сбрасывает его.
-    /// </summary>
     public float ConsumePenaltyReduction()
     {
-        float v = _pendingPenaltyReduction;
+        float reduction = Mathf.Clamp01(_pendingPenaltyReduction);
         _pendingPenaltyReduction = 0f;
-        if (v > 0f) Debug.Log($"[HandManager] PenaltyReduction применён: -{v:P0} штрафа.");
-        return v;
+        return reduction;
+    }
+
+    public void ClearEncounterEffects() => _pendingPenaltyReduction = 0f;
+
+    public bool CanUseCard(int index)
+    {
+        if (index < 0 || index >= currentHand.Count || currentHand[index] == null) return false;
+        var game = GameManager.Instance;
+        if (game == null || game.IsChoosingDice) return false;
+        var card = currentHand[index];
+        if ((card.playTiming & game.CurrentHandTiming) == 0) return false;
+
+        // Метка задаёт окно; дополнительно проверяем, что эффект применим сейчас.
+        switch (card.effectType)
+        {
+            case HandCardData.CardEffectType.Reroll:
+                return game.State == GameState.InBattle && battleManager != null &&
+                       battleManager.IsActive && battleManager.HasDiceRoll;
+            case HandCardData.CardEffectType.AddBonus:
+            case HandCardData.CardEffectType.EnemyAttackDebuff:
+            case HandCardData.CardEffectType.EscapeBattle:
+            case HandCardData.CardEffectType.ChooseDice:
+                return (game.State == GameState.PreparingEncounter || game.State == GameState.InBattle) &&
+                       battleManager != null && battleManager.IsActive;
+            case HandCardData.CardEffectType.BattlePenaltyReduce:
+                return game.State == GameState.PostEncounter && battleManager != null && battleManager.IsDefeat;
+            case HandCardData.CardEffectType.CancelCard:
+                return (game.State == GameState.PreparingEncounter || game.State == GameState.ResolvingEvent) &&
+                       CardManager.Instance != null && CardManager.Instance.CurrentCard != null;
+            case HandCardData.CardEffectType.CapacityBoost:
+            case HandCardData.CardEffectType.GoldBoost:
+                return effectManager != null;
+            case HandCardData.CardEffectType.DoubleGoods:
+                return playerInventory != null && playerInventory.Items.Count > 0;
+            default:
+                return true;
+        }
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────
@@ -122,14 +107,13 @@ public class HandManager : MonoBehaviour
     {
         if (index < 0 || index >= currentHand.Count) return;
 
-        GameState state = GameManager.Instance.State;
-        if (state != GameState.InBattle && state != GameState.ResolvingEvent && state != GameState.InCity)
+        if (!CanUseCard(index))
         {
-            Debug.LogWarning($"[HandManager] Нельзя сыграть карту в состоянии {state}.");
+            Debug.LogWarning("[HandManager] Карта недоступна в текущей фазе.");
             return;
         }
-
-        ExecuteCardEffect(currentHand[index], index, state);
+        ExecuteCardEffect(currentHand[index], index);
+        RefreshUI();
     }
 
     public void DiscardCard(int index)
@@ -152,7 +136,7 @@ public class HandManager : MonoBehaviour
 
     // ── Диспетчер эффектов ────────────────────────────────────────────────
 
-    private void ExecuteCardEffect(HandCardData card, int index, GameState state)
+    private void ExecuteCardEffect(HandCardData card, int index)
     {
         switch (card.effectType)
         {
@@ -182,24 +166,21 @@ public class HandManager : MonoBehaviour
                 break;
 
             case HandCardData.CardEffectType.ChooseDice:
-                _chooseDiceActive = true;
                 ConsumeCard(index);
                 GameManager.Instance.PromptDiceChoice();
                 Debug.Log("[HandManager] ChooseDice: игрок выбирает значение кубика.");
                 break;
 
             case HandCardData.CardEffectType.EscapeBattle:
-                _escapeBattleActive = true;
                 ConsumeCard(index);
-                if (state == GameState.InBattle)
-                    battleManager.ForceEndBattle(escaped: true);
+                battleManager.ForceEndBattle(escaped: true);
                 Debug.Log("[HandManager] EscapeBattle: бой избегнут.");
                 break;
 
             case HandCardData.CardEffectType.CancelCard:
-                _cancelNextCard = true;
                 ConsumeCard(index);
-                Debug.Log("[HandManager] CancelCard: следующая карта отменена.");
+                CardManager.Instance.CancelCurrentCard();
+                Debug.Log("[HandManager] CancelCard: текущая карта отменена.");
                 break;
 
             case HandCardData.CardEffectType.DoubleGoods:
@@ -237,14 +218,15 @@ public class HandManager : MonoBehaviour
             // ── Новые боевые (Consume-паттерн) ───────────────────────────
 
             case HandCardData.CardEffectType.EnemyAttackDebuff:
-                _pendingEnemyDebuff += card.value;
                 ConsumeCard(index);
+                battleManager.AddEnemyAttackDebuff(card.value);
                 Debug.Log($"[HandManager] EnemyDebuff: -{card.value} к атаке противника.");
                 break;
 
             case HandCardData.CardEffectType.BattlePenaltyReduce:
                 _pendingPenaltyReduction += card.value * 0.01f;
                 ConsumeCard(index);
+                battleManager.RefreshPostCombatPreview();
                 Debug.Log($"[HandManager] PenaltyReduce: -{card.value}% штрафа после поражения.");
                 break;
 
@@ -260,12 +242,13 @@ public class HandManager : MonoBehaviour
     {
         if (handTransform == null || cardPrefab == null) return;
 
-        bool isCity = GameManager.Instance != null && GameManager.Instance.State == GameState.InCity;
-        handTransform.gameObject.SetActive(!isCity);
-        if (isCity) return;
+        handTransform.gameObject.SetActive(true);
 
         foreach (Transform child in handTransform)
+        {
+            child.gameObject.SetActive(false);
             Destroy(child.gameObject);
+        }
 
         for (int i = 0; i < currentHand.Count; i++)
         {

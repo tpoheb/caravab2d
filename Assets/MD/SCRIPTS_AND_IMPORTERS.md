@@ -1,6 +1,6 @@
 # Скрипты и импортёры — текущая реализация
 
-Сверено с `.cs` файлами 2026-10-05. API систем: [SYSTEMS.md](SYSTEMS.md); последовательность фаз: [ARCHITECTURE.md](ARCHITECTURE.md).
+Сверено с `.cs` файлами 2026-10-06. API систем: [SYSTEMS.md](SYSTEMS.md); последовательность фаз: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Импортёры
 
@@ -11,7 +11,7 @@ Editor-инструменты находятся в `Assets/Editor/` и созд
 | `BattleCardImporter` | Tools → Battle Cards → Import from CSV | Выбранный CSV/TSV → `Assets/Data/BattleCards/` по умолчанию |
 | `ShadowCardCSVImporter` | Tools → Cards → Import Shadow Cards from CSV | `Assets/Data/ShadowCards.csv` → `Assets/Data/ShadowEvent/` |
 | `ShadowCardImporter` | Tools → Cards → Create Shadow Cards | Встроенные определения событий → ассеты |
-| `HandCardImporter` | Tools → 1000 Roads → Import Hand Cards | Встроенные определения руки → `Assets/Data/HandCards/` |
+| `HandCardImporter` | Tools → 1000 Roads → Import Hand Cards | Встроенные определения руки → `Assets/Data/HandCard/` |
 | `Editor.TradeDataImporter` | Tools → Trade → Import Trade Data | Выбранный CSV → `Assets/Data/Items/` и `Assets/Data/Cities/` |
 
 ### BattleCardImporter
@@ -67,7 +67,7 @@ cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volati
 
 ### HandCardImporter и ShadowCardImporter
 
-Создают карты из определений в исходниках, а не читают внешний CSV. Существующие ассеты обновляются по ожидаемым путям. Иконки карт руки назначаются вручную. Для изменения правил фаз требуется код: категория карты сама по себе не ограничивает момент применения.
+Создают карты из определений в исходниках, а не из CSV. HandCardImporter пропускает существующие ассеты, сохраняя иконки и настройки; новые ассеты получают начальные `playTiming`. Категория не задаёт фазу: метки меняются в Inspector.
 
 ## Порядок выполнения игровых скриптов
 
@@ -75,11 +75,11 @@ cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volati
 
 `Awake()` регистрирует Singleton и проверяет зависимости. `OnEnable()` подписывается на экземпляры кубика и фишки, добавляет обработчик кнопки вытягивания. `Start()` инициализирует характеристики и первый личный ход в городе.
 
-При выборе пути `OnPathSelected()` делает шаг. Кнопка вытягивания доступна в `DrawingCard`: она переводит FSM в `ResolvingEvent` и вызывает `CardManager.DrawCard()` для выбора по весам без фильтра сложности.
+При выборе пути `OnPathSelected()` делает шаг. Кнопка в `DrawingCard` блокирует повторный клик и вызывает `CardManager.DrawCard()`; раскрытие открывает `PreparingEncounter`.
 
-После события/боевого броска `RequestEndTurn()` сначала устанавливает `EndingTurn`. Повторный запрос в этом состоянии отклоняется. Для боя применяется результат и выдерживается задержка 1,5 секунды. Затем тикают эффекты, текущая карта отправляется в сброс и начинается `WaitingForAI`.
+`RequestEndTurn()` вызывает `AdvancePhase()`: подготовка → битва/событие → постфаза. Только подтверждение постфазы устанавливает `EndingTurn`, списывает штраф, тикает эффекты, сбрасывает карту и запускает `WaitingForAI`.
 
-`WaitForAIAndBeginPlayerTurn()` ожидает всю очередь ИИ. После неё увеличивает личный номер хода и продолжает движение либо вводит игрока в город. `CompleteEventPhase()` делегирует этому обычному циклу завершения.
+`WaitForAIAndBeginPlayerTurn()` ожидает всю очередь ИИ. После неё увеличивает личный номер хода и продолжает движение либо вводит игрока в город. `CompleteEventPhase()` подтверждает событие и открывает постфазу.
 
 ### PlayerToken и PathController
 
@@ -91,7 +91,7 @@ cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volati
 
 Два сериализованных каталога объединяются в один `CardDeck` при запуске. `Draw()` расходует карту; менеджер хранит её как текущую до конца личного хода. Сброс принадлежит менеджеру, UI получает только счётчики.
 
-Если флаг отмены руки активен, выбранная карта показывается отменённой и не применяет эффект. Иначе событие вызывает `ApplyCard()`, а битва — `PrepareBattle()`. При `true` из подготовки GameManager автоматически бросает кубик; при `false` позволяет завершить ход без боя.
+Карты раскрываются без применения эффекта и боевого броска. Подтверждение подготовки открывает битву с кубиком либо событие с окном карт до применения. Отмена раскрытой карты и побег ведут в постфазу.
 
 `ShowCard()` показывает лицевую сторону синхронно и вызывает callback. Если префаб отображения не назначен, логируется ошибка, но callback всё равно исполняется. Искусственного ожидания анимации и отдельной очереди UI нет.
 
@@ -127,10 +127,10 @@ cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volati
 
 ## Известные ограничения
 
-- Новых интерактивных фаз подготовки и таблицы применения карт руки пока нет. Событие применяется сразу, боевой бросок автоматический.
+- Подготовка, встреча и постфаза интерактивны; допустимые моменты задаёт `HandCardData.playTiming`.
 - `ProcessTurn()` уменьшает длительность и только что полученного эффекта в конце текущего личного хода. Новое правило длительности ещё не утверждено.
 - `ShadowEffectManager.OnEnterCity()` и `ConsumeBonusTrade()` не подключены к текущему CityManager. Наличие полей и описаний в ассете не гарантирует применение этих эффектов в городе.
-- `HandManager.RefreshUI()` скрывает руку в городе, хотя `UseCard()` допускает состояние `InCity`. Сброс общей колоды не является сбросом руки.
+- Рука видна в городе; метка `InCity` разрешает розыгрыш. Сброс общей колоды не является сбросом руки.
 - `BattleManager` пока не использует `crewLoss` и `rewardHandCardID`; за победу выдаёт случайную карту руки.
 - `PlayerInventory.LoadInventory()` использует `Resources.Load("Items/...")`, а товары находятся в `Assets/Data/Items/`; текущая загрузка не восстанавливает эти ассеты.
 

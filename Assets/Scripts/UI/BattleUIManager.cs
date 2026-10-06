@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// Управляет кнопками боевой панели и делегирует отображение текстов в EventPanelUI.
@@ -12,6 +13,7 @@ public class BattleUIManager : MonoBehaviour
     [SerializeField] private GameObject battlePanel;
     [SerializeField] private Button endTurnButton;
     [SerializeField] private Button diceButton;
+    [SerializeField] private TextMeshProUGUI phaseText;
 
     [Header("Зависимости")]
     [SerializeField] private EventPanelUI eventPanel;
@@ -20,7 +22,9 @@ public class BattleUIManager : MonoBehaviour
     {
         if (battlePanel != null) battlePanel.SetActive(true);
         ValidateReferences();
-        SetIdleState();
+        if (GameManager.Instance != null)
+            ShowPhase(GameManager.Instance.State, false, GameManager.Instance.CanAdvancePhase);
+        else SetIdleState();
     }
 
     private void ValidateReferences()
@@ -37,8 +41,66 @@ public class BattleUIManager : MonoBehaviour
     {
         eventPanel?.ClearAll();
         ShowEndTurnButton(false);
-        ShowDiceButton(true);
+        ShowDiceButton(false);
     }
+
+    /// <summary>Одна существующая кнопка продолжает подготовку, встречу и постфазу.</summary>
+    public void ShowPhase(GameState state, bool isBattle, bool canContinue)
+    {
+        // В MapPrototipe старая кнопка кубика используется для вытягивания карты.
+        if (state != GameState.DrawingCard) ShowDiceButton(false);
+        string label;
+        string phase;
+        switch (state)
+        {
+            case GameState.PreparingEncounter:
+                label = isBattle ? "Начать битву" : "Начать событие";
+                phase = isBattle ? "Подготовка к битве" : "Подготовка к событию";
+                break;
+            case GameState.InBattle:
+                label = "Завершить бой";
+                phase = "Битва";
+                break;
+            case GameState.ResolvingEvent:
+                label = "Применить событие";
+                phase = "Событие";
+                break;
+            case GameState.PostEncounter:
+                label = "Завершить ход";
+                phase = isBattle ? "После битвы" : "После события";
+                break;
+            default:
+                ShowEndTurnButton(false);
+                return;
+        }
+
+        ShowEndTurnButton(true);
+        if (endTurnButton == null) return;
+        endTurnButton.interactable = canContinue;
+        var buttonText = endTurnButton.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (buttonText != null) buttonText.text = label;
+        EnsurePhaseText(buttonText);
+        if (phaseText != null) phaseText.text = phase;
+    }
+
+    private void EnsurePhaseText(TextMeshProUGUI template)
+    {
+        if (phaseText != null || template == null) return;
+        var obj = new GameObject("Текущая фаза", typeof(RectTransform));
+        obj.transform.SetParent(endTurnButton.transform, false);
+        phaseText = obj.AddComponent<TextMeshProUGUI>();
+        phaseText.font = template.font;
+        phaseText.fontSize = 18;
+        phaseText.alignment = TextAlignmentOptions.Center;
+        phaseText.raycastTarget = false;
+        var rect = phaseText.rectTransform;
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(0f, 8f);
+        rect.sizeDelta = new Vector2(420f, 32f);
+    }
+
+    public void DisplaySettledPenalty(int amount) => eventPanel?.DisplayBattleResult(false, -amount);
 
     // ── Тексты — делегируем в EventPanelUI ───────────────────────────────
 

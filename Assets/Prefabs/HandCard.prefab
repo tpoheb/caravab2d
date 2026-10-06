@@ -94,6 +94,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardSlotUI
   slotIndex: 0
+  useButton: {fileID: 7217173386248957183}
   iconImage: {fileID: 3800951245560131709}
   titleText: {fileID: 5232057561518968032}
   descriptionText: {fileID: 2230822909375562567}

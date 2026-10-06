@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to agents working in this repository. Technical documentation was synchronized with code on 2026-10-05; always verify behavior against `.cs` files.
+This file provides guidance to agents working in this repository. Technical documentation was synchronized with code on 2026-10-06; always verify behavior against `.cs` files.
 
 ## Stack
 
@@ -18,9 +18,9 @@ This file provides guidance to agents working in this repository. Technical docu
 ## Architecture
 
 - Documentation is under [Assets/MD](Assets/MD/README.md), not `Assets/Scripts/MD`. Files in `Design/` describe design intent; do not assume every rule is implemented.
-- [GameManager](Assets/Scripts/GameManager.cs) is the player-turn orchestrator and Singleton. FSM: `Idle`, `InCity`, `Moving`, `DrawingCard`, `ResolvingEvent`, `InBattle`, `EndingTurn`, `WaitingForAI`.
+- [GameManager](Assets/Scripts/GameManager.cs) is the player-turn orchestrator and Singleton. FSM: `Idle`, `InCity`, `Moving`, `DrawingCard`, `PreparingEncounter`, `ResolvingEvent`, `InBattle`, `PostEncounter`, `EndingTurn`, `WaitingForAI`.
 - One personal player turn contains one road-cell step. After AI completes, player entry from the last cell into a city, free city actions and movement onto the next route's first cell belong to one personal turn. `TurnNumber` advances after AI, before player movement.
-- `StartTurn()` is private and initializes the first turn. UI uses `OnPathSelected()`, `RequestEndTurn()` and the draw-card button. `CompleteEventPhase()` delegates to normal end-turn handling.
+- `StartTurn()` is private and initializes the first turn. UI uses `OnPathSelected()`, `RequestEndTurn()` and the draw-card button. `RequestEndTurn()` advances one encounter phase; only PostEncounter ends the turn. `CompleteEventPhase()` resolves the event and opens PostEncounter.
 - [DiceSystem.OnDiceRolled](Assets/Scripts/DiceSystem.cs) is an instance `Action<int>` for battle attack only. Dice no longer selects a card type; `DiceEventType.cs` is unused by the current game flow.
 - [PlayerToken](Assets/Scripts/PlayerToken.cs) has instance `OnArrivedAtCity` / `OnStepCompleted` events. GameManager and CityManager use `Subscribe()/Unsubscribe()` in `OnEnable()/OnDisable()`; some other systems, including TradeSystem, retain `Awake()/OnDestroy()` subscriptions.
 - Dependencies are generally Inspector-injected using `[SerializeField] private`; verify required references in the actual component. ScriptableObjects under `Assets/Data/` provide configuration.
@@ -31,8 +31,8 @@ This file provides guidance to agents working in this repository. Technical docu
 - [CardDeck.Draw](Assets/Scripts/Card/CardDeck.cs) selects by positive weight among eligible remaining cards and removes the result. `HideEventCard()` discards completed/cancelled cards once. Refill from discard happens before a draw only when the entire deck is empty.
 - CardDeckUI only displays cards and counts from CardManager. CardDisplay is immediate; there is no awaited flip animation or separate gameplay queue in UI.
 - CardDeck uses UnityEngine.Random and belongs on the main thread. The optional `weightSelector` is an extension point; cell/province modifiers are not wired into gameplay yet.
-- Interactive preparation for events/battles is agreed but not implemented. Events currently apply on reveal; PrepareBattle initializes a battle and is followed by an automatic roll.
-- Hand-card timing and the new duration rule still require user clarification. Do not invent them. Current ProcessTurn ticks at the end of the current personal player turn; a newly gained duration-1 effect can expire that same turn.
+- Reveal opens interactive preparation. Confirming it rolls the battle die or opens the event window; a second confirmation fixes the result and opens PostEncounter. Events apply only on that second confirmation. Loss penalties settle after postcombat; victory rewards are granted before it.
+- HandCardData.playTiming defines before/during/after battle/event and InCity flags. HandManager.CanUseCard checks both timing and applicability. Cancellation affects the revealed card; escape works before/during battle; BattlePenaltyReduce works after defeat. The new duration rule still requires clarification: ProcessTurn ticks at the end of the current personal player turn, so a newly gained duration-1 effect can expire that same turn.
 - Hand cards are removed from currentHand on use; they do not have their own discard/refill collection.
 
 ## AI and economy (`Assets/Scripts/AI/`)

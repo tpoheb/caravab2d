@@ -22,3 +22,4 @@ MonoBehaviour:
   category: 2
   effectType: 7
   value: 0
+  playTiming: 125

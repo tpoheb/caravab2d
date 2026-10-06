@@ -32,7 +32,30 @@ public class GameManager : MonoBehaviour
     /// <summary>Текущий личный ход игрока. Увеличивается после завершения ходов ИИ.</summary>
     public int TurnNumber { get; private set; }
 
-    private bool _pendingBattle = false;
+    private bool _pendingBattle;
+    private int? _selectedDiceValue;
+    private bool _awaitingDiceChoice;
+
+    public HandCardData.PlayTiming CurrentHandTiming => State switch
+    {
+        GameState.InCity => HandCardData.PlayTiming.InCity,
+        GameState.PreparingEncounter when cardManager.CurrentCard is BattleCardData
+            => HandCardData.PlayTiming.BeforeBattle,
+        GameState.PreparingEncounter when cardManager.CurrentCard is ShadowCardData
+            => HandCardData.PlayTiming.BeforeEvent,
+        GameState.InBattle => HandCardData.PlayTiming.DuringBattle,
+        GameState.ResolvingEvent => HandCardData.PlayTiming.DuringEvent,
+        GameState.PostEncounter when cardManager.CurrentCard is BattleCardData
+            => HandCardData.PlayTiming.AfterBattle,
+        GameState.PostEncounter when cardManager.CurrentCard is ShadowCardData
+            => HandCardData.PlayTiming.AfterEvent,
+        _ => HandCardData.PlayTiming.None,
+    };
+
+    public bool CanAdvancePhase => !_awaitingDiceChoice &&
+        (State == GameState.PreparingEncounter || State == GameState.ResolvingEvent ||
+         State == GameState.PostEncounter ||
+         (State == GameState.InBattle && battleManager.HasDiceRoll));
 
     // ─────────────────────────────────────────────────────────────────────
     // Lifecycle
@@ -83,6 +106,7 @@ public class GameManager : MonoBehaviour
         State = newState;
         HandManager.Instance?.RefreshUI();
         UpdateDrawCardButton();
+        UpdatePhaseUI();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -104,76 +128,107 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        SetState(GameState.ResolvingEvent);
+        // Блокируем повторное вытягивание до получения сигнала раскрытия.
+        SetState(GameState.Idle);
         cardManager.DrawCard();
     }
 
     public void OnShadowCardRevealed()
     {
-        GetUIManager().ShowEndTurnButton(true);
-        GetUIManager().ShowDiceButton(false);
+        _pendingBattle = false;
+        BeginPreparation();
     }
 
     public void OnBattleCardRevealed()
     {
         _pendingBattle = true;
-        SetState(GameState.InBattle);
-        diceSystem.RollDice();
+        BeginPreparation();
     }
 
-    /// <summary>
-    /// Вызывается BattleManager когда бой завершён принудительно (Дымовая завеса).
-    /// Переводим в ResolvingEvent — игрок нажимает "Завершить ход" как обычно.
-    /// </summary>
+    private void BeginPreparation()
+    {
+        _selectedDiceValue = null;
+        _awaitingDiceChoice = false;
+        SetState(GameState.PreparingEncounter);
+    }
+
     public void OnBattleForceEnded()
     {
         _pendingBattle = false;
-        SetState(GameState.ResolvingEvent);
-        GetUIManager().ShowEndTurnButton(true);
-        GetUIManager().ShowDiceButton(false);
+        CloseDiceChoice();
+        SetState(GameState.PostEncounter);
         Debug.Log("[GameManager] Бой пропущен через EscapeBattle.");
     }
 
-    /// <summary>
-    /// Вызывается CardManager когда карта была отменена Странным Амулетом.
-    /// Переходим сразу к завершению хода.
-    /// </summary>
     public void OnCardCancelled()
     {
-        SetState(GameState.ResolvingEvent);
-        GetUIManager().ShowEndTurnButton(true);
-        GetUIManager().ShowDiceButton(false);
-        Debug.Log("[GameManager] Карта отменена амулетом.");
+        _pendingBattle = false;
+        CloseDiceChoice();
+        SetState(GameState.PostEncounter);
+        Debug.Log("[GameManager] Карта отменена или колода пуста.");
     }
 
-    public void RequestEndTurn()
+    /// <summary>Общая кнопка продолжает текущую фазу; ход заканчивается только после постфазы.</summary>
+    public void RequestEndTurn() => AdvancePhase();
+
+    public void AdvancePhase()
     {
-        if (State != GameState.ResolvingEvent && State != GameState.InBattle)
+        if (!CanAdvancePhase)
         {
-            Debug.LogWarning($"[GameManager] RequestEndTurn проигнорирован, состояние {State}");
+            Debug.LogWarning($"[GameManager] Продолжение фазы недоступно: {State}.");
             return;
         }
 
+        switch (State)
+        {
+            case GameState.PreparingEncounter:
+                if (_pendingBattle)
+                {
+                    SetState(GameState.InBattle);
+                    if (_selectedDiceValue.HasValue) OnDiceRolled(_selectedDiceValue.Value);
+                    else diceSystem.RollDice();
+                }
+                else SetState(GameState.ResolvingEvent);
+                break;
+
+            case GameState.InBattle:
+                battleManager.FinalizeBattle();
+                SetState(GameState.PostEncounter);
+                break;
+
+            case GameState.ResolvingEvent:
+                cardManager.ResolveCurrentEvent();
+                SetState(GameState.PostEncounter);
+                break;
+
+            case GameState.PostEncounter:
+                EndPlayerTurn();
+                break;
+        }
+    }
+
+    private void EndPlayerTurn()
+    {
+        CompleteEncounter();
+        FinishEndTurn();
+    }
+
+    private void CompleteEncounter()
+    {
+        // Блокировка действий до выплаты штрафа, тика эффектов и запуска ИИ.
         SetState(GameState.EndingTurn);
-        GetUIManager().ShowEndTurnButton(false);
-
-        if (_pendingBattle)
-        {
-            battleManager.FinalizeBattle();
-            _pendingBattle = false;
-            StartCoroutine(EndTurnAfterDelay(1.5f));
-            return;
-        }
-
+        if (_pendingBattle) battleManager.SettleBattle();
+        _pendingBattle = false;
+        handManager?.ClearEncounterEffects();
+        CloseDiceChoice();
         shadowEffectManager?.ProcessTurn();
-        FinishEndTurn();
     }
 
-    private System.Collections.IEnumerator EndTurnAfterDelay(float delay)
+    private void CloseDiceChoice()
     {
-        yield return new WaitForSeconds(delay);
-        shadowEffectManager?.ProcessTurn();
-        FinishEndTurn();
+        _awaitingDiceChoice = false;
+        _selectedDiceValue = null;
+        diceChoicePanel?.SetActive(false);
     }
 
     private void FinishEndTurn()
@@ -206,13 +261,10 @@ public class GameManager : MonoBehaviour
 
     public void OnDiceRolled(int value)
     {
-        if (State == GameState.InBattle || State == GameState.ResolvingEvent)
-        {
-            battleManager.ExecuteBattle(value);
-            SetState(GameState.ResolvingEvent);
-            GetUIManager().ShowEndTurnButton(true);
-            GetUIManager().ShowDiceButton(false);
-        }
+        if (State != GameState.InBattle || !_pendingBattle || _awaitingDiceChoice) return;
+        battleManager.ExecuteBattle(value);
+        UpdatePhaseUI();
+        handManager?.RefreshUI();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -226,6 +278,10 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void PromptDiceChoice()
     {
+        if (!_pendingBattle || (State != GameState.PreparingEncounter && State != GameState.InBattle)) return;
+        _awaitingDiceChoice = true;
+        UpdatePhaseUI();
+        handManager?.RefreshUI();
         if (diceChoicePanel == null)
         {
             Debug.LogWarning("[GameManager] diceChoicePanel не назначен в инспекторе. " +
@@ -244,6 +300,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void OnDiceChoiceSelected(int value)
     {
+        if (!_awaitingDiceChoice) return;
         value = Mathf.Clamp(value, 1, 6);
         diceChoicePanel?.SetActive(false);
         ApplyDiceChoice(value);
@@ -251,13 +308,15 @@ public class GameManager : MonoBehaviour
 
     private void ApplyDiceChoice(int value)
     {
+        _awaitingDiceChoice = false;
         Debug.Log($"[GameManager] ChooseDice: выбрано {value}.");
-        // Передаём выбранную прибавку к атаке в BattleManager
-        battleManager.ExecuteBattle(value);
-        SetState(GameState.ResolvingEvent);
-        GetUIManager().ShowEndTurnButton(true);
-        GetUIManager().ShowDiceButton(false);
+        if (State == GameState.PreparingEncounter) _selectedDiceValue = value;
+        else OnDiceRolled(value);
+        UpdatePhaseUI();
+        handManager?.RefreshUI();
     }
+
+    public bool IsChoosingDice => _awaitingDiceChoice;
 
     /// <summary>
     /// Показывает UI выбора товара для удвоения (Мистический Узел).
@@ -344,8 +403,7 @@ public class GameManager : MonoBehaviour
 
     public void CompleteEventPhase()
     {
-        if (State != GameState.ResolvingEvent) return;
-        RequestEndTurn();
+        if (State == GameState.ResolvingEvent) AdvancePhase();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -356,6 +414,12 @@ public class GameManager : MonoBehaviour
     {
         if (drawCardButton != null)
             drawCardButton.gameObject.SetActive(State == GameState.DrawingCard);
+    }
+
+    private void UpdatePhaseUI()
+    {
+        var ui = battleManager != null ? GetUIManager() : null;
+        ui?.ShowPhase(State, cardManager != null && cardManager.CurrentCard is BattleCardData, CanAdvancePhase);
     }
 
     private BattleUIManager GetUIManager() => battleManager.GetUIManager();
