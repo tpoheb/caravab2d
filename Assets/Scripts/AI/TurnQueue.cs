@@ -22,6 +22,7 @@ public class TurnQueue
 
     public IEnumerator ProcessTurnCoroutine()
     {
+        while (PauseMenuController.IsPaused) yield return null;
         TurnNumber++;
         OnTurnStarted?.Invoke(TurnNumber);
         AIDebugLog.NewTurn(TurnNumber);
@@ -43,12 +44,13 @@ public class TurnQueue
         // Один снимок для всех планов. Исполнение строго последовательное.
         var tasks = _traders.Select(trader => Task.Run(() => trader.PlanTurn(snapshot))).ToArray();
         var planning = Task.WhenAll(tasks);
-        while (!planning.IsCompleted) yield return null;
+        while (!planning.IsCompleted || PauseMenuController.IsPaused) yield return null;
         if (planning.IsFaulted) _ = planning.Exception;
 
         var claims = new PathClaims();
         for (int i = 0; i < tasks.Length; i++)
         {
+            while (PauseMenuController.IsPaused) yield return null;
             if (tasks[i].IsFaulted)
             {
                 Debug.LogException(tasks[i].Exception);
@@ -71,6 +73,7 @@ public class TurnQueue
                 intent.SelectedPath?.FinishCity?.CityName ?? "?");
             yield return intent.Trader.ExecuteMovement(intent);
         }
+        while (PauseMenuController.IsPaused) yield return null;
         OnTurnResolved?.Invoke(TurnNumber);
     }
 }

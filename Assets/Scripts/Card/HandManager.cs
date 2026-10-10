@@ -44,6 +44,7 @@ public class HandManager : MonoBehaviour
 
     public bool CanUseCard(int index)
     {
+        if (PauseMenuController.IsPaused) return false;
         if (index < 0 || index >= currentHand.Count || currentHand[index] == null) return false;
         var game = GameManager.Instance;
         if (game == null || game.IsChoosingDice) return false;
@@ -118,6 +119,7 @@ public class HandManager : MonoBehaviour
 
     public void DiscardCard(int index)
     {
+        if (PauseMenuController.IsPaused) return;
         if (index < 0 || index >= currentHand.Count) return;
         Debug.Log($"[HandManager] Сброшена карта '{currentHand[index].cardName}'.");
         currentHand.RemoveAt(index);

@@ -68,6 +68,7 @@ public class TradeSystem : MonoBehaviour
     // --- Методы, вызываемые UI-кнопками ---
     public void BuyItem(CityData.CityItem cityItem, int quantity)
     {
+        if (PauseMenuController.IsPaused) return;
         // ИСПРАВЛЕНИЕ: Используем RuntimeData
         if (_currentCity?.RuntimeData == null) return;
 
@@ -84,6 +85,7 @@ public class TradeSystem : MonoBehaviour
 
     public void SellItem(CityData.CityItem cityItem, int quantity)
     {
+        if (PauseMenuController.IsPaused) return;
         // ИСПРАВЛЕНИЕ: Используем RuntimeData
         if (_currentCity?.RuntimeData == null) return;
 

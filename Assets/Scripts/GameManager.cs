@@ -52,7 +52,7 @@ public class GameManager : MonoBehaviour
         _ => HandCardData.PlayTiming.None,
     };
 
-    public bool CanAdvancePhase => !_awaitingDiceChoice &&
+    public bool CanAdvancePhase => !PauseMenuController.IsPaused && !_awaitingDiceChoice &&
         (State == GameState.PreparingEncounter || State == GameState.ResolvingEvent ||
          State == GameState.PostEncounter ||
          (State == GameState.InBattle && battleManager.HasDiceRoll));
@@ -122,6 +122,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDrawCardButtonPressed()
     {
+        if (PauseMenuController.IsPaused) return;
         if (State != GameState.DrawingCard)
         {
             Debug.LogWarning($"[GameManager] DrawCard проигнорирован, состояние {State}");
@@ -248,6 +249,8 @@ public class GameManager : MonoBehaviour
         if (AITurnManager.Instance != null)
             yield return AITurnManager.Instance.ProcessAITurnAndWait();
 
+        while (PauseMenuController.IsPaused) yield return null;
+
         // Начинается следующий личный ход. Вход в город не завершает его:
         // после городских действий OnPathSelected приведёт на первую клетку.
         TurnNumber++;
@@ -261,6 +264,7 @@ public class GameManager : MonoBehaviour
 
     public void OnDiceRolled(int value)
     {
+        if (PauseMenuController.IsPaused) return;
         if (State != GameState.InBattle || !_pendingBattle || _awaitingDiceChoice) return;
         battleManager.ExecuteBattle(value);
         UpdatePhaseUI();
@@ -300,6 +304,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void OnDiceChoiceSelected(int value)
     {
+        if (PauseMenuController.IsPaused) return;
         if (!_awaitingDiceChoice) return;
         value = Mathf.Clamp(value, 1, 6);
         diceChoicePanel?.SetActive(false);
@@ -353,6 +358,7 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void OnDoubleGoodsSelected(Item item)
     {
+        if (PauseMenuController.IsPaused) return;
         playerInventory.DoubleGoods(item);
         Debug.Log($"[GameManager] DoubleGoods: выбран товар {item.name}.");
     }
@@ -363,6 +369,7 @@ public class GameManager : MonoBehaviour
 
     public void OnPathSelected(PathCellInitializer path)
     {
+        if (PauseMenuController.IsPaused) return;
         if (State != GameState.InCity)
         {
             Debug.LogWarning($"[GameManager] Путь проигнорирован, состояние {State}");
@@ -377,6 +384,7 @@ public class GameManager : MonoBehaviour
 
     public void ContinueMovement()
     {
+        if (PauseMenuController.IsPaused) return;
         if (State != GameState.Moving)
         {
             Debug.LogWarning($"[GameManager] ContinueMovement прерван, состояние {State}");
