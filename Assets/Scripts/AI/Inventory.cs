@@ -27,4 +27,5 @@ public class Inventory
     }
 
     public IReadOnlyDictionary<string, int> GetAll() => _items;
+    public void Clear() => _items.Clear();
 }

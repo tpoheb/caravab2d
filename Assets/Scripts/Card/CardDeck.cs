@@ -8,6 +8,7 @@ public sealed class CardDeck
     private readonly List<ICard> _cards = new List<ICard>();
 
     public int Count => _cards.Count;
+    public IReadOnlyList<ICard> Cards => _cards;
     public bool IsEmpty => _cards.Count == 0;
 
     public void Add(ICard card)

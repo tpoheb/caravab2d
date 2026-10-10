@@ -30,7 +30,7 @@ public class JournalEntryData
 ///   └── JournalPanel (поле journalPanel, скрывается/показывается)
 ///       └── QuestEntryContainer (VerticalLayoutGroup)
 /// </summary>
-public class GameJournal : MonoBehaviour
+public partial class GameJournal : MonoBehaviour
 {
     public static GameJournal Instance { get; private set; }
 

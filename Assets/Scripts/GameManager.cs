@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameManager : MonoBehaviour
+public partial class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
@@ -229,7 +229,7 @@ public class GameManager : MonoBehaviour
     {
         _awaitingDiceChoice = false;
         _selectedDiceValue = null;
-        diceChoicePanel?.SetActive(false);
+        if (diceChoicePanel != null) diceChoicePanel.SetActive(false);
     }
 
     private void FinishEndTurn()
@@ -256,6 +256,7 @@ public class GameManager : MonoBehaviour
         TurnNumber++;
         SetState(GameState.Moving);
         ContinueMovement();
+        GameSaveService.TryAutosave();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -307,7 +308,7 @@ public class GameManager : MonoBehaviour
         if (PauseMenuController.IsPaused) return;
         if (!_awaitingDiceChoice) return;
         value = Mathf.Clamp(value, 1, 6);
-        diceChoicePanel?.SetActive(false);
+        if (diceChoicePanel != null) diceChoicePanel.SetActive(false);
         ApplyDiceChoice(value);
     }
 

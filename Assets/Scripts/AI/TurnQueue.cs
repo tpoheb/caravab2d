@@ -13,6 +13,7 @@ public class TurnQueue
     public int TurnNumber { get; private set; }
     public event Action<int> OnTurnStarted;
     public event Action<int> OnTurnResolved;
+    public void RestoreTurnNumber(int turn) => TurnNumber = turn;
 
     public TurnQueue(List<ITrader> traders, WorldEconomy economy)
     {

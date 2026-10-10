@@ -6,7 +6,7 @@ using UnityEngine;
 /// Управляет ИИ-торговцами. Не имеет своего цикла —
 /// GameManager ждёт завершения всех ИИ перед следующим ходом игрока.
 /// </summary>
-public class AITurnManager : MonoBehaviour
+public partial class AITurnManager : MonoBehaviour
 {
     public static AITurnManager Instance { get; private set; }
 

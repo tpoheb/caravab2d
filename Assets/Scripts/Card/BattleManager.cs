@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 
 /// <summary>Подготовка, изменение броска, результат боя и расчёт после посткомбата.</summary>
-public class BattleManager : MonoBehaviour
+public partial class BattleManager : MonoBehaviour
 {
     public event Action OnBattleWon;
     public event Action OnBattleLost;

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class PathController : MonoBehaviour
+public partial class PathController : MonoBehaviour
 {
     [Header("Token")]
     [SerializeField] private GameObject tokenObject;

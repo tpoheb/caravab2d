@@ -10,7 +10,7 @@ using System.Collections.Generic;
 /// Метки фаз и применимость эффекта проверяются и для UI, и для прямого вызова UseCard.
 /// Снижение штрафа накапливается в посткомбате и расходуется при завершении хода.
 /// </summary>
-public class HandManager : MonoBehaviour
+public partial class HandManager : MonoBehaviour
 {
     public static HandManager Instance { get; private set; }
 
@@ -31,6 +31,10 @@ public class HandManager : MonoBehaviour
     [SerializeField] private GameObject cardPrefab;
 
     private float _pendingPenaltyReduction;
+    private bool _cityHandOpen;
+    private bool _wasInCity;
+    public bool IsCityHandOpen => _cityHandOpen;
+    public int CardCount => currentHand.Count;
     public float PendingPenaltyReduction => Mathf.Clamp01(_pendingPenaltyReduction);
 
     public float ConsumePenaltyReduction()
@@ -240,11 +244,24 @@ public class HandManager : MonoBehaviour
 
     // ── UI ────────────────────────────────────────────────────────────────
 
+    public void ToggleCityHand()
+    {
+        if (PauseMenuController.IsPaused || GameManager.Instance == null ||
+            GameManager.Instance.State != GameState.InCity) return;
+        _cityHandOpen = !_cityHandOpen;
+        RefreshUI();
+    }
+
     public void RefreshUI()
     {
-        if (handTransform == null || cardPrefab == null) return;
+        bool inCity = GameManager.Instance != null && GameManager.Instance.State == GameState.InCity;
+        // Каждый приезд начинает с закрытой руки; обновления карт не закрывают её повторно.
+        if (!inCity || !_wasInCity) _cityHandOpen = false;
+        _wasInCity = inCity;
+        if (handTransform == null) return;
 
-        handTransform.gameObject.SetActive(true);
+        handTransform.gameObject.SetActive(!inCity || _cityHandOpen);
+        if (cardPrefab == null) return;
 
         foreach (Transform child in handTransform)
         {

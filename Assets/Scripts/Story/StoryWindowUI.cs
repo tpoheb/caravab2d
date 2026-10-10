@@ -91,7 +91,7 @@ namespace StorySystem
         // Приватные методы
         // ──────────────────────────────────────────────
 
-        private void Hide()
+        public void Hide()
         {
             windowRoot.SetActive(false);
 

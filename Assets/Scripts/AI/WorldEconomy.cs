@@ -8,7 +8,7 @@ using UnityEngine;
 /// Размести на том же GameObject что AITurnManager.
 /// Заполни CityBindings: каждый City из сцены → его CityData ScriptableObject.
 /// </summary>
-public class WorldEconomy : MonoBehaviour
+public partial class WorldEconomy : MonoBehaviour
 {
     [Header("Все CityData в игре")]
     [Tooltip("Тот же список что в TradeSystem.allCities")]

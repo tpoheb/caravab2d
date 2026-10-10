@@ -5,7 +5,7 @@ using UnityEngine;
 /// Висит на том же GameObject что и PlayerInventory/TeamSystem.
 /// Вступить/выйти/сменить гильдию можно только в столице — проверку делает CityPanel.
 /// </summary>
-public class GuildSystem : MonoBehaviour
+public partial class GuildSystem : MonoBehaviour
 {
     [Header("Зависимости")]
     [SerializeField] private PlayerInventory playerInventory;

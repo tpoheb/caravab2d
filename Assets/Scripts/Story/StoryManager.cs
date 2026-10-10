@@ -8,7 +8,7 @@ namespace StorySystem
     /// Подключи этот компонент к GameObject "StoryManager" на сцене.
     /// Назначь все StoryBeat-ассеты в список allBeats через Inspector.
     /// </summary>
-    public class StoryManager : MonoBehaviour
+    public partial class StoryManager : MonoBehaviour
     {
         public static StoryManager Instance { get; private set; }
 
@@ -25,6 +25,7 @@ namespace StorySystem
 
         // Очередь вставок, готовых к показу (показываем по одной)
         private readonly Queue<StoryBeat> _pendingBeats = new Queue<StoryBeat>();
+        private StoryBeat _currentBeat;
 
         // ──────────────────────────────────────────────
         // Lifecycle
@@ -38,7 +39,6 @@ namespace StorySystem
                 return;
             }
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
 
         private void Start()
@@ -158,6 +158,7 @@ namespace StorySystem
             if (_pendingBeats.Count == 0) return;
 
             StoryBeat beat = _pendingBeats.Dequeue();
+            _currentBeat = beat;
             _shownBeats.Add(beat.beatId);
 
             storyWindowUI.Show(beat, OnWindowClosed);
@@ -170,6 +171,7 @@ namespace StorySystem
 
         private void OnWindowClosed()
         {
+            _currentBeat = null;
             // После закрытия текущего окна — показываем следующее из очереди
             TryShowNextBeat();
         }

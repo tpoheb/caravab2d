@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TeamSystem : MonoBehaviour
+public partial class TeamSystem : MonoBehaviour
 {
     [Header("Player Systems")]
     [SerializeField] private PlayerInventory playerInventory;

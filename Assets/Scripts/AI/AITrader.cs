@@ -9,7 +9,7 @@ using UnityEngine;
 ///   - В пути: делает один шаг за ход
 ///   - Последняя клетка: в следующем ходе входит в город, торгует и выходит на новый путь
 /// </summary>
-public class AITrader : MonoBehaviour, ITrader
+public partial class AITrader : MonoBehaviour, ITrader
 {
     // --- ITrader ---
     public string    DisplayName { get; private set; }

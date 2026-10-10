@@ -6,7 +6,7 @@ using UnityEngine;
 /// ProcessTurn() вызывается из GameManager каждый EndTurn.
 /// OnEnterCity() и ConsumeBonusTrade() — из CityManager.
 /// </summary>
-public class ShadowEffectManager : MonoBehaviour
+public partial class ShadowEffectManager : MonoBehaviour
 {
     [Header("Зависимости")]
     [SerializeField] private PlayerStats      playerStats;

@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class CityManager : MonoBehaviour
+public partial class CityManager : MonoBehaviour
 {
     [Header("Зависимости")]
     [SerializeField] private CityPanel cityPanel;

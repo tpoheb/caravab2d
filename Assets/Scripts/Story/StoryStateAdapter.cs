@@ -8,7 +8,7 @@ namespace StorySystem
     /// Подписывается на PlayerToken.OnArrivedAtCity и транслирует
     /// события в GameEvents — StoryManager реагирует автоматически.
     /// </summary>
-    public class StoryStateAdapter : MonoBehaviour
+    public partial class StoryStateAdapter : MonoBehaviour
     {
         public static StoryStateAdapter Instance { get; private set; }
 
@@ -30,7 +30,6 @@ namespace StorySystem
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
-            DontDestroyOnLoad(gameObject);
         }
 
         private void Start()
@@ -44,16 +43,23 @@ namespace StorySystem
                                  "триггер ArriveAtCity не будет работать.");
 
             // Обновляем локальное состояние при срабатывании GameEvents
-            GameEvents.OnPlayerArrivedAtCity += city => _lastVisitedCityId = city;
-            GameEvents.OnEventCardCollected   += card => _collectedEventCardIds.Add(card);
-            GameEvents.OnUnitHired            += unit => _hiredUnitTypes.Add(unit);
+            GameEvents.OnPlayerArrivedAtCity += RecordCity;
+            GameEvents.OnEventCardCollected += RecordCard;
+            GameEvents.OnUnitHired += RecordUnit;
         }
 
         private void OnDestroy()
         {
+            GameEvents.OnPlayerArrivedAtCity -= RecordCity;
+            GameEvents.OnEventCardCollected -= RecordCard;
+            GameEvents.OnUnitHired -= RecordUnit;
             if (playerToken != null)
                 playerToken.OnArrivedAtCity -= OnPlayerArrivedAtCity;
         }
+
+        private void RecordCity(string city) => _lastVisitedCityId = city;
+        private void RecordCard(string card) => _collectedEventCardIds.Add(card);
+        private void RecordUnit(string unit) => _hiredUnitTypes.Add(unit);
 
         // ── Обработчик прибытия в город ───────────────────────────────────
 

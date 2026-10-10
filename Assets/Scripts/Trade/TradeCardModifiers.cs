@@ -5,7 +5,7 @@ using UnityEngine;
 /// Подписывается на TradeCardEvents, выдаёт значения по Consume-паттерну.
 /// TradeTransactionHandler вызывает Consume-методы в момент транзакции.
 /// </summary>
-public class TradeCardModifiers : MonoBehaviour
+public partial class TradeCardModifiers : MonoBehaviour
 {
     public static TradeCardModifiers Instance { get; private set; }
 

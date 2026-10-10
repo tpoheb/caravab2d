@@ -22,12 +22,17 @@ public class PauseMenuController : MonoBehaviour
     private GameObject _menuPanel;
     private GameObject _quitPanel;
     private Button _openButton;
+    private Button _cityHandButton;
+    private TMP_Text _cityHandLabel;
     private Button _resumeButton;
     private Button _cancelQuitButton;
     private GameObject _previousSelection;
     private bool _paused;
     private float _previousTimeScale;
     private bool _previousAudioPause;
+    private bool _returnToMenu;
+    private TMP_Text _confirmationTitle;
+    private Button _confirmButton;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStatics() => Instance = null;
@@ -51,6 +56,8 @@ public class PauseMenuController : MonoBehaviour
 
     private void Update()
     {
+        RefreshCityHandButton();
+        if (ApplicationFlow.Instance != null && ApplicationFlow.Instance.BlocksPauseInput) return;
         if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             TogglePause();
     }
@@ -92,6 +99,7 @@ public class PauseMenuController : MonoBehaviour
         Time.timeScale = 0f;
         AudioListener.pause = true;
         _openButton.gameObject.SetActive(false);
+        RefreshCityHandButton();
         _overlay.SetActive(true);
         _menuPanel.SetActive(true);
         _quitPanel.SetActive(false);
@@ -107,6 +115,7 @@ public class PauseMenuController : MonoBehaviour
         AudioListener.pause = _previousAudioPause;
         if (_overlay != null) _overlay.SetActive(false);
         if (_openButton != null) _openButton.gameObject.SetActive(true);
+        RefreshCityHandButton();
         Select(_previousSelection != null && _previousSelection.activeInHierarchy
             ? _previousSelection : null);
         _previousSelection = null;
@@ -115,6 +124,23 @@ public class PauseMenuController : MonoBehaviour
     public void RequestQuit()
     {
         if (!_paused) return;
+        _returnToMenu = false;
+        _confirmationTitle.text = "Выйти из игры?";
+        _confirmButton.GetComponentInChildren<TMP_Text>().text = "Сохранить и выйти";
+        OpenExitConfirmation();
+    }
+
+    public void RequestMainMenu()
+    {
+        if (!_paused) return;
+        _returnToMenu = true;
+        _confirmationTitle.text = "Вернуться в главное меню?";
+        _confirmButton.GetComponentInChildren<TMP_Text>().text = "Сохранить и вернуться";
+        OpenExitConfirmation();
+    }
+
+    private void OpenExitConfirmation()
+    {
         _menuPanel.SetActive(false);
         _quitPanel.SetActive(true);
         Select(_cancelQuitButton.gameObject);
@@ -131,6 +157,11 @@ public class PauseMenuController : MonoBehaviour
     public void ConfirmQuit()
     {
         if (!_paused || !_quitPanel.activeSelf) return;
+        if (ApplicationFlow.Instance != null)
+        {
+            ApplicationFlow.Instance.LeaveGame(!_returnToMenu);
+            return;
+        }
         Resume();
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
@@ -142,6 +173,19 @@ public class PauseMenuController : MonoBehaviour
     private static void Select(GameObject target)
     {
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(target);
+    }
+
+    private void RefreshCityHandButton()
+    {
+        if (_cityHandButton == null) return;
+        var hand = HandManager.Instance;
+        bool visible = !_paused && hand != null && GameManager.Instance != null &&
+            GameManager.Instance.State == GameState.InCity &&
+            (ApplicationFlow.Instance == null || !ApplicationFlow.Instance.BlocksPauseInput);
+        _cityHandButton.gameObject.SetActive(visible);
+        if (!visible) return;
+        string label = hand.IsCityHandOpen ? "Скрыть карты" : $"Карты ({hand.CardCount})";
+        if (_cityHandLabel.text != label) _cityHandLabel.text = label;
     }
 
     private void BuildUI()
@@ -161,10 +205,19 @@ public class PauseMenuController : MonoBehaviour
         _openButton = CreateButton(root.transform, "Пауза", "Пауза  ·  Esc", Vector2.zero,
             new Vector2(180f, 52f), Pause);
         var openRect = (RectTransform)_openButton.transform;
-        openRect.anchorMin = openRect.anchorMax = new Vector2(1f, 1f);
-        openRect.pivot = new Vector2(1f, 1f);
-        openRect.anchoredPosition = new Vector2(-24f, -24f);
+        openRect.anchorMin = openRect.anchorMax = new Vector2(0f, 1f);
+        openRect.pivot = new Vector2(0f, 1f);
+        openRect.anchoredPosition = new Vector2(24f, -24f);
         _openButton.navigation = new Navigation { mode = Navigation.Mode.None };
+
+        _cityHandButton = CreateButton(root.transform, "Карты в городе", "Карты", Vector2.zero,
+            new Vector2(180f, 52f), () => { HandManager.Instance?.ToggleCityHand(); RefreshCityHandButton(); });
+        var handRect = (RectTransform)_cityHandButton.transform;
+        handRect.anchorMin = handRect.anchorMax = handRect.pivot = new Vector2(0f, 1f);
+        handRect.anchoredPosition = new Vector2(24f, -88f);
+        _cityHandButton.navigation = new Navigation { mode = Navigation.Mode.None };
+        _cityHandLabel = _cityHandButton.GetComponentInChildren<TMP_Text>();
+        _cityHandButton.gameObject.SetActive(false);
 
         var overlay = CreateRect("Затемнение и блокировка ввода", root.transform);
         Stretch(overlay);
@@ -176,26 +229,34 @@ public class PauseMenuController : MonoBehaviour
         backdropButton.onClick.AddListener(() => Select(_quitPanel.activeSelf
             ? _cancelQuitButton.gameObject : _resumeButton.gameObject));
 
-        _menuPanel = CreatePanel("Пауза", overlay);
-        CreateLabel(_menuPanel.transform, "1000 ДОРОГ", new Vector2(0f, 145f), 19f, Gold);
-        CreateLabel(_menuPanel.transform, "Пауза", new Vector2(0f, 92f), 44f, Cream);
-        CreateLabel(_menuPanel.transform, "Караван ждёт вашего возвращения", new Vector2(0f, 44f), 20f, Cream);
+        _menuPanel = CreatePanel("Пауза", overlay, 590f);
+        CreateLabel(_menuPanel.transform, "1000 ДОРОГ", new Vector2(0f, 235f), 19f, Gold);
+        CreateLabel(_menuPanel.transform, "Пауза", new Vector2(0f, 180f), 44f, Cream);
+        CreateLabel(_menuPanel.transform, "Караван ждёт вашего возвращения", new Vector2(0f, 130f), 20f, Cream);
         _resumeButton = CreateButton(_menuPanel.transform, "Продолжить", "Продолжить",
-            new Vector2(0f, -25f), new Vector2(390f, 64f), Resume);
+            new Vector2(0f, 60f), new Vector2(390f, 64f), Resume);
+        CreateButton(_menuPanel.transform, "Настройки", "Настройки",
+            new Vector2(0f, -18f), new Vector2(390f, 64f), () => ApplicationFlow.Instance?.OpenSettings());
+        CreateButton(_menuPanel.transform, "Главное меню", "Главное меню",
+            new Vector2(0f, -96f), new Vector2(390f, 64f), RequestMainMenu);
         var quitButton = CreateButton(_menuPanel.transform, "Выйти из игры", "Выйти из игры",
-            new Vector2(0f, -103f), new Vector2(390f, 64f), RequestQuit);
-        LinkNavigation(_resumeButton, quitButton);
-        CreateLabel(_menuPanel.transform, "Esc — вернуться в игру", new Vector2(0f, -164f), 18f, Gold);
+            new Vector2(0f, -174f), new Vector2(390f, 64f), RequestQuit);
+        var menuButtons = _menuPanel.GetComponentsInChildren<Button>();
+        for (int i = 0; i < menuButtons.Length; i++)
+            menuButtons[i].navigation = new Navigation { mode = Navigation.Mode.Explicit,
+                selectOnUp = menuButtons[(i + menuButtons.Length - 1) % menuButtons.Length],
+                selectOnDown = menuButtons[(i + 1) % menuButtons.Length] };
+        CreateLabel(_menuPanel.transform, "Esc — вернуться в игру", new Vector2(0f, -247f), 18f, Gold);
 
         _quitPanel = CreatePanel("Подтверждение выхода", overlay);
         CreateLabel(_quitPanel.transform, "ЗАВЕРШЕНИЕ ПУТЕШЕСТВИЯ", new Vector2(0f, 145f), 18f, Gold);
-        CreateLabel(_quitPanel.transform, "Выйти из игры?", new Vector2(0f, 92f), 36f, Cream);
-        CreateLabel(_quitPanel.transform, "Текущая партия не будет сохранена.", new Vector2(0f, 40f), 20f, Cream);
+        _confirmationTitle = CreateLabel(_quitPanel.transform, "Выйти из игры?", new Vector2(0f, 92f), 30f, Cream);
+        CreateLabel(_quitPanel.transform, "Путешествие будет сохранено.", new Vector2(0f, 40f), 20f, Cream);
         _cancelQuitButton = CreateButton(_quitPanel.transform, "Остаться", "Остаться",
             new Vector2(0f, -25f), new Vector2(390f, 64f), CancelQuit);
-        var confirmButton = CreateButton(_quitPanel.transform, "Подтвердить выход", "Выйти из игры",
+        _confirmButton = CreateButton(_quitPanel.transform, "Подтвердить выход", "Сохранить и выйти",
             new Vector2(0f, -103f), new Vector2(390f, 64f), ConfirmQuit);
-        LinkNavigation(_cancelQuitButton, confirmButton);
+        LinkNavigation(_cancelQuitButton, _confirmButton);
         CreateLabel(_quitPanel.transform, "Esc — отменить выход", new Vector2(0f, -164f), 18f, Gold);
         _quitPanel.SetActive(false);
         _overlay.SetActive(false);
@@ -204,10 +265,10 @@ public class PauseMenuController : MonoBehaviour
     private static Color Gold => new Color(0.83f, 0.68f, 0.42f);
     private static Color Cream => new Color(0.96f, 0.91f, 0.80f);
 
-    private GameObject CreatePanel(string name, Transform parent)
+    private GameObject CreatePanel(string name, Transform parent, float height = 420f)
     {
         var border = CreateRect(name, parent);
-        border.sizeDelta = new Vector2(520f, 420f);
+        border.sizeDelta = new Vector2(520f, height);
         border.gameObject.AddComponent<Image>().color = Gold;
         var body = CreateRect("Фон", border);
         Stretch(body, 2f);

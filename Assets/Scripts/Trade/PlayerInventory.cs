@@ -10,7 +10,7 @@ public class InventoryItem
     public float averagePurchasePrice;
 }
 
-public class PlayerInventory : MonoBehaviour
+public partial class PlayerInventory : MonoBehaviour
 {
     [Header("Settings")]
     [SerializeField] private int startMoney = 1000;

@@ -3,7 +3,7 @@ using UnityEngine;
 using System;
 
 [CreateAssetMenu(fileName = "New Player Stats", menuName = "Game/Player Stats")]
-public class PlayerStats : ScriptableObject
+public partial class PlayerStats : ScriptableObject
 {
     [Header("Базовые характеристики (Начальные)")]
     [SerializeField, Range(1, 100)]   private int _baseAttack   = 10;
