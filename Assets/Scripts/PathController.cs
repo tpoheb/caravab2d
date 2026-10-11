@@ -90,12 +90,12 @@ public partial class PathController : MonoBehaviour
 
     private void CachePathCells()
     {
-        int count = currentPath.transform.childCount;
+        int count = currentPath.CellCount;
         pathCells = new Cell[count];
 
         for (int i = 0; i < count; i++)
         {
-            var cell = currentPath.transform.GetChild(i).GetComponent<Cell>();
+            var cell = currentPath.GetCell(i);
 
             if (cell == null)
             {

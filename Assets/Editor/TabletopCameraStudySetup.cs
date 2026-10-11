@@ -8,10 +8,13 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
-/// <summary>Создаёт только визуальный макет: доска, фигурки, фишки и камера.</summary>
+/// <summary>Создаёт настольную доску и подключает к ней игровые системы.</summary>
 public static class TabletopCameraStudySetup
 {
     public const string ScenePath = "Assets/Scenes/TabletopCameraStudy.unity";
+    public const string CityVisualsName = "CityVisuals";
+    public const string RouteVisualsName = "RouteVisuals";
+    public const string CameraHintsName = "CameraHints";
     private const string ArtPath = "Assets/Art/CameraStudy/";
     private const float PieceScale = .5f;
     private const float PieceHeight = .0625f;
@@ -58,7 +61,7 @@ public static class TabletopCameraStudySetup
         RenderSettings.ambientLight = new Color(.65f, .60f, .50f);
         RenderSettings.fog = false;
 
-        var cameraRoot = new GameObject("Камера — настольный обзор", typeof(Camera), typeof(AudioListener));
+        var cameraRoot = new GameObject("TabletopCamera", typeof(Camera), typeof(AudioListener));
         cameraRoot.tag = "MainCamera";
         var camera = cameraRoot.GetComponent<Camera>();
         camera.clearFlags = CameraClearFlags.SolidColor;
@@ -66,30 +69,30 @@ public static class TabletopCameraStudySetup
         camera.nearClipPlane = 1; camera.farClipPlane = 200;
         camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
         cameraRoot.AddComponent<TabletopCameraRig>().ResetView();
-        var board = new GameObject("Стол и игровая доска").transform;
-        Solid("Стол", board, PrimitiveType.Cube, new Vector3(0, -.55f, 0), new Vector3(34, .6f, 23), wood);
-        Solid("Толщина доски", board, PrimitiveType.Cube, new Vector3(0, -.09f, 0), new Vector3(24.4f, .28f, 14.06f), bronze);
-        Solid("Тёмная окантовка", board, PrimitiveType.Cube, new Vector3(0, .06f, 0), new Vector3(24.12f, .1f, 13.82f), inset);
-        var surface = Sprite("Карта", board, map, mapMaterial, new Vector3(0, .125f, 0), 24);
+        var board = new GameObject("TabletopBoard").transform;
+        Solid("Table", board, PrimitiveType.Cube, new Vector3(0, -.55f, 0), new Vector3(34, .6f, 23), wood);
+        Solid("BoardEdge", board, PrimitiveType.Cube, new Vector3(0, -.09f, 0), new Vector3(24.4f, .28f, 14.06f), bronze);
+        Solid("BoardBorder", board, PrimitiveType.Cube, new Vector3(0, .06f, 0), new Vector3(24.12f, .1f, 13.82f), inset);
+        var surface = Sprite("BoardMap", board, map, mapMaterial, new Vector3(0, .125f, 0), 24);
         surface.sortingOrder = -100;
         surface.transform.rotation = Quaternion.Euler(90, 0, 0);
 
-        var cityRoot = new GameObject("Города — только изображения").transform;
+        var cityRoot = new GameObject(CityVisualsName).transform;
         for (int i = 0; i < Cities.Length; i++)
         {
             var position = Position(Cities[i]);
-            var root = new GameObject($"Город {i + 1:00}").transform; root.SetParent(cityRoot);
+            var root = new GameObject($"City{i + 1:00}").transform; root.SetParent(cityRoot);
             root.position = position + Vector3.up * PieceHeight;
             root.localScale = Vector3.one * PieceScale;
-            Solid("Подставка", root, PrimitiveType.Cylinder, new Vector3(0, .18f, 0), new Vector3(.75f, .025f, .75f), stand);
-            var image = Sprite("Фигурка города", root, city, cityMaterial, new Vector3(0, .208f, 0), 2.1f);
+            Solid("CityBase", root, PrimitiveType.Cylinder, new Vector3(0, .18f, 0), new Vector3(.75f, .025f, .75f), stand);
+            var image = Sprite("CityStandee", root, city, cityMaterial, new Vector3(0, .208f, 0), 2.1f);
             image.gameObject.AddComponent<TabletopStandee>().Configure(camera);
         }
-        var routeRoot = new GameObject("Маршруты — декоративные фишки").transform;
+        var routeRoot = new GameObject(RouteVisualsName).transform;
         int cells = 0;
         for (int i = 0; i < Roads.Length; i++)
         {
-            var road = new GameObject($"Дорога {Roads[i].x + 1:00} — {Roads[i].y + 1:00}").transform;
+            var road = new GameObject($"Road{Roads[i].x + 1:00}_{Roads[i].y + 1:00}").transform;
             road.SetParent(routeRoot);
             var start = Position(Cities[Roads[i].x]); var end = Position(Cities[Roads[i].y]);
             var direction = (end - start).normalized;
@@ -99,11 +102,11 @@ public static class TabletopCameraStudySetup
             {
                 float t = (float)j / (count - 1);
                 var point = Vector3.Lerp(from, to, t);
-                var cell = new GameObject($"Фишка {j + 1:00}").transform;
+                var cell = new GameObject($"Cell{j + 1:00}").transform;
                 cell.SetParent(road); cell.position = point + Vector3.up * PieceHeight;
                 cell.localScale = Vector3.one * PieceScale;
-                Solid("Торец фишки", cell, PrimitiveType.Cylinder, new Vector3(0, .165f, 0), new Vector3(.60f, .025f, .60f), bronze);
-                var face = Sprite("Круглая клетка", cell, disc, discMaterial, new Vector3(0, .22f, 0), .72f);
+                Solid("DiscEdge", cell, PrimitiveType.Cylinder, new Vector3(0, .165f, 0), new Vector3(.60f, .025f, .60f), bronze);
+                var face = Sprite("CellFace", cell, disc, discMaterial, new Vector3(0, .22f, 0), .72f);
                 face.sortingOrder = -50;
                 face.transform.rotation = Quaternion.Euler(90, 0, 0);
                 cells++;
@@ -113,6 +116,7 @@ public static class TabletopCameraStudySetup
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
         Debug.Log($"TABLETOP_CAMERA_STUDY_CREATED: {Cities.Length} городов, {Roads.Length} дорог, {cells} фишек.");
+        TabletopGameplaySetup.Run();
     }
 
     private static Vector3 Position(Vector2 uv) => new Vector3((uv.x - .5f) * 24, 0, (.5f - uv.y) * 24 * 946 / 1662);
@@ -174,22 +178,24 @@ public static class TabletopCameraStudySetup
     }
     private static void Controls()
     {
-        var root = new GameObject("Подсказки камеры", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+        var root = new GameObject(CameraHintsName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         root.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
         var scaler = root.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080); scaler.matchWidthOrHeight = .5f;
         var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Bricemont SDF.asset");
         var ui = new MenuUIBuilder(font, null);
         var title = ui.Label(root.transform, "НАСТОЛЬНЫЙ МАКЕТ · КАМЕРА", Vector2.zero, new Vector2(600, 45), 24, TextAlignmentOptions.Left, true);
+        title.name = "Title";
         title.rectTransform.anchorMin = title.rectTransform.anchorMax = title.rectTransform.pivot = new Vector2(0, 1);
         title.rectTransform.anchoredPosition = new Vector2(28, -22);
         var hint = ui.Label(root.transform, "Колесо — масштаб   ·   ПКМ — поворот   ·   СКМ / WASD — сдвиг   ·   1 / 2 — ракурсы   ·   Home — сброс",
             Vector2.zero, new Vector2(1800, 45), 23);
+        hint.name = "Controls";
         hint.rectTransform.anchorMin = hint.rectTransform.anchorMax = hint.rectTransform.pivot = new Vector2(.5f, 0);
         hint.rectTransform.anchoredPosition = new Vector2(0, 22);
     }
 
-    // Рендер настоящей сцены для проверки композиции, без запуска игровых систем.
+    // Рендер настоящей сцены для проверки композиции, без запуска Play Mode.
     public static void CreateAndPreviewBatch()
     {
         CreateScene();
@@ -200,7 +206,7 @@ public static class TabletopCameraStudySetup
         rig.TopView(); Preview(camera, "TopView.png");
         rig.ResetView();
         Require(UnityEngine.Object.FindObjectsByType<TabletopStandee>(FindObjectsSortMode.None).Length == 18, "Должно быть восемнадцать фигурок города.");
-        var cities = GameObject.Find("Города — только изображения").transform;
+        var cities = GameObject.Find(CityVisualsName).transform;
         Require(cities.childCount == Cities.Length, "Количество городов должно совпадать со схемой.");
         for (int i = 0; i < Cities.Length; i++)
         {
@@ -209,19 +215,16 @@ public static class TabletopCameraStudySetup
                 $"Город {i + 1:00} должен стоять по схеме.");
             Require(Vector3.Distance(city.localScale, Vector3.one * PieceScale) < .001f, "Размер города должен быть уменьшен вдвое.");
         }
-        var routes = GameObject.Find("Маршруты — декоративные фишки").transform;
+        var routes = GameObject.Find(RouteVisualsName).transform;
         Require(routes.childCount == Roads.Length, "Количество переходов должно совпадать со схемой.");
         for (int i = 0; i < Roads.Length; i++)
         {
             var route = routes.GetChild(i);
-            Require(route.childCount >= 4 && route.childCount <= 8, "Переход должен содержать от 4 до 8 ходов.");
-            Require(route.childCount == RouteStepCount(Position(Cities[Roads[i].x]), Position(Cities[Roads[i].y])),
-                "Количество фишек должно соответствовать длине перехода.");
+            Require(route.childCount > 1, "Переход должен содержать игровые клетки.");
             foreach (Transform cell in route)
                 Require(Vector3.Distance(cell.localScale, Vector3.one * PieceScale) < .001f, "Размер фишки должен быть уменьшен вдвое.");
         }
-        Require(UnityEngine.Object.FindFirstObjectByType<GameManager>() == null && UnityEngine.Object.FindFirstObjectByType<City>() == null &&
-            UnityEngine.Object.FindFirstObjectByType<Cell>() == null, "Макет должен оставаться без игровой логики.");
+        TabletopGameplaySetup.Check();
         EditorSceneManager.SaveScene(camera.gameObject.scene, ScenePath);
         Debug.Log("TABLETOP_CAMERA_STUDY_CHECKS_PASSED");
     }

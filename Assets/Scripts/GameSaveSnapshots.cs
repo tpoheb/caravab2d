@@ -70,8 +70,11 @@ public partial class GameManager
                 item.UpdateDemand();
             }
         }
-        playerToken.GetComponent<PathController>().RestoreRoute(data.playerRoute);
-        playerToken.transform.position = data.playerPosition;
+        var controller = playerToken.GetComponent<PathController>();
+        controller.RestoreRoute(data.playerRoute);
+        // Координаты карты могут измениться между сценами; маршрут уже поставил фишку на актуальную клетку.
+        if (!controller.HasActivePath)
+            playerToken.transform.position = GameSaveService.Resolve<City>(data.city)?.transform.position ?? data.playerPosition;
         playerToken.gameObject.SetActive(data.playerVisible);
         GameSaveService.Find<CityManager>().RestoreCity(GameSaveService.Resolve<City>(data.city), data.phase == GameState.InCity);
         cardManager.RestoreSave(data, catalog);
@@ -262,7 +265,9 @@ public partial class AITrader
         { Inventory.Add(item.id, item.quantity); _avgPurchasePrices[item.id] = item.averagePrice; }
         _pathController.RestoreRoute(saved.route); _chosenPath = _pathController.CurrentPath;
         _state = _chosenPath != null ? TraderState.OnPath : TraderState.InCity;
-        transform.position = saved.position; gameObject.SetActive(saved.visible);
+        if (!_pathController.HasActivePath)
+            transform.position = CurrentCity != null ? CurrentCity.transform.position : saved.position;
+        gameObject.SetActive(saved.visible);
     }
 }
 public partial class AITurnManager

@@ -73,7 +73,8 @@ public static class GameSaveService
     }
 
     public static T Find<T>() where T : Component => UnityEngine.Object.FindObjectsByType<T>(
-        FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault(value => value.gameObject.scene.name == "MapPrototipe");
+        FindObjectsInactive.Include, FindObjectsSortMode.None).FirstOrDefault(value =>
+            GameManager.Instance != null && value.gameObject.scene == GameManager.Instance.gameObject.scene);
 
     public static string SceneId(Component value)
     {
@@ -87,7 +88,8 @@ public static class GameSaveService
     {
         if (string.IsNullOrEmpty(id)) return null;
         var found = UnityEngine.Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None)
-            .Where(value => value.gameObject.scene.name == "MapPrototipe" && SceneId(value) == id).ToArray();
+            .Where(value => GameManager.Instance != null &&
+                value.gameObject.scene == GameManager.Instance.gameObject.scene && SceneId(value) == id).ToArray();
         if (found.Length == 1) return found[0];
         throw new InvalidDataException("Объект сцены недоступен в сохранении: " + id);
     }
@@ -135,7 +137,7 @@ public static class GameSaveService
     private static void ValidateRoute(RouteSave route)
     {
         var path = Resolve<PathCellInitializer>(route.path);
-        if (path != null && (route.cell < -1 || route.cell >= path.transform.childCount))
+        if (path != null && (route.cell < -1 || route.cell >= path.CellCount))
             throw new InvalidDataException("Сохранённая клетка маршрута отсутствует.");
     }
     private static bool IsStablePhase(GameState phase) => phase == GameState.InCity || phase == GameState.DrawingCard ||

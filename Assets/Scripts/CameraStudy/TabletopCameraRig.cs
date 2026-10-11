@@ -1,12 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>Камера макета настольной карты. Не связана с игровыми системами.</summary>
+/// <summary>Независимое управление обзором настольной игровой карты.</summary>
 [ExecuteAlways]
 [RequireComponent(typeof(Camera))]
 public sealed class TabletopCameraRig : MonoBehaviour
 {
-    [Header("Ракурс стола")]
+    [Header("Table View")]
     [SerializeField] private Vector3 _target = new Vector3(0, .25f, 0);
     [SerializeField, Range(30, 89)] private float _pitch = 52;
     [SerializeField] private float _yaw;
@@ -14,7 +14,7 @@ public sealed class TabletopCameraRig : MonoBehaviour
     [SerializeField, Range(25, 60)] private float _fieldOfView = 36;
     [SerializeField] private bool _orthographic;
 
-    [Header("Управление обзором")]
+    [Header("View Controls")]
     [SerializeField] private float _rotationSpeed = .18f;
     [SerializeField] private float _panSpeed = .018f;
     [SerializeField] private float _keyboardSpeed = 7;

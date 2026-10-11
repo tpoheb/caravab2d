@@ -47,7 +47,7 @@ public static class PauseMenuPlayModeChecks
     {
         if (!Application.isBatchMode)
             throw new InvalidOperationException("Эта проверка запускается в отдельном batchmode Editor.");
-        EditorSceneManager.OpenScene("Assets/Scenes/MapPrototipe.unity");
+        EditorSceneManager.OpenScene(GameMenuSetup.GamePath);
         SessionState.SetBool(RunningKey, true);
         SessionState.SetBool(StoppingKey, false);
         SessionState.SetFloat(DeadlineKey, (float)EditorApplication.timeSinceStartup + 300f);

@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/MainMenu.unity
     guid: b4e457465efcacb4385ebba6bfadec2c
   - enabled: 1
+    path: Assets/Scenes/TabletopCameraStudy.unity
+    guid: 08d50b681241f644fb7ed10f3ab958ee
+  - enabled: 0
     path: Assets/Scenes/MapPrototipe.unity
     guid: f1e8f661bbaaa7340ac348bcaa16c286
   - enabled: 0

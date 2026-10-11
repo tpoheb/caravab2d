@@ -12,6 +12,7 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-200)]
 public sealed class ApplicationFlow : MonoBehaviour
 {
+    public const string GameSceneName = "TabletopCameraStudy";
     public static ApplicationFlow Instance { get; private set; }
     [SerializeField] private Texture2D _background;
     [SerializeField] private TMP_FontAsset _font;
@@ -111,7 +112,7 @@ public sealed class ApplicationFlow : MonoBehaviour
         { _lastSaveError = readError; RefreshContinue(); yield break; }
         IsRestoring = true; BeginLoading(resume ? "Возвращаемся к каравану…" : "Собираем караван…");
         _events.SetActive(false);
-        yield return LoadScene("MapPrototipe");
+        yield return LoadScene(GameSceneName);
         yield return null; yield return null;
         float deadline = Time.realtimeSinceStartup + 30;
         while ((GameManager.Instance == null || AITurnManager.Instance != null && !AITurnManager.Instance.IsReady) && Time.realtimeSinceStartup < deadline)
@@ -150,7 +151,8 @@ public sealed class ApplicationFlow : MonoBehaviour
     public void OpenSettings()
     {
         if (IsBusy) return;
-        _settingsFromGame = SceneManager.GetActiveScene().name == "MapPrototipe";
+        _settingsFromGame = GameManager.Instance != null &&
+            GameManager.Instance.gameObject.scene == SceneManager.GetActiveScene();
         _previousSelection = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
         _canvasRoot.SetActive(true); _main.SetActive(false); _loading.SetActive(false); _dialog.SetActive(false);
         _art.gameObject.SetActive(!_settingsFromGame);

@@ -16,6 +16,9 @@ using UnityEngine.UI;
 [InitializeOnLoad]
 public static class GameMenuPlayModeChecks
 {
+    [Serializable] private sealed class SavedSceneSetup { public SceneSetup[] scenes; }
+    private const string EditorSetup = "GameMenuChecks.EditorSetup";
+    private const string EditorQuality = "GameMenuChecks.EditorQuality";
     private const string Running = "GameMenuChecks.Running", Stopping = "GameMenuChecks.Stopping", Deadline = "GameMenuChecks.Deadline", ExitCode = "GameMenuChecks.ExitCode";
     private const string Preferences = "Caravan.Checks.Settings";
     private static string CheckPath => Path.GetFullPath("Library/GameMenuPreview/check-autosave.json");
@@ -28,6 +31,7 @@ public static class GameMenuPlayModeChecks
     private static InputSettings _originalInput, _checkInput;
     static GameMenuPlayModeChecks()
     {
+        EditorApplication.playModeStateChanged += OnPlayModeChanged;
         if (!SessionState.GetBool(Running, false)) return;
         _stopping = SessionState.GetBool(Stopping, false); _exitCode = SessionState.GetInt(ExitCode, 1);
         EditorApplication.update += Tick;
@@ -36,12 +40,30 @@ public static class GameMenuPlayModeChecks
     private static void IsolateData()
     {
         if (!SessionState.GetBool(Running, false)) return;
+        Application.runInBackground = true;
         GameSaveService.OverridePath = CheckPath; GameSettings.OverrideKey = Preferences;
     }
     // Без -quit: завершает редактор после проверки и выхода из Play Mode.
     public static void RunBatch()
     {
         if (!Application.isBatchMode) throw new InvalidOperationException("Запустите в отдельном batchmode Editor.");
+        RunChecks();
+    }
+    [MenuItem("Tools/Проверки/Главное меню и сохранения в Play Mode")]
+    public static void RunInEditor()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || Enumerable.Range(0, SceneManager.sceneCount)
+            .Any(index => SceneManager.GetSceneAt(index).isDirty))
+            throw new InvalidOperationException("Запустите вне Play Mode, сохранив открытые сцены.");
+        SessionState.SetString(EditorSetup, JsonUtility.ToJson(new SavedSceneSetup { scenes = EditorSceneManager.GetSceneManagerSetup() }));
+        SessionState.SetInt(EditorQuality, QualitySettings.GetQualityLevel());
+        SessionState.SetBool("GameMenuChecks.RunInBackground", Application.runInBackground);
+        SessionState.SetFloat("GameMenuChecks.AudioVolume", AudioListener.volume);
+        RunChecks();
+    }
+    private static void RunChecks()
+    {
+        _stage = 0; _nextFrame = 0; _stopping = false; _loggedStage = -1;
         PauseMenuChecks.RunAll();
         Directory.CreateDirectory(Path.GetDirectoryName(CheckPath));
         if (File.Exists(CheckPath)) File.Delete(CheckPath);
@@ -49,7 +71,8 @@ public static class GameMenuPlayModeChecks
         EditorSceneManager.OpenScene(GameMenuSetup.MainMenuPath);
         SessionState.SetBool(Running, true); SessionState.SetBool(Stopping, false);
         SessionState.SetFloat(Deadline, (float)EditorApplication.timeSinceStartup + 480);
-        EditorApplication.update -= Tick; EditorApplication.update += Tick; EditorApplication.isPlaying = true;
+        EditorApplication.update -= Tick; EditorApplication.update += Tick;
+        EditorApplication.isPaused = false; EditorApplication.isPlaying = true;
     }
     private static void Tick()
     {
@@ -58,7 +81,21 @@ public static class GameMenuPlayModeChecks
             if (_stopping)
             {
                 if (!EditorApplication.isPlayingOrWillChangePlaymode)
-                { SessionState.SetBool(Running, false); PlayerPrefs.DeleteKey(Preferences); EditorApplication.Exit(_exitCode); }
+                {
+                    SessionState.SetBool(Running, false); PlayerPrefs.DeleteKey(Preferences);
+                    EditorApplication.update -= Tick;
+                    File.WriteAllText("Library/GameMenuPreview/check-result.txt", _exitCode == 0 ? "GAME_MENU_PLAY_MODE_CHECKS_PASSED" : "GAME_MENU_PLAY_MODE_CHECKS_FAILED");
+                    if (Application.isBatchMode) EditorApplication.Exit(_exitCode);
+                    else
+                    {
+                        QualitySettings.SetQualityLevel(SessionState.GetInt(EditorQuality, 2), true);
+                        Application.runInBackground = SessionState.GetBool("GameMenuChecks.RunInBackground", false);
+                        AudioListener.volume = SessionState.GetFloat("GameMenuChecks.AudioVolume", 1);
+                        var saved = JsonUtility.FromJson<SavedSceneSetup>(SessionState.GetString(EditorSetup, ""));
+                        if (saved != null) EditorSceneManager.RestoreSceneManagerSetup(saved.scenes);
+                        SessionState.EraseString(EditorSetup);
+                    }
+                }
                 return;
             }
             Require(EditorApplication.timeSinceStartup < SessionState.GetFloat(Deadline, 0), "Таймаут проверки меню.");
@@ -92,13 +129,13 @@ public static class GameMenuPlayModeChecks
                     break;
                 case 2:
                     if (flow.IsBusy) return;
-                    Require(SceneManager.GetActiveScene().name == "MapPrototipe" && GameManager.Instance.State == GameState.InCity,
+                    Require(SceneManager.GetActiveScene().name == ApplicationFlow.GameSceneName && GameManager.Instance.State == GameState.InCity,
                         "Новая игра должна открыть стартовый город.");
                     Require(GameSaveService.TryRead(out var first, out _) && first.turn == 1, "Новая партия создаёт автосохранение.");
                     CheckCityHand(PauseMenuController.Instance);
                     PrepareCaravan();
                     var city = GameSaveService.Find<CityManager>().PlayerCurrentCity;
-                    GameManager.Instance.OnPathSelected(city.Paths.First(path => path != null && path.transform.childCount >= 3));
+                    GameManager.Instance.OnPathSelected(city.Paths.First(path => path != null && path.CellCount >= 3));
                     DrawType<ShadowCardData>();
                     GameManager.Instance.AdvancePhase(); GameManager.Instance.AdvancePhase(); GameManager.Instance.AdvancePhase();
                     break;
@@ -134,11 +171,16 @@ public static class GameMenuPlayModeChecks
                     Require(GameSaveService.TryRead(out _expected, out _), "Сохранение доступно после выхода.");
                     flow.RequestNewGame(); Get<Button>(flow, "_dialogCancel").onClick.Invoke();
                     Require(GameSaveService.TryRead(out var unchanged, out _) && unchanged.money == _expected.money, "Отмена новой игры сохраняет прежнюю партию.");
+                    // Идентификаторы старой сцены те же, но её мировые координаты выходят за пределы доски.
+                    var legacy = JsonUtility.FromJson<CaravanSaveData>(JsonUtility.ToJson(_expected));
+                    legacy.playerPosition += new Vector3(1000, 500, 600);
+                    foreach (var trader in legacy.traders) trader.position += new Vector3(1000, 500, 600);
+                    GameSaveService.Write(legacy);
                     flow.ContinueGame();
                     break;
                 case 6:
                     if (flow.IsBusy) return;
-                    Require(SceneManager.GetActiveScene().name == "MapPrototipe", "Продолжить загружает сцену игры.");
+                    Require(SceneManager.GetActiveScene().name == ApplicationFlow.GameSceneName, "Продолжить загружает сцену игры.");
                     var restored = GameManager.Instance.CaptureSave(flow.Catalog); restored.savedAt = _expected.savedAt;
                     File.WriteAllText(Path.GetFullPath("Library/GameMenuPreview/expected.json"), JsonUtility.ToJson(_expected, true));
                     File.WriteAllText(Path.GetFullPath("Library/GameMenuPreview/restored.json"), JsonUtility.ToJson(restored, true));
@@ -260,11 +302,26 @@ public static class GameMenuPlayModeChecks
     }
     private static void Capture(ApplicationFlow flow, string filename) =>
         MenuPreviewCapture.Save(Get<GameObject>(flow, "_canvasRoot").GetComponent<Canvas>(), filename);
-    private static void Stop(int code)
+    private static void RestoreInput()
     {
         if (_keyboard != null && _keyboard.added) InputSystem.RemoveDevice(_keyboard);
         if (_originalInput != null) InputSystem.settings = _originalInput;
         if (_checkInput != null) UnityEngine.Object.DestroyImmediate(_checkInput);
+        _keyboard = null; _originalInput = null; _checkInput = null;
+    }
+    private static void OnPlayModeChanged(PlayModeStateChange state)
+    {
+        if (state != PlayModeStateChange.ExitingPlayMode || !SessionState.GetBool(Running, false)) return;
+        RestoreInput();
+        if (!_stopping)
+        {
+            _stopping = true; _exitCode = 1;
+            SessionState.SetBool(Stopping, true); SessionState.SetInt(ExitCode, 1);
+        }
+    }
+    private static void Stop(int code)
+    {
+        RestoreInput();
         PauseMenuController.Instance?.Resume(); _stopping = true; _exitCode = code;
         SessionState.SetBool(Stopping, true); SessionState.SetInt(ExitCode, code); EditorApplication.isPlaying = false;
     }

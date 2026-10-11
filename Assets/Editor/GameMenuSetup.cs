@@ -14,7 +14,7 @@ public sealed class GameMenuSetup : IPreprocessBuildWithReport
     public int callbackOrder => 0;
     public const string CatalogPath = "Assets/Data/SaveGameCatalog.asset";
     public const string MainMenuPath = "Assets/Scenes/MainMenu.unity";
-    public const string GamePath = "Assets/Scenes/MapPrototipe.unity";
+    public const string GamePath = "Assets/Scenes/" + ApplicationFlow.GameSceneName + ".unity";
     public void OnPreprocessBuild(BuildReport report) => RefreshCatalog();
 
     [MenuItem("Tools/Меню/Обновить каталог сохранений")]
