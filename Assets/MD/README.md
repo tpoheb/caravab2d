@@ -45,6 +45,7 @@
 | Документ | Назначение |
 |---|---|
 | [MENU_AND_SAVES.md](MENU_AND_SAVES.md) | Главное меню, загрузка, настройки и автосохранение |
+| [TABLETOP_CAMERA_STUDY.md](TABLETOP_CAMERA_STUDY.md) | Отдельный визуальный макет для подбора настольного ракурса |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | FSM, зависимости, ход игрока и ИИ, общий рынок |
 | [SYSTEMS.md](SYSTEMS.md) | Актуальные API и события систем |
 | [ShadowCards_Mechanics.md](ShadowCards_Mechanics.md) | Общая колода, сброс, эффекты и UI |
