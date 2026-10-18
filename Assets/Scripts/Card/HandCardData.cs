@@ -12,6 +12,12 @@ public class HandCardData : ScriptableObject
     public string description;
     public Sprite icon;
 
+    public enum CardGroup { General, Battle }
+    public CardGroup group;
+    [Tooltip("Причина недоступности карты, пока её механика отсутствует")]
+    public string unavailableReason;
+    public string momentLabel;
+
     [Header("Категория")]
     public CardCategory category;
 
@@ -23,6 +29,7 @@ public class HandCardData : ScriptableObject
     public enum PlayTiming
     {
         None = 0,
+        [InspectorName("Перед событием клетки")] BeforeCellEvent = 128,
         [InspectorName("Перед битвой")] BeforeBattle = 1,
         [InspectorName("Во время битвы")] DuringBattle = 2,
         [InspectorName("После битвы")] AfterBattle = 4,
@@ -36,7 +43,9 @@ public class HandCardData : ScriptableObject
     {
         get
         {
+            if (!string.IsNullOrEmpty(momentLabel)) return momentLabel;
             var labels = new System.Collections.Generic.List<string>();
+            if ((playTiming & PlayTiming.BeforeCellEvent) != 0) labels.Add("перед событием клетки");
             if ((playTiming & PlayTiming.BeforeBattle) != 0) labels.Add("перед битвой");
             if ((playTiming & PlayTiming.DuringBattle) != 0) labels.Add("во время битвы");
             if ((playTiming & PlayTiming.AfterBattle) != 0) labels.Add("после битвы");
@@ -103,5 +112,18 @@ public class HandCardData : ScriptableObject
         // ── Новые боевые ─────────────────────────────────────────────────
         EnemyAttackDebuff,   // Пыль в глаза:  -value к атаке противника
         BattlePenaltyReduce, // Клятва Пути:   -value% штрафа после поражения
+
+        RetryBattle,
+        IgnoreAttackPenalties,
+        RiskAttackBonus,
+        BoostDice,
+        AttackFloor,
+        CloseBattleBonus,
+        WithdrawBattle,
+        UndoEventPenalty,
+        RedrawEvent,
+        PeekEncounter,
+        CancelEvent,
+        Unsupported,
     }
 }

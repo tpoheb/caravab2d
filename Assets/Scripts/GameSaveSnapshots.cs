@@ -168,19 +168,23 @@ public partial class CardManager
         data.deck = _deck.Cards.Select(catalog.Id).ToList();
         data.discard = _discard.Select(catalog.Id).ToList();
         data.currentCard = catalog.Id(_currentCard); data.eventResolved = _eventResolved;
+        data.eventPenaltyUndone = _eventPenaltyUndone; data.eventCancelled = _eventCancelled; data.previewCard = catalog.Id(_previewCard);
     }
     public void RestoreSave(CaravanSaveData data, SaveGameCatalog catalog)
     {
         _deck.Clear(); _deck.AddRange(data.deck.Select(catalog.Get<ICard>));
         _discard.Clear(); _discard.AddRange(data.discard.Select(catalog.Get<ICard>));
         _currentCard = catalog.Get<ICard>(data.currentCard); _eventResolved = data.eventResolved;
+        _eventPenaltyUndone = data.eventPenaltyUndone; _eventCancelled = data.eventCancelled; _previewCard = catalog.Get<ICard>(data.previewCard);
         deckUI?.HideCurrentCard();
         // Показ без RouteCard: не запускает подготовку или эффект повторно.
         if (_currentCard != null)
         {
-            if (_currentCard is BattleCardData && !data.pendingBattle) deckUI?.ShowCancelledCard(_currentCard);
+            if (_eventCancelled || (_currentCard is BattleCardData && !data.pendingBattle)) deckUI?.ShowCancelledCard(_currentCard);
             else deckUI?.ShowCard(_currentCard);
         }
+        if (_previewCard != null) deckUI?.ShowCard(_previewCard);
+        if (_eventPenaltyUndone) deckUI?.ShowPenaltyCancelled();
         UpdateDeckCounts();
     }
 }
@@ -201,15 +205,19 @@ public partial class BattleManager
     public void CaptureSave(CaravanSaveData data, SaveGameCatalog catalog)
     {
         data.battle = new BattleSave { card = catalog.Id(_card), dice = _lastDiceRoll, bonus = _attackBonus,
-            debuff = _enemyDebuff, resolved = _resolved, victory = _victory };
+            debuff = _enemyDebuff, resolved = _resolved, victory = _victory,
+            retryUsed = _retryUsed, ignoreAttackPenalties = _ignoreAttackPenalties, attackFloor = _attackFloor,
+            withdrawn = _withdrawn, penaltyIncreasePercent = _penaltyIncreasePercent };
     }
     public void RestoreSave(CaravanSaveData data, SaveGameCatalog catalog)
     {
         var saved = data.battle;
         _card = catalog.Get<BattleCardData>(saved.card); _lastDiceRoll = saved.dice;
         _attackBonus = saved.bonus; _enemyDebuff = saved.debuff; _resolved = saved.resolved; _victory = saved.victory;
+        _retryUsed = saved.retryUsed; _ignoreAttackPenalties = saved.ignoreAttackPenalties;
+        _attackFloor = saved.attackFloor; _withdrawn = saved.withdrawn; _penaltyIncreasePercent = saved.penaltyIncreasePercent;
         if (_card == null) return;
-        if (_resolved) uiManager?.DisplayBattleResult(_victory, _card, PlayerBaseAttack + _lastDiceRoll);
+        if (_resolved) uiManager?.DisplayBattleResult(_victory, _card, TotalAttack);
         else RefreshPreview();
         RefreshPostCombatPreview();
     }

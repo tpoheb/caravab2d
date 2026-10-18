@@ -6,7 +6,10 @@ public static class TradeTransactionHandler
                                     CityData city, PlayerInventory playerInventory,
                                     PlayerStats playerStats, out int totalCost)
     {
-        // 1. Вычисляем динамическую стоимость чека
+        totalCost = 0;
+        if (!ValidRequest(cityItem, quantity, city, playerInventory)) return false;
+
+        // Вычисление не расходует модификаторы до проверки сделки.
         totalCost = CalculateTransactionCost(cityItem, quantity, true, playerStats);
         int totalWeight = cityItem.item.weight * quantity;
 
@@ -16,6 +19,7 @@ public static class TradeTransactionHandler
             return false;
         }
 
+        TradeCardModifiers.Instance?.ConsumePurchaseDiscount();
         ExecuteBuyTransaction(cityItem, quantity, totalCost, city, playerInventory);
         return true;
     }
@@ -24,8 +28,12 @@ public static class TradeTransactionHandler
                                      CityData city, PlayerInventory playerInventory,
                                      PlayerStats playerStats, out int totalValue)
     {
-        // 1. Вычисляем динамическую выручку с чека
-        totalValue = CalculateTransactionCost(cityItem, quantity, false, playerStats);
+        totalValue = 0;
+        if (!ValidRequest(cityItem, quantity, city, playerInventory)) return false;
+
+        // Полная выручка, включая фиксированный бонус, должна быть у города.
+        totalValue = CalculateTransactionCost(cityItem, quantity, false, playerStats)
+            + (TradeCardModifiers.Instance?.PendingSaleBonus ?? 0);
 
         if (!CanSell(cityItem, quantity, totalValue, city, playerInventory))
         {
@@ -33,50 +41,50 @@ public static class TradeTransactionHandler
             return false;
         }
 
+        TradeCardModifiers.Instance?.ConsumeSalePriceBoost();
+        TradeCardModifiers.Instance?.ConsumeSaleBonus();
         ExecuteSellTransaction(cityItem, quantity, totalValue, city, playerInventory);
         return true;
     }
 
-    // --- НОВАЯ ЛОГИКА КАЛЬКУЛЯТОРА ---
+    // Расчёт стоимости не меняет рынок и не расходует одноразовые бонусы.
     private static int CalculateTransactionCost(CityData.CityItem cityItem, int quantity,
                                             bool isBuying, PlayerStats playerStats)
-{
-    float tempPrice = isBuying ? cityItem.currentBuyPrice : cityItem.currentSellPrice;
-    float total = 0f;
-    float bargainEffect = (playerStats != null) ? playerStats.Bargain * 0.01f : 0f;
-
-    // Модификатор скидки на покупку (Купец купцу друг)
-    float purchaseDiscount = isBuying
-        ? (TradeCardModifiers.Instance?.ConsumePurchaseDiscount() ?? 0f)
-        : 0f;
-
-    // Модификатор буста цены продажи (Слух из первых уст)
-    float salePriceBoost = !isBuying
-        ? (TradeCardModifiers.Instance?.ConsumeSalePriceBoost() ?? 0f)
-        : 0f;
-
-    for (int i = 0; i < quantity; i++)
     {
-        float price = tempPrice;
+        float tempPrice = isBuying ? cityItem.currentBuyPrice : cityItem.currentSellPrice;
+        float total = 0f;
+        float bargainEffect = (playerStats != null) ? playerStats.Bargain * 0.01f : 0f;
 
-        if (isBuying)
-            price = price * (1f - bargainEffect) * (1f - purchaseDiscount);
-        else
-            price = price * (1f + bargainEffect) * (1f + salePriceBoost);
+        // Модификатор скидки на покупку (Купец купцу друг)
+        float purchaseDiscount = isBuying
+            ? (TradeCardModifiers.Instance?.PendingPurchaseDiscount ?? 0f)
+            : 0f;
 
-        total += Mathf.Max(1f, Mathf.Round(price));
+        // Модификатор буста цены продажи (Слух из первых уст)
+        float salePriceBoost = !isBuying
+            ? (TradeCardModifiers.Instance?.PendingSalePriceBoost ?? 0f)
+            : 0f;
 
-        if (isBuying)
-            tempPrice = Mathf.Min(cityItem.maxBuyPrice, tempPrice * (1f + cityItem.volatility));
-        else
-            tempPrice = Mathf.Max(cityItem.minSellPrice, tempPrice * (1f - cityItem.volatility));
+        for (int i = 0; i < quantity; i++)
+        {
+            float price = tempPrice;
+
+            if (isBuying)
+                price = price * (1f - bargainEffect) * (1f - purchaseDiscount);
+            else
+                price = price * (1f + bargainEffect) * (1f + salePriceBoost);
+
+            total += Mathf.Max(1f, Mathf.Round(price));
+
+            if (isBuying)
+                tempPrice = Mathf.Min(cityItem.maxBuyPrice, tempPrice * (1f + cityItem.volatility));
+            else
+                tempPrice = Mathf.Max(cityItem.minSellPrice, tempPrice * (1f - cityItem.volatility));
+        }
+
+        return Mathf.RoundToInt(total);
     }
 
-    return Mathf.RoundToInt(total);
-}
-
-    
-    // --- ОБНОВЛЕННЫЕ ИСПОЛНИТЕЛИ ---
     private static void ExecuteBuyTransaction(CityData.CityItem cityItem, int quantity,
         int totalCost, CityData city, PlayerInventory playerInventory)
     {
@@ -93,34 +101,35 @@ public static class TradeTransactionHandler
         }
 
         cityItem.UpdateDemand();
-        
+
         Debug.Log($"Bought {quantity}. New Buy: {cityItem.currentBuyPrice}, Sell: {cityItem.currentSellPrice}");
     }
 
     private static void ExecuteSellTransaction(CityData.CityItem cityItem, int quantity,
-    int totalValue, CityData city, PlayerInventory playerInventory)
-{
-    // Фиксированный бонус к выручке (Слово Менялы)
-    int saleBonus  = TradeCardModifiers.Instance?.ConsumeSaleBonus() ?? 0;
-    int finalValue = totalValue + saleBonus;
-
-    playerInventory.Money += finalValue;
-    city.cityGold -= finalValue;
-    cityItem.stock += quantity;
-    playerInventory.RemoveItem(cityItem.item, quantity);
-
-    for (int i = 0; i < quantity; i++)
+        int totalValue, CityData city, PlayerInventory playerInventory)
     {
-        cityItem.currentBuyPrice  = Mathf.Max(cityItem.minBuyPrice,  cityItem.currentBuyPrice  * (1f - cityItem.volatility));
-        cityItem.currentSellPrice = Mathf.Max(cityItem.minSellPrice, cityItem.currentSellPrice * (1f - cityItem.volatility));
+
+        playerInventory.Money += totalValue;
+        city.cityGold -= totalValue;
+        cityItem.stock += quantity;
+        playerInventory.RemoveItem(cityItem.item, quantity);
+
+        for (int i = 0; i < quantity; i++)
+        {
+            cityItem.currentBuyPrice  = Mathf.Max(cityItem.minBuyPrice,  cityItem.currentBuyPrice  * (1f - cityItem.volatility));
+            cityItem.currentSellPrice = Mathf.Max(cityItem.minSellPrice, cityItem.currentSellPrice * (1f - cityItem.volatility));
+        }
+
+        cityItem.UpdateDemand();
+
+        Debug.Log($"Sold {quantity} for {totalValue}. " +
+                  $"New Buy: {cityItem.currentBuyPrice}, Sell: {cityItem.currentSellPrice}");
     }
 
-    cityItem.UpdateDemand();
+    private static bool ValidRequest(CityData.CityItem cityItem, int quantity, CityData city, PlayerInventory inventory)
+        => quantity > 0 && cityItem?.item != null && city != null && inventory != null
+            && city.items != null && city.items.Contains(cityItem);
 
-    Debug.Log($"Sold {quantity} for {finalValue} (base {totalValue} + bonus {saleBonus}). " +
-              $"New Buy: {cityItem.currentBuyPrice}, Sell: {cityItem.currentSellPrice}");
-}
-    // (Методы CanBuy, CanSell и LogTradeValidation остаются без изменений)
     private static bool CanBuy(CityData.CityItem cityItem, int quantity, int totalCost, int totalWeight, CityData city, PlayerInventory playerInventory)
     {
         bool canCarry = playerInventory.CanCarryMore(totalWeight);

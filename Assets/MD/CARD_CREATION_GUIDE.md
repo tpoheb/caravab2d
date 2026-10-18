@@ -2,6 +2,7 @@
 
 Актуально на 2026-10-06. События и битвы входят в одну общую колоду; активные карты руки настраиваются отдельно.
 
+Дополнено 2026-10-18: [актуальный набор карт](DOCUMENT_CARDS.md), [отложенные городские эффекты](CITY_EFFECTS.md) и [меню/сохранения](MENU_AND_SAVES.md).
 ## Создание ассетов
 
 | Данные | Меню Create | Подключение |
@@ -49,19 +50,19 @@ duration: 1
 | `TeamStats` | Процентный множитель характеристик через PlayerStats |
 | `AddGoods` / `RemoveGoods` | Параметр добавления/удаления случайных товаров |
 | `FireCrewMember` | Не используется: увольняется один случайный член команды |
-| `WagePenalty` | Не используется: выставляется отложенный флаг |
+| `WagePenalty` | Поле value не используется: флаг разовой доплаты обычного жалованья в следующем городе |
 | `Confiscation` | Штраф задаётся `penaltyValue` |
 | `BonusTrade` | Накапливаемый процент отложенного бонуса |
 
-Точные ограничения обработчиков приведены в [ShadowCards_Mechanics.md](ShadowCards_Mechanics.md#эффекты-shadoweffectmanager). `WagePenalty` и `BonusTrade` пока не подключены к городскому потоку.
+Точные ограничения обработчиков приведены в [ShadowCards_Mechanics.md](ShadowCards_Mechanics.md#эффекты-shadoweffectmanager). `WagePenalty` и `BonusTrade` подключены при прибытии через CityManager; правила и сохранение описаны в [CITY_EFFECTS.md](CITY_EFFECTS.md).
 
 ### Временные эффекты
 
-Inspector предлагает `duration` от 1 до 10. У `Attack`, `Capacity`, `Bargain`, `TeamStats` обработчик сейчас регистрирует временный эффект независимо от `isTemporary`.
+Inspector предлагает `duration` от 1 до 15. У `Attack`, `Capacity`, `Bargain`, `TeamStats` обработчик сейчас регистрирует временный эффект независимо от `isTemporary`.
 
 Счётчик уменьшается в конце текущего личного хода игрока. Значение 1 может истечь уже в ход получения; новое правило отсчёта ещё уточняется. Не использовать 1 как условие «следующий бой» или 999 как условие «до конца пути»: таких условий нет.
 
-Поля `applyOnceInCity` у ShadowCardData нет. Для отложенных городских эффектов существуют отдельные флаги менеджера, но их потребление в текущем CityManager не подключено.
+Поля `applyOnceInCity` у ShadowCardData нет. Для отложенных городских эффектов существуют отдельные флаги менеджера; CityManager потребляет их только при фактическом прибытии, перед открытием панели.
 
 ## Карта битвы
 
@@ -105,7 +106,7 @@ rewardHandCardID: 0
 |---|---|
 | События из CSV | Tools → Cards → Import Shadow Cards from CSV |
 | Битвы из выбранного CSV/TSV | Tools → Battle Cards → Import from CSV |
-| Рука из встроенных определений | Tools → 1000 Roads → Import Hand Cards |
+| Рука из `DocumentCards.json` | Tools → 1000 Roads → Import Hand Cards |
 
 Форматы, пути и ограничения: [SCRIPTS_AND_IMPORTERS.md](SCRIPTS_AND_IMPORTERS.md). Импортёр битв не задаёт `weight`; настроить его после импорта. Диапазон сложности не влияет на вытягивание.
 

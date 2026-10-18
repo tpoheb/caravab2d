@@ -2,6 +2,7 @@
 
 Сверено с `.cs` файлами 2026-10-06. API систем: [SYSTEMS.md](SYSTEMS.md); последовательность фаз: [ARCHITECTURE.md](ARCHITECTURE.md).
 
+Дополнено 2026-10-18: [актуальный набор карт](DOCUMENT_CARDS.md), [отложенные городские эффекты](CITY_EFFECTS.md) и [меню/сохранения](MENU_AND_SAVES.md).
 ## Импортёры
 
 Editor-инструменты находятся в `Assets/Editor/` и создают исходные ассеты. Импорт не добавляет новые карты в списки `CardManager` автоматически: ссылки надо назначить в Inspector.
@@ -11,7 +12,7 @@ Editor-инструменты находятся в `Assets/Editor/` и созд
 | `BattleCardImporter` | Tools → Battle Cards → Import from CSV | Выбранный CSV/TSV → `Assets/Data/BattleCards/` по умолчанию |
 | `ShadowCardCSVImporter` | Tools → Cards → Import Shadow Cards from CSV | `Assets/Data/ShadowCards.csv` → `Assets/Data/ShadowEvent/` |
 | `ShadowCardImporter` | Tools → Cards → Create Shadow Cards | Встроенные определения событий → ассеты |
-| `HandCardImporter` | Tools → 1000 Roads → Import Hand Cards | Встроенные определения руки → `Assets/Data/HandCard/` |
+| `HandCardImporter` | Tools → 1000 Roads → Import Hand Cards | `DocumentCards.json` → `Assets/Data/HandCard/` |
 | `Editor.TradeDataImporter` | Tools → Trade → Import Trade Data | Выбранный CSV → `Assets/Data/Items/` и `Assets/Data/Cities/` |
 
 ### BattleCardImporter
@@ -67,7 +68,7 @@ cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volati
 
 ### HandCardImporter и ShadowCardImporter
 
-Создают карты из определений в исходниках, а не из CSV. HandCardImporter пропускает существующие ассеты, сохраняя иконки и настройки; новые ассеты получают начальные `playTiming`. Категория не задаёт фазу: метки меняются в Inspector.
+Используют `DocumentCardImporter` и единый источник `Assets/Data/DocumentCards.json`. Обновляют данные существующих ассетов, сохраняя GUID и назначенные иконки. Фазы и группа руки берутся из источника. Состав игрового набора описан в [DOCUMENT_CARDS.md](DOCUMENT_CARDS.md).
 
 ## Порядок выполнения игровых скриптов
 
@@ -129,7 +130,7 @@ cityName,itemName,weight,stock,buyPrice,sellPrice,minBuyPrice,maxBuyPrice,volati
 
 - Подготовка, встреча и постфаза интерактивны; допустимые моменты задаёт `HandCardData.playTiming`.
 - `ProcessTurn()` уменьшает длительность и только что полученного эффекта в конце текущего личного хода. Новое правило длительности ещё не утверждено.
-- `ShadowEffectManager.OnEnterCity()` и `ConsumeBonusTrade()` не подключены к текущему CityManager. Наличие полей и описаний в ассете не гарантирует применение этих эффектов в городе.
+- `CityManager` вызывает `ShadowEffectManager.OnEnterCity()` и `ConsumeBonusTrade()` только при прибытии. Доплата жалованья списывается сразу; торговый процент расходуется следующей успешной продажей. Ссылки на `ShadowEffectManager`, `TeamSystem`, `TradeCardModifiers` назначены в обеих игровых сценах. См. [CITY_EFFECTS.md](CITY_EFFECTS.md).
 - Рука видна в городе; метка `InCity` разрешает розыгрыш. Сброс общей колоды не является сбросом руки.
 - `BattleManager` пока не использует `crewLoss` и `rewardHandCardID`; за победу выдаёт случайную карту руки.
 - `PlayerInventory.LoadInventory()` использует `Resources.Load("Items/...")`, а товары находятся в `Assets/Data/Items/`; текущая загрузка не восстанавливает эти ассеты.

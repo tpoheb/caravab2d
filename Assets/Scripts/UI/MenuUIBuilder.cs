@@ -46,6 +46,8 @@ public sealed class MenuUIBuilder
     {
         var image = Image(text, parent, position, size, _button == null ? new Color(0.28f, 0.21f, 0.14f) : Color.white);
         image.sprite = _button; image.type = UnityEngine.UI.Image.Type.Sliced;
+        // Масштаб рамки зависит от высоты кнопки; середина растягивается по ширине.
+        if (_button != null) image.pixelsPerUnitMultiplier = Mathf.Max(1, _button.rect.height / size.y);
         var button = image.gameObject.AddComponent<Button>(); button.targetGraphic = image;
         var colors = button.colors;
         colors.highlightedColor = colors.selectedColor = new Color(1.15f, 1.1f, 1f);

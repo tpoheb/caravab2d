@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to agents working in this repository. Technical documentation was synchronized with code on 2026-10-06; always verify behavior against `.cs` files.
+This file provides guidance to agents working in this repository. Technical documentation was synchronized with code on 2026-10-06; cards, UI, saves and deferred city effects were updated on 2026-10-18; always verify behavior against `.cs` files.
 
 ## Stack
 
@@ -13,7 +13,8 @@ This file provides guidance to agents working in this repository. Technical docu
 - Unity Test Framework 1.6.0 is installed; there are no project NUnit `[Test]` / `[UnityTest]` suites.
 - Real Editor checks exist in [CardSystemChecks.cs](Assets/Editor/Tests/CardSystemChecks.cs). Run **Tools → Проверки → Фазы хода, колода и общий рынок**, or Unity `-batchmode -nographics -projectPath <project> -executeMethod CardSystemChecks.Run -quit -logFile <log>` when no other Editor has the project open.
 - Success is logged as `CARD_SYSTEM_CHECKS_PASSED`. Checks cover weighted draws, discard/refill, shared runtime markets, copied snapshots, background planning, sequential AI and a player turn containing city entry plus the next route's first cell.
-- These checks are not a Play Mode scene run or a player build. For documentation-only changes, check links and consistency; no Unity run is needed.
+- [CityEffectChecks.cs](Assets/Editor/Tests/CityEffectChecks.cs): **Tools → Проверки → Отложенные эффекты в городе**, marker `CITY_EFFECT_CHECKS_PASSED`. `CityEffectChecks.RunBatch` also runs document-card checks and the full menu/save/route Play Mode check; omit `-quit` and `-nographics` because the harness exits itself. Run only when the project is not already open, or use an isolated physical project copy.
+- CardSystemChecks alone is not a Play Mode scene run or a player build. For documentation-only changes, check links and consistency; no Unity run is needed.
 
 ## Architecture
 
@@ -27,12 +28,13 @@ This file provides guidance to agents working in this repository. Technical docu
 
 ## Cards
 
-- [CardManager](Assets/Scripts/Card/CardManager.cs) owns one CardDeck, one current card and one discard list. Inspector catalogs `allShadowCards` / `allBattleCards` are preserved for scene references and merged at runtime. MapPrototipe contains 25 new events and 20 battles; draws use weights only, without difficulty filtering. Serialized minDifficulty/maxDifficulty fields remain for data compatibility and do not affect draws.
+- [CardManager](Assets/Scripts/Card/CardManager.cs) owns one CardDeck, one current card and one discard list. Inspector catalogs `allShadowCards` / `allBattleCards` are preserved for scene references and merged at runtime. TabletopCameraStudy and MapPrototipe contain 10 document events and 20 enemy encounters; draws use weights only, without difficulty filtering. Serialized minDifficulty/maxDifficulty fields remain for data compatibility and do not affect draws.
 - [CardDeck.Draw](Assets/Scripts/Card/CardDeck.cs) selects by positive weight among eligible remaining cards and removes the result. `HideEventCard()` discards completed/cancelled cards once. Refill from discard happens before a draw only when the entire deck is empty.
 - CardDeckUI only displays cards and counts from CardManager. CardDisplay is immediate; there is no awaited flip animation or separate gameplay queue in UI.
 - CardDeck uses UnityEngine.Random and belongs on the main thread. The optional `weightSelector` is an extension point; cell/province modifiers are not wired into gameplay yet.
 - Reveal opens interactive preparation. Confirming it rolls the battle die or opens the event window; a second confirmation fixes the result and opens PostEncounter. Events apply only on that second confirmation. Loss penalties settle after postcombat; victory rewards are granted before it.
 - HandCardData.playTiming defines before/during/after battle/event and InCity flags. HandManager.CanUseCard checks both timing and applicability. Cancellation affects the revealed card; escape works before/during battle; BattlePenaltyReduce works after defeat. The new duration rule still requires clarification: ProcessTurn ticks at the end of the current personal player turn, so a newly gained duration-1 effect can expire that same turn.
+- The current card source is `Assets/Data/DocumentCards.json`, based on `1001_Карты_игры.docx` (33 explicitly described, despite a stated total of 40). At the user’s request, four cards requiring absent mechanics were removed entirely: Второй шанс, Цена ошибки, Ложный выпад, Сломанная удача. The included set has 29 cards: 10 events, 10 general hand cards and 9 combat hand cards; importers must not recreate the exclusions. See `Assets/MD/DOCUMENT_CARDS.md` and `DocumentCardChecks.Run`. `BeforeCellEvent` allows preview before drawing; battle retries, risk, retreat and preview state are saved.
 - Hand cards are removed from currentHand on use; they do not have their own discard/refill collection.
 
 ## AI and economy (`Assets/Scripts/AI/`)
@@ -52,7 +54,11 @@ This file provides guidance to agents working in this repository. Technical docu
 - BattleCardImporter supports comma CSV and tab TSV with eight positional columns; asset identity is the expected filename including ID and name. Renaming can duplicate an asset.
 - ShadowCardCSVImporter reads named columns from `Assets/Data/ShadowCards.csv`; asset filenames also include ID and name.
 - TradeDataImporter currently reads comma CSV via `Tools/Trade/Import Trade Data`, updates existing Item.weight, and clears/rebuilds the item list of each city present in the file. Older TSV-only documentation is obsolete.
-- BattleCardData.crewLoss / rewardHandCardID exist but are not used by the current BattleManager. CityManager does not currently call ShadowEffectManager.OnEnterCity / ConsumeBonusTrade.
+- BattleCardData.crewLoss / rewardHandCardID exist but are not used by the current BattleManager. CityManager consumes OnEnterCity / ConsumeBonusTrade only on actual arrival: one additional crew salary (limited to available money), and a percentage boost for the next successful sale. Reopening/restoring the city panel does not reapply effects. TradeTransactionHandler consumes modifiers only after validation, including the full fixed sale bonus in city-funds validation and its returned total.
+
+## UI assets
+
+- Use existing sprites from `Assets/Resurses/` for new and updated interface elements. Menu buttons use `Assets/Resurses/Button.png` with sliced borders; preserve their proportions when resizing.
 
 ## Code style
 

@@ -25,7 +25,8 @@ using UnityEngine;
     public float penaltyReduction;
     public List<string> deck = new List<string>(), discard = new List<string>();
     public string currentCard;
-    public bool eventResolved;
+    public bool eventResolved, eventPenaltyUndone, eventCancelled;
+    public string previewCard;
     public BattleSave battle = new BattleSave();
     public List<EffectSave> effects = new List<EffectSave>();
     public bool wagePenalty, ignoreTax;
@@ -56,7 +57,7 @@ using UnityEngine;
     public bool visible;
     public List<GoodsSave> goods = new List<GoodsSave>();
 }
-[Serializable] public sealed class BattleSave { public string card; public int dice, bonus, debuff; public bool resolved, victory; }
+[Serializable] public sealed class BattleSave { public string card; public int dice, bonus, debuff; public bool resolved, victory; public bool retryUsed, ignoreAttackPenalties, attackFloor, withdrawn; public int penaltyIncreasePercent; }
 [Serializable] public sealed class EffectSave { public ShadowEffectType type; public int value, remaining; public string title; }
 [Serializable] public sealed class StorySave
 {

@@ -37,7 +37,7 @@ public class ShadowCardData : ScriptableObject, ICard
     public bool isTemporary;
 
     [Tooltip("Количество ходов действия (если isTemporary = true)")]
-    [Range(1, 10)]
+    [Range(1, 15)]
     public int duration = 1;
 
     [Header("Дополнительно")]

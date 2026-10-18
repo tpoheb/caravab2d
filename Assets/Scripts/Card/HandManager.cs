@@ -53,11 +53,36 @@ public partial class HandManager : MonoBehaviour
         var game = GameManager.Instance;
         if (game == null || game.IsChoosingDice) return false;
         var card = currentHand[index];
+        if (!string.IsNullOrEmpty(card.unavailableReason)) return false;
         if ((card.playTiming & game.CurrentHandTiming) == 0) return false;
 
         // Метка задаёт окно; дополнительно проверяем, что эффект применим сейчас.
         switch (card.effectType)
         {
+            case HandCardData.CardEffectType.Unsupported:
+                return false;
+            case HandCardData.CardEffectType.RetryBattle:
+                return game.State == GameState.PostEncounter && battleManager != null && battleManager.CanRetry;
+            case HandCardData.CardEffectType.WithdrawBattle:
+                return game.State == GameState.PostEncounter && battleManager != null && battleManager.CanWithdraw;
+            case HandCardData.CardEffectType.BoostDice:
+                return game.State == GameState.InBattle && battleManager != null && battleManager.IsActive && battleManager.HasDiceRoll;
+            case HandCardData.CardEffectType.CloseBattleBonus:
+                return game.State == GameState.InBattle && battleManager != null && battleManager.IsCloseBattle;
+            case HandCardData.CardEffectType.IgnoreAttackPenalties:
+            case HandCardData.CardEffectType.RiskAttackBonus:
+            case HandCardData.CardEffectType.AttackFloor:
+                return (game.State == GameState.PreparingEncounter || game.State == GameState.InBattle) &&
+                    battleManager != null && battleManager.IsActive;
+            case HandCardData.CardEffectType.UndoEventPenalty:
+                return game.State == GameState.PostEncounter && CardManager.Instance != null && CardManager.Instance.CanUndoEventPenalty;
+            case HandCardData.CardEffectType.RedrawEvent:
+            case HandCardData.CardEffectType.CancelEvent:
+                return (game.State == GameState.PreparingEncounter || game.State == GameState.ResolvingEvent) &&
+                    CardManager.Instance != null && CardManager.Instance.CurrentCard is ShadowCardData;
+            case HandCardData.CardEffectType.PeekEncounter:
+                return game.State == GameState.DrawingCard && CardManager.Instance != null && CardManager.Instance.CanPreview;
+
             case HandCardData.CardEffectType.Reroll:
                 return game.State == GameState.InBattle && battleManager != null &&
                        battleManager.IsActive && battleManager.HasDiceRoll;
@@ -137,7 +162,9 @@ public partial class HandManager : MonoBehaviour
             Debug.LogError("[HandManager] Пул наград пуст!");
             return;
         }
-        AddCard(rewardPool[Random.Range(0, rewardPool.Count)]);
+        var available = rewardPool.FindAll(card => card != null &&
+            string.IsNullOrEmpty(card.unavailableReason) && card.effectType != HandCardData.CardEffectType.Unsupported);
+        if (available.Count > 0) AddCard(available[Random.Range(0, available.Count)]);
     }
 
     // ── Диспетчер эффектов ────────────────────────────────────────────────
@@ -146,6 +173,29 @@ public partial class HandManager : MonoBehaviour
     {
         switch (card.effectType)
         {
+            case HandCardData.CardEffectType.RetryBattle:
+                ConsumeCard(index); battleManager.RetryBattle(card.value); break;
+            case HandCardData.CardEffectType.IgnoreAttackPenalties:
+                ConsumeCard(index); battleManager.IgnoreAttackPenalties(); break;
+            case HandCardData.CardEffectType.RiskAttackBonus:
+                ConsumeCard(index); battleManager.AddRiskBonus(card.value); break;
+            case HandCardData.CardEffectType.BoostDice:
+                ConsumeCard(index); battleManager.BoostDice(card.value); break;
+            case HandCardData.CardEffectType.AttackFloor:
+                ConsumeCard(index); battleManager.EnsureBaseAttack(); break;
+            case HandCardData.CardEffectType.CloseBattleBonus:
+                ConsumeCard(index); battleManager.AddAttackBonus(card.value); break;
+            case HandCardData.CardEffectType.WithdrawBattle:
+                ConsumeCard(index); battleManager.WithdrawBattle(); break;
+            case HandCardData.CardEffectType.UndoEventPenalty:
+                ConsumeCard(index); CardManager.Instance.UndoEventPenalty(); break;
+            case HandCardData.CardEffectType.RedrawEvent:
+                ConsumeCard(index); CardManager.Instance.RedrawEvent(); break;
+            case HandCardData.CardEffectType.PeekEncounter:
+                ConsumeCard(index); CardManager.Instance.PreviewNextCard(); break;
+            case HandCardData.CardEffectType.CancelEvent:
+                ConsumeCard(index); CardManager.Instance.CancelCurrentCard(); break;
+
             // ── Существующие боевые/тактические ──────────────────────────
 
             case HandCardData.CardEffectType.Reroll:

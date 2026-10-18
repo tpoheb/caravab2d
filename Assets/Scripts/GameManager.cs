@@ -39,6 +39,7 @@ public partial class GameManager : MonoBehaviour
     public HandCardData.PlayTiming CurrentHandTiming => State switch
     {
         GameState.InCity => HandCardData.PlayTiming.InCity,
+        GameState.DrawingCard => HandCardData.PlayTiming.BeforeCellEvent,
         GameState.PreparingEncounter when cardManager.CurrentCard is BattleCardData
             => HandCardData.PlayTiming.BeforeBattle,
         GameState.PreparingEncounter when cardManager.CurrentCard is ShadowCardData

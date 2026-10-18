@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f599bd26837a1b44c8603c0d89fa321a, type: 3}
+  m_Name: "Выверенный удар"
+  m_EditorClassIdentifier: Assembly-CSharp::HandCardData
+  cardName: "Выверенный удар"
+  description: "Изменить результат кубика на +2, но не выше его максимума. Контроль случайности."
+  icon: {fileID: 0}
+  category: 0
+  effectType: 17
+  value: 2
+  playTiming: 2
+  group: 1
+  unavailableReason: ""
+  momentLabel: "После броска боевого кубика"

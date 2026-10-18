@@ -82951,6 +82951,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cityPanel: {fileID: 323572841}
   playerToken: {fileID: 973928746}
+  _effectManager: {fileID: 2041521378}
+  _teamSystem: {fileID: 2041521370}
+  _tradeModifiers: {fileID: 2113258594}
   allCities:
   - {fileID: 400054865377390355}
   - {fileID: 1870378441}
@@ -307569,21 +307572,6 @@ MonoBehaviour:
   battleManager: {fileID: 2041521376}
   effectManager: {fileID: 2041521378}
   allShadowCards:
-  - {fileID: 11400000, guid: 6e571ce7208189e418c9034f3069f006, type: 2}
-  - {fileID: 11400000, guid: 15d51efff1109d840b85cfce5f540110, type: 2}
-  - {fileID: 11400000, guid: d213384d36759904291e6ab385a00da1, type: 2}
-  - {fileID: 11400000, guid: 157a13cfba6ee544cb70e22d7420f785, type: 2}
-  - {fileID: 11400000, guid: 6847b7da6b85ab84f876d860e3ebdf2b, type: 2}
-  - {fileID: 11400000, guid: b4f874d8fea114c4da102ee42075631f, type: 2}
-  - {fileID: 11400000, guid: 5498ab2e22d9501489cc76c07723687f, type: 2}
-  - {fileID: 11400000, guid: f89ceac9f6f92904e9f29bb65b12f39a, type: 2}
-  - {fileID: 11400000, guid: 67e88fa3ff38090458e2ae81b0c5e86e, type: 2}
-  - {fileID: 11400000, guid: 34271b05a7f077140b67b84c2fa12156, type: 2}
-  - {fileID: 11400000, guid: 98f786323e6cdb94cadecf235cf14f59, type: 2}
-  - {fileID: 11400000, guid: 6dcd7ec55c9f1b540aa60eb151cbb152, type: 2}
-  - {fileID: 11400000, guid: 53d31d5ac0da92a4e8d138e837cc5d4f, type: 2}
-  - {fileID: 11400000, guid: da3560f5f1464bd49b82c5f954b3160a, type: 2}
-  - {fileID: 11400000, guid: 97ede37bbc79c124d87f13be9c402c94, type: 2}
   - {fileID: 11400000, guid: c87dbc430945bfe479b10e8b86bf1987, type: 2}
   - {fileID: 11400000, guid: cc704a677e02b324bb0c1c5f543d699e, type: 2}
   - {fileID: 11400000, guid: b2c8a1c52c962b2418c3b77b6549a6f2, type: 2}
@@ -307654,25 +307642,28 @@ MonoBehaviour:
   playerInventory: {fileID: 2041521372}
   maxHandSize: 5
   currentHand:
-  - {fileID: 11400000, guid: 1907d53c5afe0124885ba79bf92026aa, type: 2}
+  - {fileID: 11400000, guid: cf9fc9a582ccecc4d8d8ab802935560b, type: 2}
   - {fileID: 11400000, guid: f626a598e25894a4caa230abee97e5e6, type: 2}
   rewardPool:
-  - {fileID: 11400000, guid: cf9fc9a582ccecc4d8d8ab802935560b, type: 2}
-  - {fileID: 11400000, guid: 3373a126e5278644292b2bef8f23ea46, type: 2}
-  - {fileID: 11400000, guid: 3bd5c0b4d792d004fb8f921c81a87b37, type: 2}
   - {fileID: 11400000, guid: c21db5f94d67a844bbfb87687d7bde08, type: 2}
-  - {fileID: 11400000, guid: e90ff520b4c9280409d6e76e36c7c5fe, type: 2}
-  - {fileID: 11400000, guid: bc65b04a7c86bef49851d3096448cc90, type: 2}
-  - {fileID: 11400000, guid: 06772d8dc8156564787af9c55159010c, type: 2}
-  - {fileID: 11400000, guid: 58ea87a1dc0296a429e64863e20eb771, type: 2}
-  - {fileID: 11400000, guid: 8249033edf255644c92649c4f46c34d4, type: 2}
+  - {fileID: 11400000, guid: cf9fc9a582ccecc4d8d8ab802935560b, type: 2}
+  - {fileID: 11400000, guid: 10f7203c431f4fca84ba227f55e497e0, type: 2}
+  - {fileID: 11400000, guid: 674d5370a6ed4ee0a7152139298adc15, type: 2}
+  - {fileID: 11400000, guid: cfb5168b3c634a15be525456f95dcc30, type: 2}
+  - {fileID: 11400000, guid: 58ade441b151432db9d27212977385eb, type: 2}
   - {fileID: 11400000, guid: f626a598e25894a4caa230abee97e5e6, type: 2}
-  - {fileID: 11400000, guid: 682b7f6d011c0a04c8ab10e7ad15e057, type: 2}
-  - {fileID: 11400000, guid: a5da595d1ead2ac438d3eb03eed8d6bd, type: 2}
-  - {fileID: 11400000, guid: 6f6066f25005a224e85d81176ae317de, type: 2}
-  - {fileID: 11400000, guid: 9027bd976782667428eebfaf7fa1de9b, type: 2}
+  - {fileID: 11400000, guid: 705ad79c51804a9eb2e29062c5e4e8b4, type: 2}
   - {fileID: 11400000, guid: bc669014573a3ca4fb7310798ad26df5, type: 2}
-  - {fileID: 11400000, guid: 1907d53c5afe0124885ba79bf92026aa, type: 2}
+  - {fileID: 11400000, guid: 0979a46227f944209f81363311b97a36, type: 2}
+  - {fileID: 11400000, guid: 0f0ca83677d943f0b9cab95670887be3, type: 2}
+  - {fileID: 11400000, guid: 92b944dd8fc244eea6dfa40d21a47317, type: 2}
+  - {fileID: 11400000, guid: 5a8c2853243b485395c46ee2d11e6e0c, type: 2}
+  - {fileID: 11400000, guid: 9d210c82b4c04e8ca99e59f6e8b4c10c, type: 2}
+  - {fileID: 11400000, guid: 7344e4d57a79425fa0023931f284efb4, type: 2}
+  - {fileID: 11400000, guid: b6d3f00752ac42478c302cf65a499912, type: 2}
+  - {fileID: 11400000, guid: 9368ffd56ab54662b19faf9b8d46b973, type: 2}
+  - {fileID: 11400000, guid: 944b452a82174042998835680605a082, type: 2}
+  - {fileID: 11400000, guid: 1e6fa48256704831bb162f2e3334007d, type: 2}
   handTransform: {fileID: 2133158012}
   cardPrefab: {fileID: 1052226475764424330, guid: 2e21a2cdd93a30d428c06b89b3d4e949, type: 3}
 --- !u!114 &2041521378

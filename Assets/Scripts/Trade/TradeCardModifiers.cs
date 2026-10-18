@@ -16,12 +16,27 @@ public partial class TradeCardModifiers : MonoBehaviour
     private float _pendingSalePriceBoost  = 0f;   // множитель, напр. 0.25 = +25%
     private float _pendingPurchaseDiscount = 0f;  // множитель, напр. 0.20 = −20%
 
+    // Просмотр не расходует бонусы: неудачная попытка сделки сохраняет их.
+    public int PendingSaleBonus => _pendingSaleBonus;
+    public float PendingSalePriceBoost => _pendingSalePriceBoost;
+    public float PendingPurchaseDiscount => _pendingPurchaseDiscount;
+
+    public void AddDeferredCityBonus(float percent)
+    {
+        if (percent != 0f) AddSalePriceBoost(percent);
+    }
+
     // ── Lifecycle ────────────────────────────────────────────────────────
 
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     private void OnEnable()

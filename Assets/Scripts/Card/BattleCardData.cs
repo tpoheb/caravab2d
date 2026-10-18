@@ -54,6 +54,9 @@ public class BattleCardData : ScriptableObject, ICard
     )]
     public int crewLoss;
 
+    [Tooltip("Обычный штраф отступления для карты «Шаг назад». 0 = не предусмотрен.")]
+    public int retreatPenaltyMoney;
+
     // ── ICard ────────────────────────────────────────────────────────────
     public string CardName       => enemyName;
     public string Description    => description;

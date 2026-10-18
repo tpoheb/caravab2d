@@ -106,6 +106,10 @@ public static class GameSaveService
         catalog.Get<GuildData>(data.guild);
         foreach (var id in data.hand) RequireAsset<HandCardData>(catalog, id);
         foreach (var id in data.deck.Concat(data.discard)) RequireAsset<ICard>(catalog, id);
+        if (!string.IsNullOrEmpty(data.previewCard) &&
+            (!data.deck.Contains(data.previewCard) || !string.IsNullOrEmpty(data.currentCard)))
+            throw new InvalidDataException("Некорректный предпросмотр карты.");
+        catalog.Get<ICard>(data.previewCard);
         catalog.Get<ICard>(data.currentCard); catalog.Get<BattleCardData>(data.battle.card);
         var allCards = data.deck.Concat(data.discard).Concat(string.IsNullOrEmpty(data.currentCard) ? Array.Empty<string>() : new[] { data.currentCard }).ToArray();
         if (allCards.Distinct().Count() != allCards.Length || data.selectedDice < 0 || data.selectedDice > 6 || data.battle.dice < 0 || data.battle.dice > 6)

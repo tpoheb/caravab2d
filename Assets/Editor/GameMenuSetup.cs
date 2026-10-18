@@ -50,7 +50,7 @@ public sealed class GameMenuSetup : IPreprocessBuildWithReport
         var properties = new SerializedObject(flow);
         properties.FindProperty("_background").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Loading/CaravanLoadingBackground.png");
         properties.FindProperty("_font").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Bricemont SDF.asset");
-        properties.FindProperty("_buttonSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GUIDToAssetPath("16bfa79c69596934392cd371ffc2ace5"));
+        properties.FindProperty("_buttonSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Resurses/Button.png");
         properties.FindProperty("_catalog").objectReferenceValue = catalog;
         properties.ApplyModifiedPropertiesWithoutUndo();
         EditorSceneManager.SaveScene(scene, MainMenuPath);

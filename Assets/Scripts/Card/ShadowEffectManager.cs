@@ -16,6 +16,32 @@ public partial class ShadowEffectManager : MonoBehaviour
     // ── Стек временных эффектов ──────────────────────────────────────────
     private readonly List<ActiveEffect> _activeEffects = new List<ActiveEffect>();
 
+    // Карты нового набора меняют только атаку; сумма нужна для разовых боевых защит.
+    public int AttackModifier
+    {
+        get { int sum = 0; foreach (var effect in _activeEffects)
+            if (effect.Data.effectType == ShadowEffectType.Attack) sum += effect.Data.value;
+            return sum; }
+    }
+    public int AttackPenaltyCompensation
+    {
+        get { int sum = 0; foreach (var effect in _activeEffects)
+            if (effect.Data.effectType == ShadowEffectType.Attack && effect.Data.value < 0) sum -= effect.Data.value;
+            return sum; }
+    }
+
+    public bool UndoAttackPenalty(ShadowCardData card)
+    {
+        if (card == null || card.effectType != ShadowEffectType.Attack || card.value >= 0) return false;
+        for (int i = _activeEffects.Count - 1; i >= 0; i--)
+        {
+            var data = _activeEffects[i].Data;
+            if (data.cardName != card.cardName || data.effectType != card.effectType || data.value != card.value) continue;
+            RevertEffect(data); _activeEffects.RemoveAt(i); return true;
+        }
+        return false;
+    }
+
     // ── Отложенные флаги (применяются при входе в город) ────────────────
     private bool  _wagePenaltyActive  = false;
     private float _bonusTradePercent  = 0f;
@@ -125,7 +151,7 @@ public partial class ShadowEffectManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Вызывается из CityManager при расчёте торговой прибыли.
+    /// Вызывается из CityManager при прибытии: процент передаётся в бонус следующей продажи.
     /// Возвращает накопленный % бонус и сбрасывает его.
     /// </summary>
     public float ConsumeBonusTrade()

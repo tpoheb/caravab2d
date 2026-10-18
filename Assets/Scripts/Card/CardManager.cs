@@ -24,6 +24,41 @@ public partial class CardManager : MonoBehaviour
     private readonly List<ICard> _discard = new List<ICard>();
     private ICard _currentCard;
     private bool _eventResolved;
+    private bool _eventPenaltyUndone, _eventCancelled;
+    private ICard _previewCard;
+    public bool CanPreview => _currentCard == null && _previewCard == null && (_deck.Count > 0 || _discard.Count > 0);
+    public bool CanUndoEventPenalty => _eventResolved && !_eventPenaltyUndone && !_eventCancelled &&
+        _currentCard is ShadowCardData shadow && shadow.effectType == ShadowEffectType.Attack && shadow.value < 0;
+
+    public void PreviewNextCard()
+    {
+        if (!CanPreview) return;
+        RefillIfEmpty();
+        var copy = new CardDeck(); copy.AddRange(_deck.Cards);
+        _previewCard = copy.Draw();
+        deckUI?.ShowCard(_previewCard);
+        HandManager.Instance?.RefreshUI();
+    }
+
+    public void RedrawEvent()
+    {
+        if (!(_currentCard is ShadowCardData) || _eventResolved) return;
+        HideEventCard(); DrawCard();
+    }
+
+    public void UndoEventPenalty()
+    {
+        if (!CanUndoEventPenalty || !effectManager.UndoAttackPenalty((ShadowCardData)_currentCard)) return;
+        _eventPenaltyUndone = true;
+        deckUI?.ShowPenaltyCancelled();
+        HandManager.Instance?.RefreshUI();
+    }
+
+    private void RefillIfEmpty()
+    {
+        if (!_deck.IsEmpty || _discard.Count == 0) return;
+        _deck.AddRange(_discard); _discard.Clear();
+    }
 
     public int RemainingCards => _deck.Count;
     public int DiscardCount => _discard.Count;
@@ -59,8 +94,11 @@ public partial class CardManager : MonoBehaviour
         }
 
         // Битвы и события участвуют в одном выборе: отдельного шанса битвы нет.
-        _currentCard = _deck.Draw();
+        if (_previewCard != null && _deck.Take(_previewCard)) _currentCard = _previewCard;
+        else _currentCard = _deck.Draw();
+        _previewCard = null;
         _eventResolved = false;
+        _eventPenaltyUndone = _eventCancelled = false;
         UpdateDeckCounts();
         if (_currentCard == null)
         {
@@ -86,6 +124,7 @@ public partial class CardManager : MonoBehaviour
     {
         if (_currentCard == null || _eventResolved) return;
         _eventResolved = true;
+        _eventCancelled = true;
         deckUI?.ShowCancelledCard(_currentCard);
         if (_currentCard is BattleCardData) battleManager.CancelBattle();
         gameManager.OnCardCancelled();
@@ -111,7 +150,8 @@ public partial class CardManager : MonoBehaviour
     {
         _deck.Clear();
         _discard.Clear();
-        _currentCard = null;
+        _currentCard = _previewCard = null;
+        _eventPenaltyUndone = _eventCancelled = false;
         foreach (var card in allShadowCards) _deck.Add(card);
         foreach (var card in allBattleCards) _deck.Add(card);
         UpdateDeckCounts();

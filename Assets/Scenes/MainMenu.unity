@@ -151,7 +151,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ApplicationFlow
   _background: {fileID: 2800000, guid: a3722a8ba94342b3a177045ed46b8e35, type: 3}
   _font: {fileID: 11400000, guid: 82a87514a01e96d49bbcb9db7def99c9, type: 2}
-  _buttonSprite: {fileID: 21300000, guid: 16bfa79c69596934392cd371ffc2ace5, type: 3}
+  _buttonSprite: {fileID: 21300000, guid: 1e298c0cb2592fd4ea8fc0bb7de15168, type: 3}
   _catalog: {fileID: 11400000, guid: fbb2448f281ac8842a4002aba3cd5d68, type: 2}
 --- !u!4 &2144337330
 Transform:

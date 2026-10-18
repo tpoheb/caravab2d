@@ -41,6 +41,8 @@ public class CardDeckUI : MonoBehaviour
         onRevealed?.Invoke();
     }
 
+    public void ShowPenaltyCancelled() => eventPanelUI?.DisplayResult("Числовой штраф события отменён.", true);
+
     public void ShowCancelledCard(ICard card)
     {
         if (card != null) ShowCard(new CancelledCardWrapper(card));

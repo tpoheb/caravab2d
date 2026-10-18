@@ -6,6 +6,9 @@ public partial class CityManager : MonoBehaviour
     [Header("Зависимости")]
     [SerializeField] private CityPanel cityPanel;
     [SerializeField] private PlayerToken playerToken;
+    [SerializeField] private ShadowEffectManager _effectManager;
+    [SerializeField] private TeamSystem _teamSystem;
+    [SerializeField] private TradeCardModifiers _tradeModifiers;
 
     [Header("Данные")]
     [SerializeField] private List<City> allCities;
@@ -91,8 +94,22 @@ public partial class CityManager : MonoBehaviour
             return;
         }
         lastArrivedCity = city;
+        ApplyDeferredCityEffects();
         Debug.Log($"CityManager: Игрок прибыл в город {city.CityName}");
         OpenCityPanel(city);
+    }
+
+    private void ApplyDeferredCityEffects()
+    {
+        if (_effectManager == null) return;
+        if (_teamSystem != null)
+        {
+            float multiplier = _effectManager.OnEnterCity();
+            // Обычное жалованье платится за дорожный шаг. В городе списывается только доплата.
+            if (multiplier > 1f) _teamSystem.PayAdditionalCityWages(multiplier - 1f);
+        }
+        if (_tradeModifiers != null)
+            _tradeModifiers.AddDeferredCityBonus(_effectManager.ConsumeBonusTrade() * 0.01f);
     }
 
     private void HandleTradeClosed()
@@ -126,6 +143,8 @@ public partial class CityManager : MonoBehaviour
             Debug.LogError("CityManager: CityPanel не назначен");
         if (playerToken == null)
             Debug.LogError("CityManager: PlayerToken не назначен");
+        if (_effectManager == null || _teamSystem == null || _tradeModifiers == null)
+            Debug.LogWarning("CityManager: Не назначены зависимости отложенных городских эффектов");
         if (allCities == null || allCities.Count == 0)
             Debug.LogWarning("CityManager: Список городов пуст или не задан");
     }

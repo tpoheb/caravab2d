@@ -2,7 +2,7 @@
 
 Пошаговая торговая игра в арабском фэнтезийном мире: маршруты между городами, общий рынок, наём команды, карты событий и битв.
 
-Техническая документация сверена с исходниками 2026-10-06. Материалы в `Design/` описывают замысел и баланс; наличие правила в GDD само по себе не означает, что оно реализовано.
+Техническая документация сверена с исходниками 2026-10-06; карты, UI, сохранения и отложенные городские эффекты обновлены 2026-10-18. Материалы в `Design/` описывают замысел и баланс; наличие правила в GDD само по себе не означает, что оно реализовано.
 
 ## Быстрый старт
 
@@ -49,6 +49,8 @@
 | [ARCHITECTURE.md](ARCHITECTURE.md) | FSM, зависимости, ход игрока и ИИ, общий рынок |
 | [SYSTEMS.md](SYSTEMS.md) | Актуальные API и события систем |
 | [ShadowCards_Mechanics.md](ShadowCards_Mechanics.md) | Общая колода, сброс, эффекты и UI |
+| [CITY_EFFECTS.md](CITY_EFFECTS.md) | Отложенное жалованье, бонус продажи и проверки |
+| [DOCUMENT_CARDS.md](DOCUMENT_CARDS.md) | Актуальные карты из документа, доступность и проверки |
 | [CARD_CREATION_GUIDE.md](CARD_CREATION_GUIDE.md) | Создание и подключение ассетов карт |
 | [SCRIPTS_AND_IMPORTERS.md](SCRIPTS_AND_IMPORTERS.md) | Порядок выполнения и актуальные импортёры |
 | [REFACTORING.md](REFACTORING.md) | Выполненные изменения и незавершённые этапы |
@@ -86,3 +88,5 @@ Assets/
 `PauseMenuPlayModeChecks.RunBatch` проверяет Esc, экранные кнопки, блокировку кликов и подтверждённый выход в настоящей сцене `MapPrototipe`. Запуск в отдельном Editor: `-batchmode -projectPath <project> -executeMethod PauseMenuPlayModeChecks.RunBatch -logFile <log>`, без `-quit` и `-nographics`. Проверка сама завершает Editor, записывает `PAUSE_MENU_PLAYMODE_CHECKS_PASSED` и сохраняет снимки меню в `Library/PauseMenuPreview/`.
 
 Полный сценарий главного меню, настроек и продолжения партии проверяет `GameMenuPlayModeChecks.RunBatch`. Запуск и формат сохранения описаны в [MENU_AND_SAVES.md](MENU_AND_SAVES.md).
+
+`CityEffectChecks.RunBatch` объединяет проверки городских эффектов, 29 карт из документа и полный маршрут Play Mode с сохранением/продолжением. Маркер городских проверок: `CITY_EFFECT_CHECKS_PASSED`. Правила и запуск: [CITY_EFFECTS.md](CITY_EFFECTS.md).

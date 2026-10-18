@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3e216504e15175f4886c79e64a37fc22, type: 3}
-  m_Name: "Shadow_018_\u0421\u043B\u043E\u0432\u043E_\u0432\u043E\u0438\u043D\u0430"
+  m_Name: "Shadow_018_Слово_воина"
   m_EditorClassIdentifier: Assembly-CSharp::ShadowCardData
   cardID: 18
-  cardName: "\u0421\u043B\u043E\u0432\u043E \u0432\u043E\u0438\u043D\u0430"
-  description: "\u0412\u0441\u0435 \u043F\u0440\u043E\u0439\u0434\u0435\u0442\u2026"
+  cardName: "Слово воина"
+  description: "Дисциплина и готовность к бою сохраняются надолго."
   minDifficulty: 0
   maxDifficulty: 10
   weight: 10
@@ -22,4 +22,4 @@ MonoBehaviour:
   value: 5
   isTemporary: 1
   duration: 10
-  penaltyValue: 200
+  penaltyValue: 0

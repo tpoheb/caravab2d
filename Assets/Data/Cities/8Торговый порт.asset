@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f33d9a5e20c08144993d84e2e4915d00, type: 3}
-  m_Name: "7\u0422\u043E\u0440\u0433\u043E\u0432\u044B\u0439 \u043F\u043E\u0440\u0442"
+  m_Name: "8\u0422\u043E\u0440\u0433\u043E\u0432\u044B\u0439 \u043F\u043E\u0440\u0442"
   m_EditorClassIdentifier: Assembly-CSharp::CityData
-  cityName: "7\u0422\u043E\u0440\u0433\u043E\u0432\u044B\u0439 \u043F\u043E\u0440\u0442"
+  cityName: "8\u0422\u043E\u0440\u0433\u043E\u0432\u044B\u0439 \u043F\u043E\u0440\u0442"
   cityGold: 500
   items:
   - item: {fileID: 11400000, guid: db3e249a689981c4f95f398834ff3d6a, type: 2}
@@ -249,3 +249,7 @@ MonoBehaviour:
     maxSellPrice: 112
     volatility: 0.02
     regenRate: 0.1
+  info:
+  rumors: []
+  isCapital: 0
+  availableUnits: []

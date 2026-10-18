@@ -18,6 +18,61 @@ public partial class BattleManager : MonoBehaviour
     private int _enemyDebuff;
     private bool _resolved;
     private bool _victory;
+    private bool _retryUsed, _ignoreAttackPenalties, _attackFloor, _withdrawn;
+    private int _penaltyIncreasePercent;
+    [SerializeField] private ShadowEffectManager effectManager;
+
+    public bool CanRetry => IsDefeat && !_retryUsed && !_withdrawn;
+    public bool CanWithdraw => IsDefeat && !_withdrawn;
+    public bool IsCloseBattle => IsActive && HasDiceRoll && Mathf.Abs(TotalAttack - EnemyAttack) <= 3;
+    public int TotalAttack => _attackFloor
+        ? Mathf.Max(UnmodifiedAttack, PlayerBaseAttack + _lastDiceRoll)
+        : PlayerBaseAttack + _lastDiceRoll;
+    private int UnmodifiedAttack => teamSystem.GetTotalAttack() - (Effects?.AttackModifier ?? 0);
+    private ShadowEffectManager Effects => effectManager != null ? effectManager : GameSaveService.Find<ShadowEffectManager>();
+    private int DefeatPenalty => _withdrawn ? Mathf.Abs(_card.retreatPenaltyMoney) :
+        Mathf.RoundToInt(Mathf.Abs(_card.penaltyMoney) * (1f + _penaltyIncreasePercent * 0.01f));
+
+    public void RetryBattle(int bonus)
+    {
+        if (!CanRetry) return;
+        _retryUsed = true;
+        _attackBonus += bonus;
+        _resolved = false;
+        FinalizeBattle();
+        RefreshPostCombatPreview();
+        HandManager.Instance?.RefreshUI();
+    }
+
+    public void WithdrawBattle()
+    {
+        if (!CanWithdraw) return;
+        _withdrawn = true;
+        _penaltyIncreasePercent = 0;
+        RefreshPostCombatPreview();
+        HandManager.Instance?.RefreshUI();
+    }
+
+    public void IgnoreAttackPenalties()
+    {
+        if (!IsActive) return;
+        _ignoreAttackPenalties = true; RefreshPreview();
+    }
+    public void EnsureBaseAttack()
+    {
+        if (!IsActive) return;
+        _attackFloor = true; RefreshPreview();
+    }
+    public void AddRiskBonus(int value)
+    {
+        if (!IsActive) return;
+        _penaltyIncreasePercent += 50; AddAttackBonus(value);
+    }
+    public void BoostDice(int value)
+    {
+        if (!IsActive || !HasDiceRoll) return;
+        ExecuteBattle(Mathf.Min(6, _lastDiceRoll + value));
+    }
 
     public bool HasDiceRoll => _card != null && _lastDiceRoll > 0;
     public bool IsDefeat => _card != null && _resolved && !_victory;
@@ -61,12 +116,13 @@ public partial class BattleManager : MonoBehaviour
     }
 
     private int EnemyAttack => Mathf.Max(0, _card.requiredAttack - _enemyDebuff);
-    private int PlayerBaseAttack => teamSystem.GetTotalAttack() + _attackBonus;
+    private int PlayerBaseAttack => teamSystem.GetTotalAttack() + _attackBonus +
+        (_ignoreAttackPenalties ? Effects?.AttackPenaltyCompensation ?? 0 : 0);
 
     private void RefreshPreview()
     {
         if (HasDiceRoll)
-            uiManager?.DisplayDiceRoll(_lastDiceRoll, PlayerBaseAttack, EnemyAttack);
+            uiManager?.DisplayDiceRoll(_lastDiceRoll, TotalAttack - _lastDiceRoll, EnemyAttack);
     }
 
     public void ForceEndBattle(bool escaped)
@@ -88,7 +144,7 @@ public partial class BattleManager : MonoBehaviour
     {
         if (!IsDefeat) return;
         float reduction = HandManager.Instance?.PendingPenaltyReduction ?? 0f;
-        int penalty = Mathf.RoundToInt(Mathf.Abs(_card.penaltyMoney) * (1f - reduction));
+        int penalty = Mathf.RoundToInt(DefeatPenalty * (1f - reduction));
         uiManager?.DisplaySettledPenalty(penalty);
     }
 
@@ -97,7 +153,7 @@ public partial class BattleManager : MonoBehaviour
     {
         if (!IsActive || !HasDiceRoll) return;
         _resolved = true;
-        int totalAttack = PlayerBaseAttack + _lastDiceRoll;
+        int totalAttack = TotalAttack;
         _victory = totalAttack >= EnemyAttack;
         uiManager?.DisplayBattleResult(_victory, _card, totalAttack);
         if (_victory)
@@ -121,7 +177,7 @@ public partial class BattleManager : MonoBehaviour
         if (!_victory)
         {
             float reduction = Mathf.Clamp01(HandManager.Instance?.ConsumePenaltyReduction() ?? 0f);
-            int penalty = Mathf.RoundToInt(Mathf.Abs(_card.penaltyMoney) * (1f - reduction));
+            int penalty = Mathf.RoundToInt(DefeatPenalty * (1f - reduction));
             teamSystem.RemoveMoney(penalty);
             uiManager?.DisplaySettledPenalty(penalty);
             Debug.Log($"[BattleManager] Штраф после посткомбата: {penalty} фелсов.");
@@ -137,5 +193,7 @@ public partial class BattleManager : MonoBehaviour
         _enemyDebuff = 0;
         _resolved = false;
         _victory = false;
+        _retryUsed = _ignoreAttackPenalties = _attackFloor = _withdrawn = false;
+        _penaltyIncreasePercent = 0;
     }
 }

@@ -2,6 +2,7 @@
 
 Актуально на 2026-10-06. Справочник описывает существующие методы, события и ограничения, а не целевую модель из GDD. Общий цикл: [ARCHITECTURE.md](ARCHITECTURE.md).
 
+Дополнено 2026-10-18: [актуальный набор карт](DOCUMENT_CARDS.md), [отложенные городские эффекты](CITY_EFFECTS.md) и [меню/сохранения](MENU_AND_SAVES.md).
 ## GameManager и GameState
 
 Файлы: `Assets/Scripts/GameManager.cs`, `Assets/Scripts/GameState.cs`. Singleton: `GameManager.Instance`.
@@ -128,7 +129,7 @@ public bool AdvanceToken();
 
 Файлы: `Assets/Scripts/Card/ShadowEffectManager.cs`, `Assets/Scripts/Card/HandManager.cs`.
 
-`ShadowEffectManager.ApplyCard()` применяет событие; `ApplyTransientCard()` создаёт временный объект данных для эффекта руки. `ProcessTurn()` уменьшает оставшуюся длительность в конце личного хода игрока. `OnEnterCity()` и `ConsumeBonusTrade()` существуют, но текущий `CityManager` их не вызывает.
+`ShadowEffectManager.ApplyCard()` применяет событие; `ApplyTransientCard()` создаёт временный объект данных для эффекта руки. `ProcessTurn()` уменьшает оставшуюся длительность в конце личного хода игрока. При прибытии `CityManager` вызывает `OnEnterCity()` для разовой доплаты жалованья и `ConsumeBonusTrade()` для передачи процентов в бонус следующей успешной продажи. Переоткрытие панели и `RestoreCity()` их не вызывают. См. [CITY_EFFECTS.md](CITY_EFFECTS.md).
 
 `HandManager.AddCard()`, `UseCard(index)`, `DiscardCard(index)` и `GiveRandomReward()` управляют рукой. Использование удаляет карту из `currentHand`; отдельный список сброса руки отсутствует.
 

@@ -23,6 +23,8 @@ public sealed class CardDeck
 
     public void Clear() => _cards.Clear();
 
+    public bool Take(ICard card) => _cards.Remove(card);
+
     public void Shuffle()
     {
         for (int i = _cards.Count - 1; i > 0; i--)

@@ -79,6 +79,17 @@ public partial class TeamSystem : MonoBehaviour
         }
     }
 
+    /// <summary>Разовая доплата к обычному жалованью за шаг; кошелёк не уходит в минус.</summary>
+    public int PayAdditionalCityWages(float additionalMultiplier)
+    {
+        if (playerInventory == null || additionalMultiplier <= 0f) return 0;
+        int requested = Mathf.Max(0, Mathf.RoundToInt(CalculateTotalSalary() * additionalMultiplier));
+        int payment = Mathf.Min(requested, Mathf.Max(0, playerInventory.Money));
+        if (payment > 0) playerInventory.TrySpendMoney(payment);
+        Debug.Log($"[TeamSystem] Доплата жалованья в городе: {payment} из {requested} фелсов.");
+        return payment;
+    }
+
     private int CalculateTotalSalary()
     {
         int total = 0;

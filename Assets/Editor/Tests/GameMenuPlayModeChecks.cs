@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using TMPro;
@@ -27,6 +28,9 @@ public static class GameMenuPlayModeChecks
     private static bool _stopping;
     private static int _exitCode;
     private static int _loggedStage = -1;
+    private static string _routeDestination;
+    private static int _arrivalTurn;
+    private static readonly List<string> RuntimeErrors = new List<string>();
     private static Keyboard _keyboard;
     private static InputSettings _originalInput, _checkInput;
     static GameMenuPlayModeChecks()
@@ -41,6 +45,7 @@ public static class GameMenuPlayModeChecks
     {
         if (!SessionState.GetBool(Running, false)) return;
         Application.runInBackground = true;
+        Application.logMessageReceived += OnRuntimeLog;
         GameSaveService.OverridePath = CheckPath; GameSettings.OverrideKey = Preferences;
     }
     // Без -quit: завершает редактор после проверки и выхода из Play Mode.
@@ -65,6 +70,7 @@ public static class GameMenuPlayModeChecks
     {
         _stage = 0; _nextFrame = 0; _stopping = false; _loggedStage = -1;
         PauseMenuChecks.RunAll();
+        RuntimeErrors.Clear();
         Directory.CreateDirectory(Path.GetDirectoryName(CheckPath));
         if (File.Exists(CheckPath)) File.Delete(CheckPath);
         PlayerPrefs.DeleteKey(Preferences);
@@ -135,14 +141,21 @@ public static class GameMenuPlayModeChecks
                     CheckCityHand(PauseMenuController.Instance);
                     PrepareCaravan();
                     var city = GameSaveService.Find<CityManager>().PlayerCurrentCity;
-                    GameManager.Instance.OnPathSelected(city.Paths.First(path => path != null && path.CellCount >= 3));
+                    CheckTrading(city);
+                    var route = city.Paths.Where(path => path != null && path.CellCount >= 3).OrderBy(path => path.CellCount).First();
+                    _routeDestination = route.FinishCity.CityName;
+                    _arrivalTurn = GameManager.Instance.TurnNumber + route.CellCount;
+                    SelectRoute(route);
+                    Require(GameManager.Instance.State == GameState.DrawingCard &&
+                        Get<int>(Get<PathController>(GameSaveService.Find<PlayerToken>(), "pathController"), "currentCellIndex") == 0,
+                        "Выход из города сразу приводит на первую клетку.");
                     DrawType<ShadowCardData>();
-                    GameManager.Instance.AdvancePhase(); GameManager.Instance.AdvancePhase(); GameManager.Instance.AdvancePhase();
+                    ClickPhase(); ClickPhase(); ClickPhase();
                     break;
                 case 3:
                     if (!GameManager.Instance.CanSave || GameManager.Instance.TurnNumber < 2) return;
                     Require(GameSaveService.TryRead(out var next, out _) && next.turn == 2 && next.aiTurn == 1, "После хода сохраняются игрок и очередь ИИ.");
-                    DrawType<BattleCardData>(); GameManager.Instance.AdvancePhase();
+                    DrawType<BattleCardData>(); ClickPhase();
                     Require(GameManager.Instance.State == GameState.InBattle, "Проверяем сохранение незавершённого боя.");
                     Require(Get<Transform>(HandManager.Instance, "handTransform").gameObject.activeSelf,
                         "В дорожной встрече рука показывается автоматически.");
@@ -187,7 +200,7 @@ public static class GameMenuPlayModeChecks
                     Require(JsonUtility.ToJson(restored) == JsonUtility.ToJson(_expected), "Полный снимок боя, каравана, рынков, карт, ИИ и истории должен совпадать после загрузки.");
                     Require(Get<Button>(GameSaveService.Find<BattleManager>().GetUIManager(), "endTurnButton").interactable,
                         "После восстановления броска доступна экранная кнопка завершения боя.");
-                    GameManager.Instance.AdvancePhase();
+                    ClickPhase();
                     _expected = GameManager.Instance.CaptureSave(flow.Catalog);
                     PauseMenuController.Instance.Pause(); PauseMenuController.Instance.RequestMainMenu(); PauseMenuController.Instance.ConfirmQuit();
                     break;
@@ -208,7 +221,7 @@ public static class GameMenuPlayModeChecks
                     break;
                 case 10:
                     if (flow.IsBusy) return;
-                    GameManager.Instance.AdvancePhase();
+                    ClickPhase();
                     Require(GameManager.Instance.State == GameState.WaitingForAI, "Началась очередь ИИ.");
                     PauseMenuController.Instance.Pause(); PauseMenuController.Instance.RequestMainMenu(); PauseMenuController.Instance.ConfirmQuit();
                     break;
@@ -216,14 +229,138 @@ public static class GameMenuPlayModeChecks
                     if (flow.IsBusy) return;
                     Require(SceneManager.GetActiveScene().name == "MainMenu" && GameSaveService.TryRead(out var afterAI, out _) &&
                         afterAI.turn == 3 && afterAI.aiTurn == 2, "Выход во время ИИ дожидается целой очереди и сохраняет следующий ход.");
+                    flow.ContinueGame();
+                    break;
+                case 12:
+                    if (flow.IsBusy) return;
+                    Require(GameManager.Instance.State == GameState.DrawingCard, "После ожидания ИИ восстанавливается следующая клетка.");
+                    break;
+                case 13:
+                    if (GameManager.Instance.State == GameState.WaitingForAI) return;
+                    if (GameManager.Instance.State == GameState.DrawingCard)
+                    {
+                        Require(GameManager.Instance.TurnNumber < _arrivalTurn, "До города число клеток должно совпадать с числом личных ходов.");
+                        DrawType<ShadowCardData>();
+                        ClickPhase(); ClickPhase(); ClickPhase();
+                        return;
+                    }
+                    Require(GameManager.Instance.State == GameState.InCity &&
+                        GameSaveService.Find<CityManager>().PlayerCurrentCity.CityName == _routeDestination &&
+                        GameManager.Instance.TurnNumber == _arrivalTurn && !Get<PathController>(GameSaveService.Find<PlayerToken>(), "pathController").HasActivePath,
+                        "Завершение дороги должно открыть город назначения в следующем личном ходе.");
+                    CheckCityHand(PauseMenuController.Instance);
+                    var cityEffects = GameManager.Instance.CaptureSave(flow.Catalog);
+                    Require(!cityEffects.wagePenalty && cityEffects.bonusTrade == 0 && Mathf.Approximately(cityEffects.saleBoost, .25f),
+                        "Реальное прибытие после загрузок применяет жалованье и переносит торговый бонус один раз.");
+                    CheckTrading(GameSaveService.Find<CityManager>().PlayerCurrentCity);
+                    Require(GameSaveService.Find<TradeCardModifiers>().PendingSalePriceBoost == 0, "Продажа через UI расходует городской бонус.");
+                    GameSaveService.Find<TradeCardModifiers>().AddDeferredCityBonus(.05f);
+                    _expected = GameManager.Instance.CaptureSave(flow.Catalog);
+                    Debug.Log("GAME_ROUTE_ARRIVAL_PASSED: " + _routeDestination + ", ход " + _arrivalTurn);
+                    PauseMenuController.Instance.Pause(); PauseMenuController.Instance.RequestMainMenu(); PauseMenuController.Instance.ConfirmQuit();
+                    break;
+                case 14:
+                    if (flow.IsBusy) return;
+                    Require(Get<Button>(flow, "_continue").interactable, "Городское сохранение доступно для продолжения.");
+                    flow.ContinueGame();
+                    break;
+                case 15:
+                    if (flow.IsBusy) return;
+                    var restoredCity = GameManager.Instance.CaptureSave(flow.Catalog); restoredCity.savedAt = _expected.savedAt;
+                    Require(!_expected.playerVisible && !restoredCity.playerVisible, "В городе дорожная фишка должна оставаться скрытой после загрузки.");
+                    // Загрузчик привязывает скрытую фишку к актуальному городу, а не к последней клетке старой дороги.
+                    _expected.playerPosition = GameSaveService.Find<CityManager>().PlayerCurrentCity.transform.position;
+                    File.WriteAllText("Library/GameMenuPreview/city-expected.json", JsonUtility.ToJson(_expected, true));
+                    File.WriteAllText("Library/GameMenuPreview/city-restored.json", JsonUtility.ToJson(restoredCity, true));
+                    Require(JsonUtility.ToJson(restoredCity) == JsonUtility.ToJson(_expected),
+                        "Загрузка в следующем городе должна восстановить торговлю, команду, рынки, эффекты и историю без изменений.");
+                    CheckCityHand(PauseMenuController.Instance);
+                    var nextRoute = GameSaveService.Find<CityManager>().PlayerCurrentCity.Paths.First(path => path != null && path.CellCount > 0);
+                    SelectRoute(nextRoute);
+                    Require(GameManager.Instance.TurnNumber == _arrivalTurn && GameManager.Instance.State == GameState.DrawingCard &&
+                        Get<int>(Get<PathController>(GameSaveService.Find<PlayerToken>(), "pathController"), "currentCellIndex") == 0,
+                        "Городские действия и первая клетка нового пути должны принадлежать одному личному ходу.");
+                    Debug.Log("GAME_ROUTE_CITY_CONTINUE_PASSED");
+                    PauseMenuController.Instance.Pause(); PauseMenuController.Instance.RequestMainMenu(); PauseMenuController.Instance.ConfirmQuit();
+                    break;
+                case 16:
+                    if (flow.IsBusy) return;
                     File.WriteAllText(CheckPath, "{broken save}"); flow.ShowMainMenu();
                     Require(!Get<Button>(flow, "_continue").interactable, "Повреждённое сохранение не разрешает продолжение.");
+                    Require(RuntimeErrors.Count == 0, "Ошибки выполнения во время маршрута: " + string.Join("\n", RuntimeErrors));
                     Debug.Log("GAME_MENU_PLAY_MODE_CHECKS_PASSED"); Stop(0); return;
             }
             _stage++; _nextFrame = Time.frameCount + 8;
         }
         catch (Exception exception) { Debug.LogException(exception); Stop(1); }
     }
+    private static void OnRuntimeLog(string message, string stack, LogType type)
+    {
+        if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert)
+            RuntimeErrors.Add(message + "\n" + stack);
+    }
+
+    private static void ClickPhase()
+    {
+        var game = GameManager.Instance;
+        var before = game.State;
+        var button = GameSaveService.Find<BattleManager>().GetUIManager().EndTurnButton;
+        Require(button.gameObject.activeInHierarchy && button.interactable, "Кнопка подтверждения фазы должна быть доступна: " + before);
+        button.onClick.Invoke();
+        bool valid = before == GameState.PreparingEncounter
+            ? game.State == GameState.ResolvingEvent || game.State == GameState.InBattle
+            : before == GameState.PostEncounter ? game.State == GameState.WaitingForAI : game.State == GameState.PostEncounter;
+        Require(valid, "Одно нажатие должно продвигать ровно одну фазу: " + before + " → " + game.State);
+    }
+
+    private static void SelectRoute(PathCellInitializer route)
+    {
+        var panel = GameSaveService.Find<CityPanel>();
+        var routes = GameSaveService.Find<CityManager>().PlayerCurrentCity.Paths
+            .Where(path => path != null && path.FinishCity != null).ToList();
+        var buttons = Get<List<Button>>(panel, "_pathButtons");
+        var button = buttons[routes.IndexOf(route)];
+        Require(button.gameObject.activeInHierarchy && button.interactable, "Кнопка выбранного пути должна быть доступна.");
+        button.onClick.Invoke();
+        Require(!panel.gameObject.activeSelf, "Выбор пути должен закрывать панель города.");
+    }
+
+    private static void CheckTrading(City city)
+    {
+        var inventory = GameSaveService.Find<PlayerInventory>();
+        var trade = GameSaveService.Find<TradeSystem>();
+        var ui = GameSaveService.Find<TradeUIManager>();
+        int turn = GameManager.Instance.TurnNumber;
+        var source = Get<CityData>(city, "sourceData");
+        string sourceBefore = JsonUtility.ToJson(source);
+        var cityPanel = GameSaveService.Find<CityPanel>();
+        Get<Button>(cityPanel, "buyGoodsButton").onClick.Invoke();
+        Require(Get<GameObject>(ui, "tradePanel").activeInHierarchy && ReferenceEquals(trade.CurrentCityData, city.RuntimeData),
+            "Торговая панель должна открывать общий runtime-рынок текущего города.");
+        var row = ui.ActiveItemUIs.First(value => value.CityItem.stock > 0 && inventory.CanCarryItem(value.CityItem.item, 1));
+        var item = row.CityItem;
+        int playerMoney = inventory.Money, cityMoney = city.RuntimeData.cityGold;
+        int playerStock = inventory.GetItemStock(item.item), cityStock = item.stock;
+        Get<Button>(row, "buyButton").onClick.Invoke();
+        int cost = playerMoney - inventory.Money;
+        Require(cost > 0 && city.RuntimeData.cityGold == cityMoney + cost && item.stock == cityStock - 1 &&
+            inventory.GetItemStock(item.item) == playerStock + 1,
+            "Покупка через кнопку должна передавать деньги городу и одну единицу товара игроку.");
+        Require(Get<TMP_Text>(row, "cityStock").text == item.stock.ToString() &&
+            Get<TMP_Text>(row, "playerStock").text == (playerStock + 1).ToString(), "Покупка должна обновлять запасы в UI.");
+        playerMoney = inventory.Money; cityMoney = city.RuntimeData.cityGold;
+        Get<Button>(row, "sellButton").onClick.Invoke();
+        int revenue = inventory.Money - playerMoney;
+        Require(revenue > 0 && city.RuntimeData.cityGold == cityMoney - revenue && item.stock == cityStock &&
+            inventory.GetItemStock(item.item) == playerStock, "Продажа через кнопку должна вернуть товар городу и выплатить выручку.");
+        Require(JsonUtility.ToJson(source) == sourceBefore, "Сделки не должны менять исходный CityData-ассет.");
+        Get<Button>(ui, "closeTradeButton").onClick.Invoke();
+        Require(!Get<GameObject>(ui, "tradePanel").activeSelf && GameManager.Instance.State == GameState.InCity &&
+            GameManager.Instance.TurnNumber == turn && cityPanel.gameObject.activeInHierarchy,
+            "Закрытие торговли возвращает в город без расходования хода.");
+        Debug.Log("GAME_ROUTE_TRADING_PASSED: " + city.CityName);
+    }
+
     public static void CheckChoiceNavigation(SettingsMenu settings)
     {
         var before = JsonUtility.ToJson(Get<GameSettingsData>(settings, "_draft"));
@@ -279,6 +416,8 @@ public static class GameMenuPlayModeChecks
         GameSaveService.Find<TeamSystem>().TryHireUnit(unit);
         var guild = AssetDatabase.FindAssets("t:GuildData").Select(guid => AssetDatabase.LoadAssetAtPath<GuildData>(AssetDatabase.GUIDToAssetPath(guid))).First();
         GameSaveService.Find<GuildSystem>().TryJoinGuild(guild);
+        GameSaveService.Find<ShadowEffectManager>().ApplyTransientCard(ShadowEffectType.WagePenalty, 0);
+        GameSaveService.Find<ShadowEffectManager>().ApplyTransientCard(ShadowEffectType.BonusTrade, 25);
         GameSaveService.Find<ShadowEffectManager>().ApplyTransientCard(ShadowEffectType.Attack, 4, 3);
         GameSaveService.Find<ShadowEffectManager>().ApplyTransientCard(ShadowEffectType.TeamStats, -20, 3);
         var market = GameSaveService.Find<CityManager>().AllCities[0].RuntimeData.items[0];
@@ -295,7 +434,10 @@ public static class GameMenuPlayModeChecks
             UnityEngine.Random.InitState(seed);
             var deck = new CardDeck(); deck.AddRange(state.deck.Select(flow.Catalog.Get<ICard>));
             if (!(deck.Draw() is T)) continue;
-            UnityEngine.Random.InitState(seed); CardManager.Instance.DrawCard();
+            UnityEngine.Random.InitState(seed);
+            var draw = Get<Button>(GameManager.Instance, "drawCardButton");
+            Require(draw.gameObject.activeInHierarchy && draw.interactable, "Кнопка вытягивания карты должна быть доступна.");
+            draw.onClick.Invoke();
             Require(CardManager.Instance.CurrentCard is T, "Раскрыт ожидаемый тип карты."); return;
         }
         throw new InvalidOperationException("Не найден тип карты для проверки.");
@@ -304,6 +446,7 @@ public static class GameMenuPlayModeChecks
         MenuPreviewCapture.Save(Get<GameObject>(flow, "_canvasRoot").GetComponent<Canvas>(), filename);
     private static void RestoreInput()
     {
+        Application.logMessageReceived -= OnRuntimeLog;
         if (_keyboard != null && _keyboard.added) InputSystem.RemoveDevice(_keyboard);
         if (_originalInput != null) InputSystem.settings = _originalInput;
         if (_checkInput != null) UnityEngine.Object.DestroyImmediate(_checkInput);
